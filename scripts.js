@@ -34,8 +34,6 @@ function get(computer) {
 
 	serverRev = $('#server .rev').text()
 	compRev = $('#' + computer + ' .rev').text()
-
-	//We won't need this just yet but will later
 	compChanged = $('#' + computer + ' .rev').attr('data-changed');
 
 	//Gets Tasks from each place
@@ -47,22 +45,25 @@ function get(computer) {
 		comp[$(this).attr('class')] = $(this).text()
 	});
 
-	//If the server is on the same rev as one computer, we can overwrite =)
-	if (serverRev == compRev) {
-		//Sets Data
-		server = comp;
+	//Makes sure there's been a change
+	if (compChanged == 'true') {
+		//If the server is on the same rev as one computer, we can overwrite =)
+		if (serverRev == compRev) {
+			//Sets Data
+			server = comp;
 
-		//Replaces Server List
-		$('#server ul').html('');
-		for (var key in server) {
-			$('#server ul').append('<li>' + server[key] + '</li>');
+			//Replaces Server List
+			$('#server ul').html('');
+			for (var key in server) {
+				$('#server ul').append('<li>' + server[key] + '</li>');
+			}
+
+			//We go up a rev
+			$('#server .rev').text(parseInt(serverRev)+1)
+			$('#' + computer + ' .rev').text(parseInt(compRev)+1)
+
+			$('#' + computer + ' .rev').attr('data-changed', 'false');
 		}
-
-		//We go up a rev
-		$('#server .rev').text(parseInt(serverRev)+1)
-		$('#' + computer + ' .rev').text(parseInt(compRev)+1)
-
-		$('#' + computer + ' .rev').attr('data-changed', 'false');
 	}
 
 	/*//We're taking the stuff off comp1 that's on the server
