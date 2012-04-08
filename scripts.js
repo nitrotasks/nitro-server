@@ -28,17 +28,38 @@
 	}
 });*/
 
+server = {
+	1: {
+
+	},
+	2: {
+		1: "Just a task"
+	},
+	3: {
+		1: "Task with ID1",
+	},
+	4: {
+		1: "Task with ID1",
+		2: "Task with ID2",
+	},
+	5: {
+
+	}
+};
+
 function get(computer) {
-	server = new Object()
+
 	comp = new Object()
 
-	serverRev = $('#server .rev').text()
-	compRev = $('#' + computer + ' .rev').text()
+	serverRev = parseInt($('#server .rev').text());
+	compRev = parseInt($('#' + computer + ' .rev').text());
 	compChanged = $('#' + computer + ' .rev').attr('data-changed');
+
+	console.log(serverRev);
 
 	//Gets Tasks from each place
 	$('#server ul').children().map(function() {
-		server[$(this).attr('class')] = $(this).text()
+		server[serverRev][$(this).attr('class')] = $(this).text()
 	});
 
 	$('#' + computer + ' ul').children().map(function() {
@@ -50,17 +71,20 @@ function get(computer) {
 		//If the server is on the same rev as one computer, we can overwrite =)
 		if (serverRev == compRev) {
 			//Sets Data
-			server = comp;
+			server[serverRev] = comp;
 
 			//Replaces Server List
 			$('#server ul').html('');
-			for (var key in server) {
-				$('#server ul').append('<li class="' + key + '">' + server[key] + '</li>');
+			for (var key in server[serverRev]) {
+				$('#server ul').append('<li class="' + key + '">' + server[serverRev][key] + '</li>');
 			}
 
 			//We go up a rev
-			$('#server .rev').text(parseInt(serverRev)+1)
-			$('#' + computer + ' .rev').text(parseInt(compRev)+1)
+			serverRev++;
+			compRev++;
+			$('#server .rev').text(serverRev);
+			$('#' + computer + ' .rev').text(compRev);
+			server[serverRev] = {};
 
 			$('#' + computer + ' .rev').attr('data-changed', 'false');
 		} else {
@@ -74,7 +98,7 @@ function get(computer) {
 		//Only push data if on diffrent revs
 		if (serverRev != compRev) {
 
-			comp = server;
+			comp = server[serverRev];
 
 			//Replaces Comp list
 			$('#' + computer + ' ul').html('');
