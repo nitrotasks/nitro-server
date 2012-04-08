@@ -1,17 +1,27 @@
 $(document).ready(function() {
-	var id = 0;
-	$('.add').click(function() {
-		$('.main').append('<li class="' + id + '">' + $('input').val() + '</li>');
-		$('input').val('');
 
+	var id = 0;
+	if($.jStorage.get('tasks')) {
+		console.log($.jStorage.get('tasks'));
+	}
+
+	$('.add').click(function() {
+		add($('input').val());
+		$('input').val('');
 		save();
 	});
+
+	function add(value, _id) {
+		if(!_id) _id = id;
+		$('.main').append('<li class="' + _id + '">' + value + '</li>');
+		id++;
+	}
 
 	function save() {
 		var tasks = {};
 		$('.main li').each(function(index, key) {
-			tasks[index] = $(key).html();
+			tasks[$(key).attr('class')] = $(key).html();
 		});
-		console.log(tasks);
+		$.jStorage.set('tasks', tasks);
 	}
 });
