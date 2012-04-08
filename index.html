@@ -9,12 +9,8 @@
 	<script src="scripts.js"></script>
 </head>
 <body>
-	<input type="text"><button class="add">Add</button>
-	<ul class="main">
-	</ul>
-=======
 <div id="server">
-	<h2>Server</h2>
+	<h2>Server</h2>rev <span class="rev">5</span>
 	<ul>
 		<li class="1">Task with ID1</li>
 		<li class="2">Task with ID2</li>
@@ -22,7 +18,7 @@
 	</ul>
 </div>
 <div id="comp1">
-	<h2>Comp1</h2>
+	<h2>Comp1</h2>rev <span class="rev" data-changed="true">5</span>
 	<ul>
 		<li class="1">Task with ID1</li>
 		<li class="2">Task with ID2</li>
@@ -31,7 +27,7 @@
 	</ul>
 </div>
 <div id="comp2">
-	<h2>Comp2</h2>
+	<h2>Comp2</h2>rev <span class="rev" data-changed="true">5</span>
 	<ul>
 		<li class="1">Task with ID1</li>
 		<li class="2">Task with ID2</li>
@@ -39,8 +35,8 @@
 		<li class="4">A new different task</li>
 	</ul>
 </div>
-<button class="comp1">Sync Comp1 then Comp2</button>
-<button class="comp2">Sync Comp2 then Comp1</button>
+<button class="comp1" onclick="get('comp1')">Sync Comp1</button>
+<button class="comp2">Sync Comp2</button><br>
 The result for the first button we want is: 
 <ul>
 		<li class="1">Task with ID1</li>
