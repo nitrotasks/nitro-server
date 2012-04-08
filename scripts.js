@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 /*$(document).ready(function() {
 
 	var id = 0;
@@ -30,7 +28,6 @@
 	}
 });*/
 
->>>>>>> Added a third computer which has unchanged data
 function get(computer) {
 	server = new Object()
 	comp = new Object()
