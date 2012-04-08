@@ -31,7 +31,6 @@ $(document).ready(function() {
 function get() {
 	server = new Object()
 	comp1 = new Object()
-	comp2 = new Object()
 
 	$('#server ul').children().map(function() {
 		server[$(this).attr('class')] = $(this).text()
@@ -41,7 +40,15 @@ function get() {
 		comp1[$(this).attr('class')] = $(this).text()
 	});
 
-	$('#comp2 ul').children().map(function() {
-		comp2[$(this).attr('class')] = $(this).text()
-	});
+	//We're taking the stuff off comp1 that's on the server
+	difference = comp1;
+
+	for (var key in server) {
+		//If it's the same on both the server & comp1, delete from difference
+		if (server[key] == comp1[key]) {
+			delete difference[key]
+		}
+	}
+
+	return difference;
 }
