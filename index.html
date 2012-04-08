@@ -5,16 +5,13 @@
 	<link rel="stylesheet" href="styles.css">
 
 	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-	<script src="jstorage.js"></script>
 	<script src="scripts.js"></script>
 </head>
 <body>
 <div id="server">
-	<h2>Server</h2>rev <span class="rev">5</span>
+	<h2>Server</h2>rev <span class="rev"></span>
 	<ul>
-		<li class="1">Task with ID1</li>
-		<li class="2">Task with ID2</li>
-		<li class="3">Task with ID3</li>
+
 	</ul>
 </div>
 <div id="comp1">
@@ -43,8 +40,15 @@
 		<li class="3">Task with ID3</li>
 	</ul>
 </div>
+<div id="comp4">
+	<h2>Comp4</h2>rev <span class="rev" data-changed="false">3</span>
+	<ul>
+		<li class="1">Task with ID1</li>
+	</ul>
+</div>
 <button class="comp1" onclick="get('comp1')">Sync Comp1</button>
 <button class="comp2" onclick="get('comp2')">Sync Comp2</button>
-<button class="comp3" onclick="get('comp3')">Sync Comp3</button><br>
+<button class="comp3" onclick="get('comp3')">Sync Comp3</button>
+<button class="comp4" onclick="get('comp4')">Sync Comp4</button><br>
 </body>
 </html>

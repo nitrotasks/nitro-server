@@ -1,36 +1,7 @@
-/*$(document).ready(function() {
-
-	var id = 0;
-	if($.jStorage.get('tasks')) {
-		for (var key in $.jStorage.get('tasks')) {
-			add($.jStorage.get('tasks')[key], key);
-		}
-	}
-
-	$('.add').click(function() {
-		add($('input').val());
-		$('input').val('');
-		save();
-	});
-
-	function add(value, _id) {
-		if(!_id) _id = id;
-		$('.main').append('<li class="' + _id + '">' + value + '</li>');
-		id++;
-	}
-
-	function save() {
-		var tasks = {};
-		$('.main li').each(function(index, key) {
-			tasks[$(key).attr('class')] = $(key).html();
-		});
-		$.jStorage.set('tasks', tasks);
-	}
-});*/
-
 server = {
+	index: 5,
 	1: {
-
+		// nothing
 	},
 	2: {
 		1: "Just a task"
@@ -43,25 +14,33 @@ server = {
 		2: "Task with ID2",
 	},
 	5: {
-
+		1: "Task with ID1",
+		2: "Task with ID2",
+		3: "Task with ID3"
 	}
 };
+
+$(document).ready(function() {
+
+	for (var key in server[server.index]) {
+		add(server[server.index][key], key);
+	}
+	$('#server .rev').text(server.index);
+
+	function add(value, id) {
+		$('#server ul').append('<li class="' + id + '">' + value + '</li>');
+	}
+
+});
 
 function get(computer) {
 
 	comp = new Object()
 
-	serverRev = parseInt($('#server .rev').text());
 	compRev = parseInt($('#' + computer + ' .rev').text());
 	compChanged = $('#' + computer + ' .rev').attr('data-changed');
 
-	console.log(serverRev);
-
-	//Gets Tasks from each place
-	$('#server ul').children().map(function() {
-		server[serverRev][$(this).attr('class')] = $(this).text()
-	});
-
+	//Gets Tasks from computer
 	$('#' + computer + ' ul').children().map(function() {
 		comp[$(this).attr('class')] = $(this).text()
 	});
@@ -69,22 +48,24 @@ function get(computer) {
 	//Makes sure there's been a change
 	if (compChanged == 'true') {
 		//If the server is on the same rev as one computer, we can overwrite =)
-		if (serverRev == compRev) {
+		if (server.index == compRev) {
+
+			//We go up a rev
+			server.index++;
+			compRev++;
+
 			//Sets Data
-			server[serverRev] = comp;
+			server[server.index] = comp;
 
 			//Replaces Server List
 			$('#server ul').html('');
-			for (var key in server[serverRev]) {
-				$('#server ul').append('<li class="' + key + '">' + server[serverRev][key] + '</li>');
+			for (var key in server[server.index]) {
+				$('#server ul').append('<li class="' + key + '">' + server[server.index][key] + '</li>');
 			}
 
-			//We go up a rev
-			serverRev++;
-			compRev++;
-			$('#server .rev').text(serverRev);
+			// Display revisions
+			$('#server .rev').text(server.index);
 			$('#' + computer + ' .rev').text(compRev);
-			server[serverRev] = {};
 
 			$('#' + computer + ' .rev').attr('data-changed', 'false');
 		} else {
@@ -96,9 +77,9 @@ function get(computer) {
 		//No Change? Great. We can bypass all this =)
 
 		//Only push data if on diffrent revs
-		if (serverRev != compRev) {
+		if (server.index != compRev) {
 
-			comp = server[serverRev];
+			comp = server[server.index];
 
 			//Replaces Comp list
 			$('#' + computer + ' ul').html('');
@@ -107,7 +88,7 @@ function get(computer) {
 			}
 
 			//Changes Rev to latest
-			$('#' + computer + ' .rev').text(serverRev);
+			$('#' + computer + ' .rev').text(server.index);
 		}
 	}
 
