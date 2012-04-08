@@ -1,3 +1,36 @@
+<<<<<<< HEAD
+=======
+/*$(document).ready(function() {
+
+	var id = 0;
+	if($.jStorage.get('tasks')) {
+		for (var key in $.jStorage.get('tasks')) {
+			add($.jStorage.get('tasks')[key], key);
+		}
+	}
+
+	$('.add').click(function() {
+		add($('input').val());
+		$('input').val('');
+		save();
+	});
+
+	function add(value, _id) {
+		if(!_id) _id = id;
+		$('.main').append('<li class="' + _id + '">' + value + '</li>');
+		id++;
+	}
+
+	function save() {
+		var tasks = {};
+		$('.main li').each(function(index, key) {
+			tasks[$(key).attr('class')] = $(key).html();
+		});
+		$.jStorage.set('tasks', tasks);
+	}
+});*/
+
+>>>>>>> Added a third computer which has unchanged data
 function get(computer) {
 	server = new Object()
 	comp = new Object()
@@ -25,7 +58,7 @@ function get(computer) {
 			//Replaces Server List
 			$('#server ul').html('');
 			for (var key in server) {
-				$('#server ul').append('<li>' + server[key] + '</li>');
+				$('#server ul').append('<li class="' + key + '">' + server[key] + '</li>');
 			}
 
 			//We go up a rev
@@ -33,6 +66,27 @@ function get(computer) {
 			$('#' + computer + ' .rev').text(parseInt(compRev)+1)
 
 			$('#' + computer + ' .rev').attr('data-changed', 'false');
+		} else {
+
+			//The data has been conflicted
+			alert('OH SNAP CONFLICTS!');
+		}
+	} else {
+		//No Change? Great. We can bypass all this =)
+
+		//Only push data if on diffrent revs
+		if (serverRev != compRev) {
+
+			comp = server;
+
+			//Replaces Comp list
+			$('#' + computer + ' ul').html('');
+			for (var key in comp) {
+				$('#' + computer + ' ul').append('<li class="' + key + '">' + comp[key] + '</li>');
+			}
+
+			//Changes Rev to latest
+			$('#' + computer + ' .rev').text(serverRev);
 		}
 	}
 

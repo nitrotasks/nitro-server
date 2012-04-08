@@ -35,17 +35,16 @@
 		<li class="4">A new different task</li>
 	</ul>
 </div>
-<button class="comp1" onclick="get('comp1')">Sync Comp1</button>
-<button class="comp2">Sync Comp2</button><br>
-The result for the first button we want is: 
-<ul>
+<div id="comp3">
+	<h2>Comp3</h2>rev <span class="rev" data-changed="false">5</span>
+	<ul>
 		<li class="1">Task with ID1</li>
 		<li class="2">Task with ID2</li>
 		<li class="3">Task with ID3</li>
-		<li class="4">A new task</li>
-		<li class="5">A new different task</li>
-</ul>
-
-BUT! We can't compare strings. We have to use ids.
+	</ul>
+</div>
+<button class="comp1" onclick="get('comp1')">Sync Comp1</button>
+<button class="comp2" onclick="get('comp2')">Sync Comp2</button>
+<button class="comp3" onclick="get('comp3')">Sync Comp3</button><br>
 </body>
 </html>
