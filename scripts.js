@@ -2,7 +2,9 @@ $(document).ready(function() {
 
 	var id = 0;
 	if($.jStorage.get('tasks')) {
-		console.log($.jStorage.get('tasks'));
+		for (var key in $.jStorage.get('tasks')) {
+			add($.jStorage.get('tasks')[key], key);
+		}
 	}
 
 	$('.add').click(function() {
