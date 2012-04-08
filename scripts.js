@@ -25,3 +25,21 @@ $(document).ready(function() {
 		$.jStorage.set('tasks', tasks);
 	}
 });
+
+function get() {
+	server = new Object()
+	comp1 = new Object()
+	comp2 = new Object()
+
+	$('#server ul').children().map(function() {
+		server[$(this).attr('class')] = $(this).text()
+	});
+
+	$('#comp1 ul').children().map(function() {
+		comp1[$(this).attr('class')] = $(this).text()
+	});
+
+	$('#comp2 ul').children().map(function() {
+		comp2[$(this).attr('class')] = $(this).text()
+	});
+}
