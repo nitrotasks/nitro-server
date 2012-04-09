@@ -82,7 +82,17 @@ function get(computer) {
 
 			/* Block of code that modification detection will go in */
 
-			/* But nothing yet */
+			for(var key in difference) {
+				// Check if key exists on both revisions
+				if(server[compRev].hasOwnProperty(key) && server[server.index].hasOwnProperty(key)) {
+					// Check if key is the same on both revisions
+					if(JSON.stringify(server[compRev][key]) == JSON.stringify(server[server.index][key])) {
+						// Replace task
+					} else {
+						// Alert user
+					}
+				}
+			}
 
 
 			//Finds length of server obj
