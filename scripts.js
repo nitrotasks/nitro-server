@@ -80,8 +80,33 @@ function get(computer) {
 				}
 			}
 
-			alert(JSON.stringify(difference));
-			alert(modified)
+			/* Block of code that modification detection will go in */
+
+			/* But nothing yet */
+
+
+			//Finds length of server obj
+			var count = 0;
+			for (var i in server[server.index]) {
+			    if (server[server.index].hasOwnProperty(i)) {
+			        count++;
+			    }
+			}
+
+			var newRev = server[server.index];
+			for (var i in difference) {
+				count++;
+				newRev[count] = difference[i]
+			}
+
+			//Merges newrev with server
+			server.index++;
+			server[server.index] = newRev;
+
+
+
+
+			alert(JSON.stringify(server[server.index]));
 
 			/*difference = comp;
 
