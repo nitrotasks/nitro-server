@@ -96,7 +96,7 @@ function get(computer) {
 			for(var key=0; key<modified.length; key++) {
 
 				// Check if key exists on the server
-				if(server[server.index].hasOwnProperty(modified[key])) {
+				if(comp.hasOwnProperty(modified[key]) && server[server.index].hasOwnProperty(modified[key])) {
 
 					// Checks if content is the same on both revs
 					if (server[compRev][modified[key]].content == server[server.index][modified[key]].content) {
@@ -112,8 +112,14 @@ function get(computer) {
 
 				} else {
 					// Key is deleted
+
 					newRev[modified[key]] = {content: '', notes: ''};
-					newRev[modified[key]].content = comp[modified[key]].content;
+
+					if(server[server.index].hasOwnProperty(modified[key])) {
+						newRev[modified[key]].content = server[server.index][modified[key]].content;
+					} else {
+						newRev[modified[key]].content = comp[modified[key]].content
+					}
 				}
 			}
 
