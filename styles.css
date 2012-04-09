@@ -4,6 +4,10 @@ h1, h2, h3, p, li, div {
 .rev {
 	font-weight: bold;
 }
+.rev:before {
+	content: 'Rev: ';
+	font-weight: bold;
+}
 .notes {
 	font-style: italic;
 	margin-left: 20px;
