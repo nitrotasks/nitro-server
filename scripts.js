@@ -110,7 +110,7 @@ function get(computer) {
 							newRev[modified[key]][attr] = comp[modified[key]][attr]
 
 						// Conflict! Ask user what to do...
-						} else if(confirm('Do you want to keep "' + comp[modified[key]][attr] + '"?')) {
+						} else if(confirm('Do you want to keep ' + attr + ': "' + comp[modified[key]][attr] + '"?')) {
 							// Replace current with user's choice
 							newRev[modified[key]][attr] = comp[modified[key]][attr]
 						}
