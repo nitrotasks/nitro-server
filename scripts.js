@@ -66,7 +66,8 @@ function get(computer) {
 			/* New Code */
 
 			// Create a difference object where data will be deleted from
-			difference = comp;
+			newRev = JSON.parse(JSON.stringify(server[server.index]));
+			difference = JSON.parse(JSON.stringify(comp));
 			modified = [];
 
 			// For each key on the server, it has to check against the new data
@@ -84,10 +85,18 @@ function get(computer) {
 			/* Block of code that modification detection will go in */
 
 			//Loops through modifed shit
-			for(var key = 0; key < modified.length; key++) {
+			for(var key=0; key<modified.length; key++) {
 				// Check if key exists on both revisions
 				if(server[server.index].hasOwnProperty(modified[key])) {
-					alert('We need to loop through task ' + modified[key] + ' to merge data')
+
+					//Checks if content is the same on both revs
+					if (server[compRev][modified[key]].content == server[server.index][modified[key]].content) {
+						
+						//Content is the same on both revs so we can use the new data
+						newRev[modified[key]].content = comp[modified[key]].content
+					} else {	
+						//Content has been changed between the revs, let's use the old data (do nothing)
+					}
 				} else {
 					//Key is deleted - nothing happens
 				}
@@ -103,7 +112,6 @@ function get(computer) {
 			}
 
 			//Joins server data to difference
-			var newRev = server[server.index];
 			for (var i in difference) {
 				count++;
 				newRev[count] = difference[i]
