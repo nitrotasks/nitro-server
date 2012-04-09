@@ -116,8 +116,6 @@ function get(computer) {
 			$('#' + computer + ' .rev').text(server.index);
 			$('#' + computer + ' .rev').attr('data-changed', 'false');
 
-			//The data has been conflicted
-			alert('OH SNAP CONFLICTS!');
 		}
 	} else {
 		//No Change? Great. We can bypass all this =)
