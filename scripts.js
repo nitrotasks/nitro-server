@@ -1,5 +1,9 @@
 server = {
 	index: 5,
+	4: {
+		1: {"content":"The first task","notes":""},
+		2: {"content":"The second task","notes":""}
+	},
 	5: {
 		1: {"content":"The first task","notes":""},
 		2: {"content":"The second task","notes":""},
@@ -105,9 +109,11 @@ function get(computer) {
 						// Replace current with user's choice
 						newRev[modified[key]].content = comp[modified[key]].content
 					}
-					
+
 				} else {
-					// Key is deleted - nothing happens
+					// Key is deleted
+					newRev[modified[key]] = {content: '', notes: ''};
+					newRev[modified[key]].content = comp[modified[key]].content;
 				}
 			}
 
