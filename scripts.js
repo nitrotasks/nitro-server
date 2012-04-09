@@ -98,27 +98,34 @@ function get(computer) {
 				// Check if key exists on the server
 				if(comp.hasOwnProperty(modified[key]) && server[server.index].hasOwnProperty(modified[key])) {
 
-					// Checks if content is the same on both revs
-					if (server[compRev][modified[key]].content == server[server.index][modified[key]].content) {
-						
-						// Content is the same on both revs so we can use the new data
-						newRev[modified[key]].content = comp[modified[key]].content
+					// Loop through each attribute
+					for(var attr in comp[modified[key]]) {
 
-					// Conflict! Ask user what to do...
-					} else if(confirm('Do you want to keep "' + comp[modified[key]].content + '"?')) {
-						// Replace current with user's choice
-						newRev[modified[key]].content = comp[modified[key]].content
+						// Checks if content is the same on both revs
+						if (server[compRev][modified[key]][attr] == server[server.index][modified[key]][attr]) {
+							
+							// Content is the same on both revs so we can use the new data
+							newRev[modified[key]][attr] = comp[modified[key]][attr]
+
+						// Conflict! Ask user what to do...
+						} else if(confirm('Do you want to keep "' + comp[modified[key]][attr] + '"?')) {
+							// Replace current with user's choice
+							newRev[modified[key]][attr] = comp[modified[key]][attr]
+						}
 					}
-
 				} else {
 					// Key is deleted
 
 					newRev[modified[key]] = {content: '', notes: ''};
 
 					if(server[server.index].hasOwnProperty(modified[key])) {
-						newRev[modified[key]].content = server[server.index][modified[key]].content;
+						for(var attr in server[server.index][modified[key]]) {
+							newRev[modified[key]][attr] = server[server.index][modified[key]][attr];
+						}
 					} else {
-						newRev[modified[key]].content = comp[modified[key]].content
+						for(var attr in comp[modified[key]]) {
+							newRev[modified[key]][attr] = comp[modified[key]][attr]
+						}
 					}
 				}
 			}
