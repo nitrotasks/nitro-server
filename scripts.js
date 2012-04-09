@@ -94,7 +94,7 @@ function get(computer) {
 			//Replaces Server List
 			$('#server ul').html('');
 			for (var key in server[server.index]) {
-				$('#server ul').append('<li class="' + key + '">' + server[server.index][key] + '</li>');
+				add(server[server.index][key], key, 'server');
 			}
 
 			// Display revisions
@@ -103,7 +103,7 @@ function get(computer) {
 			//Replaces Comp list
 			$('#' + computer + ' ul').html('');
 			for (var key in server[server.index]) {
-				$('#' + computer + ' ul').append('<li class="' + key + '">' + server[server.index][key] + '</li>');
+				add(server[server.index][key], key, computer);
 			}
 
 			$('#' + computer + ' .rev').text(server.index);
