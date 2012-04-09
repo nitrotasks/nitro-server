@@ -103,56 +103,51 @@ function get(computer) {
 			server.index++;
 			server[server.index] = newRev;
 
+			// alert(JSON.stringify(server[server.index]));
 
+			// difference = comp;
 
+			// for (var key in server[compRev]) {
+			// 	//If it's the same on both the server & comp1, delete from difference
+			// 	if (server[compRev][key] == comp[key]) {
+			// 		delete difference[key]
+			// 	}
+			// }
 
-			alert(JSON.stringify(server[server.index]));
+			// //Finds length of server obj
+			// var count = 0;
+			// for (var i in server[server.index]) {
+			//     if (server[server.index].hasOwnProperty(i)) {
+			//         count++;
+			//     }
+			// }
 
-			/*difference = comp;
+			// var newRev = server[server.index];
+			// for (var i in difference) {
+			// 	count++;
+			// 	newRev[count] = difference[i]
+			// }
 
-			for (var key in server[compRev]) {
-				//If it's the same on both the server & comp1, delete from difference
-				if (server[compRev][key] == comp[key]) {
-					delete difference[key]
-				}
-			}
+			// //Merges newrev with server
+			// server.index++;
+			// server[server.index] = newRev;
 
-			//Finds length of server obj
-			var count = 0;
-			for (var i in server[server.index]) {
-			    if (server[server.index].hasOwnProperty(i)) {
-			        count++;
-			    }
-			}
+			/**** PRINT TO UI ****/
 
-			var newRev = server[server.index];
-			for (var i in difference) {
-				count++;
-				newRev[count] = difference[i]
-			}
-
-			//Merges newrev with server
-			server.index++;
-			server[server.index] = newRev;
-
-			//Changes UI
-			//Replaces Server List
+			//Replaces Server and Computer List
 			$('#server ul').html('');
+			$('#' + computer + ' ul').html('');
 			for (var key in server[server.index]) {
 				add(server[server.index][key], key, 'server');
 			}
-
-			// Display revisions
-			$('#server .rev').text(server.index);
-
-			//Replaces Comp list
-			$('#' + computer + ' ul').html('');
 			for (var key in server[server.index]) {
 				add(server[server.index][key], key, computer);
 			}
-
+			
+			// Display revisions
+			$('#server .rev').text(server.index);
 			$('#' + computer + ' .rev').text(server.index);
-			$('#' + computer + ' .rev').attr('data-changed', 'false');*/
+			$('#' + computer + ' .rev').attr('data-changed', 'false');
 
 		}
 	} else {
