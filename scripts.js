@@ -86,7 +86,7 @@ function get(computer) {
 			//Loops through modifed shit
 			for(var key = 0; key < modified.length; key++) {
 				// Check if key exists on both revisions
-				if(server[compRev].hasOwnProperty(modified[key]) && server[server.index].hasOwnProperty(modified[key])) {
+				if(server[server.index].hasOwnProperty(modified[key])) {
 					alert('We need to loop through task ' + modified[key] + ' to merge data')
 				} else {
 					//Key is deleted - nothing happens
