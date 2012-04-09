@@ -77,20 +77,19 @@ function get(computer) {
 				} else {
 					//The object exists on the server but has been modified
 					modified.push(key);
+					delete difference[key];
 				}
 			}
 
 			/* Block of code that modification detection will go in */
 
-			for(var key in difference) {
+			//Loops through modifed shit
+			for(var key = 0; key < modified.length; key++) {
 				// Check if key exists on both revisions
-				if(server[compRev].hasOwnProperty(key) && server[server.index].hasOwnProperty(key)) {
-					// Check if key is the same on both revisions
-					if(JSON.stringify(server[compRev][key]) == JSON.stringify(server[server.index][key])) {
-						// Replace task
-					} else {
-						// Alert user
-					}
+				if(server[compRev].hasOwnProperty(modified[key]) && server[server.index].hasOwnProperty(modified[key])) {
+					alert('We need to loop through task ' + modified[key] + ' to merge data')
+				} else {
+					//Key is deleted - nothing happens
 				}
 			}
 
@@ -103,6 +102,7 @@ function get(computer) {
 			    }
 			}
 
+			//Joins server data to difference
 			var newRev = server[server.index];
 			for (var i in difference) {
 				count++;
