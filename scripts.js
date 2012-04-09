@@ -27,7 +27,7 @@ function get(computer) {
 
 	// Get the computers revision number and whether it's data has been changed
 	compRev = parseInt($('#' + computer + ' .rev').text());
-	compChanged = $('#' + computer + ' .rev').data('changed');
+	compChanged = $('#' + computer + ' .rev').attr('data-changed');
 
 	//Gets Tasks from computer
 	$('#' + computer + ' ul').find('li').map(function() {
@@ -37,7 +37,7 @@ function get(computer) {
 	});
 
 	//Makes sure there's been a change
-	if (compChanged == true) {
+	if (compChanged == 'true') {
 
 		//If the server is on the same rev as one computer, we can overwrite =)
 		if (server.index == compRev) {
