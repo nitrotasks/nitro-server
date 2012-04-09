@@ -65,11 +65,11 @@ function get(computer) {
 
 			/* New Code */
 
-			//Create a difference where data will be deleted from
+			// Create a difference object where data will be deleted from
 			difference = comp;
 			modified = [];
 
-			//For each key on the server, it has to check against the new data
+			// For each key on the server, it has to check against the new data
 			for (var key in server[compRev]) {
 				if (JSON.stringify(server[compRev][key]) == JSON.stringify(comp[key])) {
 					//Deletes if Data is identical
@@ -103,35 +103,6 @@ function get(computer) {
 			server.index++;
 			server[server.index] = newRev;
 
-			// alert(JSON.stringify(server[server.index]));
-
-			// difference = comp;
-
-			// for (var key in server[compRev]) {
-			// 	//If it's the same on both the server & comp1, delete from difference
-			// 	if (server[compRev][key] == comp[key]) {
-			// 		delete difference[key]
-			// 	}
-			// }
-
-			// //Finds length of server obj
-			// var count = 0;
-			// for (var i in server[server.index]) {
-			//     if (server[server.index].hasOwnProperty(i)) {
-			//         count++;
-			//     }
-			// }
-
-			// var newRev = server[server.index];
-			// for (var i in difference) {
-			// 	count++;
-			// 	newRev[count] = difference[i]
-			// }
-
-			// //Merges newrev with server
-			// server.index++;
-			// server[server.index] = newRev;
-
 			/**** PRINT TO UI ****/
 
 			//Replaces Server and Computer List
@@ -143,7 +114,7 @@ function get(computer) {
 			for (var key in server[server.index]) {
 				add(server[server.index][key], key, computer);
 			}
-			
+
 			// Display revisions
 			$('#server .rev').text(server.index);
 			$('#' + computer + ' .rev').text(server.index);
