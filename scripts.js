@@ -67,15 +67,28 @@ function get(computer) {
 
 			//Create a difference where data will be deleted from
 			difference = comp;
+			modified = [];
 
 			//For each key on the server, it has to check against the new data
 			for (var key in server[compRev]) {
 				if (JSON.stringify(server[compRev][key]) == JSON.stringify(comp[key])) {
+					//Deletes if Data is identical
 					delete difference[key];
+				} else {
+					//The object exists on the server but has been modified
+					modified.push(key);
 				}
 			}
 
+<<<<<<< HEAD
 			console.log(difference);
+=======
+			//Tests if the Object is new or has been modified
+
+
+			alert(JSON.stringify(difference));
+			alert(modified)
+>>>>>>> Added Modification Detection
 
 			/*difference = comp;
 
