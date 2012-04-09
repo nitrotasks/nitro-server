@@ -63,7 +63,21 @@ function get(computer) {
 
 		} else {
 
+			/* New Code */
+
+			//Create a difference where data will be deleted from
 			difference = comp;
+
+			//For each key on the server, it has to check against the new data
+			for (var key in server[compRev]) {
+				if (JSON.stringify(server[compRev][key]) == JSON.stringify(comp[key])) {
+					delete difference[key];
+				}
+			}
+
+			alert(JSON.stringify(difference));
+
+			/*difference = comp;
 
 			for (var key in server[compRev]) {
 				//If it's the same on both the server & comp1, delete from difference
@@ -107,7 +121,7 @@ function get(computer) {
 			}
 
 			$('#' + computer + ' .rev').text(server.index);
-			$('#' + computer + ' .rev').attr('data-changed', 'false');
+			$('#' + computer + ' .rev').attr('data-changed', 'false');*/
 
 		}
 	} else {
