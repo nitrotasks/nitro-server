@@ -20,6 +20,10 @@ function add(task, id, device) {
 	$('#' + device + ' ul').append('<li class="' + id + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span></li>');
 }
 
+function clone(input) {
+	return JSON.parse(JSON.stringify(input));
+}
+
 function get(computer) {
 
 	// Create computer
@@ -66,8 +70,8 @@ function get(computer) {
 			/* New Code */
 
 			// Create a difference object where data will be deleted from
-			newRev = JSON.parse(JSON.stringify(server[server.index]));
-			difference = JSON.parse(JSON.stringify(comp));
+			newRev = clone(server[server.index]);
+			difference = clone(comp);
 			modified = [];
 
 			// For each key on the server, it has to check against the new data
@@ -84,21 +88,26 @@ function get(computer) {
 
 			/* Block of code that modification detection will go in */
 
-			//Loops through modifed shit
+			// Loops through modifed shit
 			for(var key=0; key<modified.length; key++) {
-				// Check if key exists on both revisions
+
+				// Check if key exists on the server
 				if(server[server.index].hasOwnProperty(modified[key])) {
 
-					//Checks if content is the same on both revs
+					// Checks if content is the same on both revs
 					if (server[compRev][modified[key]].content == server[server.index][modified[key]].content) {
 						
-						//Content is the same on both revs so we can use the new data
+						// Content is the same on both revs so we can use the new data
 						newRev[modified[key]].content = comp[modified[key]].content
-					} else {	
-						//Content has been changed between the revs, let's use the old data (do nothing)
+
+					// Conflict! Ask user what to do...
+					} else if(confirm('Do you want to keep "' + comp[modified[key]].content + '"?')) {
+						// Replace current with user's choice
+						newRev[modified[key]].content = comp[modified[key]].content
 					}
+					
 				} else {
-					//Key is deleted - nothing happens
+					// Key is deleted - nothing happens
 				}
 			}
 
