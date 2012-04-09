@@ -5,9 +5,9 @@ server = {
 		2: {"content":"The second task","notes":""}
 	},
 	5: {
-		1: {"content":"The first task","notes":""},
-		2: {"content":"The second task","notes":""},
-		3: {"content":"The third task","notes":""}
+		1: {"content":"The first task","notes":"","priority": "none"},
+		2: {"content":"The second task","notes":"","priority": "none"},
+		3: {"content":"The third task","notes":"","priority": "none"}
 	}
 };
 
@@ -21,7 +21,7 @@ $(document).ready(function() {
 });
 
 function add(task, id, device) {
-	$('#' + device + ' ul').append('<li class="' + id + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span></li>');
+	$('#' + device + ' ul').append('<li class="' + id + '" data-priority="' + task.priority + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span></li>');
 }
 
 function clone(input) {
@@ -42,6 +42,8 @@ function get(computer) {
 		comp[$(this).attr('class')] = {};
 		comp[$(this).attr('class')]['content'] = $(this).find('.content').text();
 		comp[$(this).attr('class')]['notes'] = $(this).find('.notes').text();
+		comp[$(this).attr('class')]['priority'] = $(this).attr('data-priority');
+		console.log(comp);
 	});
 
 	//Makes sure there's been a change

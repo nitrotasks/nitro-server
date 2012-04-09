@@ -12,3 +12,17 @@ h1, h2, h3, p, li, div {
 	font-style: italic;
 	margin-left: 20px;
 }
+li {
+	padding: 5px;
+	border-radius: 4px;
+	max-width: 250px;
+}
+[data-priority=low] {
+	background: #6CC0E5;
+}
+[data-priority=medium] {
+	background: #FBC93D;
+}
+[data-priority=high] {
+	background: #FB4F4F;
+}
