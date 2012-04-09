@@ -70,6 +70,52 @@ function get(computer) {
 			$('#' + computer + ' .rev').attr('data-changed', 'false');
 		} else {
 
+			difference = comp;
+
+			for (var key in server[compRev]) {
+				//If it's the same on both the server & comp1, delete from difference
+				if (server[compRev][key] == comp[key]) {
+					delete difference[key]
+				}
+			}
+
+			//Finds length of server obj
+			var count = 0;
+			for (var i in server[server.index]) {
+			    if (server[server.index].hasOwnProperty(i)) {
+			        count++;
+			    }
+			}
+
+			var newRev = server[server.index];
+			for (var i in difference) {
+				count++;
+				newRev[count] = difference[i]
+			}
+
+			//Merges newrev with server
+			server.index++;
+			server[server.index] = newRev;
+
+			//Changes UI
+			//Replaces Server List
+			$('#server ul').html('');
+			for (var key in server[server.index]) {
+				$('#server ul').append('<li class="' + key + '">' + server[server.index][key] + '</li>');
+			}
+
+			// Display revisions
+			$('#server .rev').text(server.index);
+
+			//Replaces Comp list
+			$('#' + computer + ' ul').html('');
+			for (var key in server[server.index]) {
+				$('#' + computer + ' ul').append('<li class="' + key + '">' + server[server.index][key] + '</li>');
+			}
+
+			$('#' + computer + ' .rev').text(server.index);
+			$('#' + computer + ' .rev').attr('data-changed', 'false');
+
 			//The data has been conflicted
 			alert('OH SNAP CONFLICTS!');
 		}
@@ -91,16 +137,5 @@ function get(computer) {
 			$('#' + computer + ' .rev').text(server.index);
 		}
 	}
-
-	/*//We're taking the stuff off comp1 that's on the server
-	difference = comp1;
-
-	for (var key in server) {
-		//If it's the same on both the server & comp1, delete from difference
-		if (server[key] == comp1[key]) {
-			delete difference[key]
-		}
-	}
-
-	return difference;*/
+	
 }
