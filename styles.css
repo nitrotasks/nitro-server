@@ -1,0 +1,10 @@
+h1, h2, h3, p, li, div {
+	font-family: Helvetica, Arial, sans-serif;
+}
+.rev {
+	font-weight: bold;
+}
+.notes {
+	font-style: italic;
+	margin-left: 20px;
+}

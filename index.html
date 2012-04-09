@@ -2,7 +2,7 @@
 <html>
 <head>
 	<title>Nitro Sync</title>
-	<link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link>
+	<link href="styles.css" rel="stylesheet"></link>
 
 	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 	<script src="scripts.js"></script>
@@ -17,38 +17,31 @@
 <div id="comp1">
 	<h2>Comp1</h2>rev <span class="rev" data-changed="true">5</span>
 	<ul>
-		<li class="1">Task with ID1</li>
-		<li class="2">Task with ID2</li>
-		<li class="3">Task with ID3</li>
-		<li class="4">A new task</li>
+		<li class="1"><span class="content">The first task</span><span class="notes"></span></li>
+		<li class="2"><span class="content">The second task</span><span class="notes"></span></li>
+		<li class="3"><span class="content">The third task</span><span class="notes"></span></li>
+		<li class="4"><span class="content">The fourth task</span><span class="notes"></span></li>
 	</ul>
 </div>
 <div id="comp2">
 	<h2>Comp2</h2>rev <span class="rev" data-changed="true">5</span>
 	<ul>
-		<li class="1">Task with ID1</li>
-		<li class="2">Task with ID2</li>
-		<li class="3">Task with ID3</li>
-		<li class="4">A new different task</li>
+		<li class="1"><span class="content">The first task</span><span class="notes"></span></li>
+		<li class="2"><span class="content">The second task</span><span class="notes"></span></li>
+		<li class="3"><span class="content">The third task</span><span class="notes"></span></li>
+		<li class="4"><span class="content">The fourth task but with notes</span><span class="notes">Hey look! Notes</span></li>
 	</ul>
 </div>
 <div id="comp3">
 	<h2>Comp3</h2>rev <span class="rev" data-changed="false">5</span>
 	<ul>
-		<li class="1">Task with ID1</li>
-		<li class="2">Task with ID2</li>
-		<li class="3">Task with ID3</li>
-	</ul>
-</div>
-<div id="comp4">
-	<h2>Comp4</h2>rev <span class="rev" data-changed="false">3</span>
-	<ul>
-		<li class="1">Task with ID1</li>
+		<li class="1"><span class="content">The first task</span><span class="notes"></span></li>
+		<li class="2"><span class="content">The second task</span><span class="notes"></span></li>
+		<li class="3"><span class="content">The third task</span><span class="notes"></span></li>
 	</ul>
 </div>
 <button class="comp1" onclick="get('comp1')">Sync Comp1</button>
 <button class="comp2" onclick="get('comp2')">Sync Comp2</button>
-<button class="comp3" onclick="get('comp3')">Sync Comp3</button>
-<button class="comp4" onclick="get('comp4')">Sync Comp4</button><br>
+<button class="comp3" onclick="get('comp3')">Sync Comp3</button><br>
 </body>
 </html>

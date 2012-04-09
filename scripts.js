@@ -1,22 +1,9 @@
 server = {
 	index: 5,
-	1: {
-		// nothing
-	},
-	2: {
-		1: "Just a task"
-	},
-	3: {
-		1: "Task with ID1",
-	},
-	4: {
-		1: "Task with ID1",
-		2: "Task with ID2",
-	},
 	5: {
-		1: "Task with ID1",
-		2: "Task with ID2",
-		3: "Task with ID3"
+		1: {"content":"The first task","notes":""},
+		2: {"content":"The second task","notes":""},
+		3: {"content":"The third task","notes":""}
 	}
 };
 
