@@ -10,30 +10,35 @@ server = {
 $(document).ready(function() {
 
 	for (var key in server[server.index]) {
-		add(server[server.index][key], key);
+		add(server[server.index][key], key, 'server');
 	}
 	$('#server .rev').text(server.index);
 
-	function add(value, id) {
-		$('#server ul').append('<li class="' + id + '">' + value + '</li>');
-	}
-
 });
+
+function add(task, id, device) {
+	$('#' + device + ' ul').append('<li class="' + id + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span></li>');
+}
 
 function get(computer) {
 
+	// Create computer
 	comp = new Object()
 
+	// Get the computers revision number and whether it's data has been changed
 	compRev = parseInt($('#' + computer + ' .rev').text());
-	compChanged = $('#' + computer + ' .rev').attr('data-changed');
+	compChanged = $('#' + computer + ' .rev').data('changed');
 
 	//Gets Tasks from computer
-	$('#' + computer + ' ul').children().map(function() {
-		comp[$(this).attr('class')] = $(this).text()
+	$('#' + computer + ' ul').find('li').map(function() {
+		comp[$(this).attr('class')] = {};
+		comp[$(this).attr('class')]['content'] = $(this).find('.content').text();
+		comp[$(this).attr('class')]['notes'] = $(this).find('.notes').text();
 	});
 
 	//Makes sure there's been a change
-	if (compChanged == 'true') {
+	if (compChanged == true) {
+
 		//If the server is on the same rev as one computer, we can overwrite =)
 		if (server.index == compRev) {
 
@@ -47,7 +52,7 @@ function get(computer) {
 			//Replaces Server List
 			$('#server ul').html('');
 			for (var key in server[server.index]) {
-				$('#server ul').append('<li class="' + key + '">' + server[server.index][key] + '</li>');
+				add(server[server.index][key], key, 'server');
 			}
 
 			// Display revisions
@@ -55,6 +60,7 @@ function get(computer) {
 			$('#' + computer + ' .rev').text(compRev);
 
 			$('#' + computer + ' .rev').attr('data-changed', 'false');
+
 		} else {
 
 			difference = comp;
@@ -115,7 +121,7 @@ function get(computer) {
 			//Replaces Comp list
 			$('#' + computer + ' ul').html('');
 			for (var key in comp) {
-				$('#' + computer + ' ul').append('<li class="' + key + '">' + comp[key] + '</li>');
+				add(comp[key], key, computer);
 			}
 
 			//Changes Rev to latest
