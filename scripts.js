@@ -80,15 +80,8 @@ function get(computer) {
 				}
 			}
 
-<<<<<<< HEAD
-			console.log(difference);
-=======
-			//Tests if the Object is new or has been modified
-
-
 			alert(JSON.stringify(difference));
 			alert(modified)
->>>>>>> Added Modification Detection
 
 			/*difference = comp;
 
