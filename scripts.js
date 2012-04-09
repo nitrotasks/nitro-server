@@ -75,7 +75,7 @@ function get(computer) {
 				}
 			}
 
-			alert(JSON.stringify(difference));
+			console.log(difference);
 
 			/*difference = comp;
 
