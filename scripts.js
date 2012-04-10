@@ -126,6 +126,9 @@ function get(comp, el) {
 			// Loop through each attribute on computer
 			for(var key in comp.tasks[task]) {
 
+				//Stores the Attrs we'll be needing later
+				var changedAttrs = [];
+
 				//Don't loop through timestamps
 				if (key != 'time') {
 
@@ -151,8 +154,16 @@ function get(comp, el) {
 
 							// Update the timestamp
 							server.tasks[task].time[key] = comp.tasks[task].time[key];
+
+							//Adds the changed Attr to the array
+							changedAttrs.push(key);
 						}
 					}
+
+					if (changedAttrs.length > 0) {
+						alert(changedAttrs)
+					}
+					
 				}
 			}
 		}
