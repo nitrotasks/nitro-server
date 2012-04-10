@@ -13,11 +13,11 @@ server = {
 		content: { value: "The third task", time: 0 },
 		notes: { value:"", time: 0 },
 		priority: { value:"none", time: 0 }
-	},
-	4: {
-		deleted: 1
 	}
 }
+
+// Real legit Nitro database
+
 
 $(document).ready(function() {
 
@@ -149,7 +149,7 @@ function get(computer) {
 
 						// Update the servers version
 						server[task][key] = clone(comp[task][key]);
-						
+
 					}
 				}		
 			}
