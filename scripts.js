@@ -132,7 +132,7 @@ function get(comp, el) {
 				//Don't loop through timestamps
 				if (key != 'time') {
 
-					// Check if task was deleted on server
+					// Check if task was deleted on server or 
 					 if (server.tasks[task].hasOwnProperty('deleted')) {
 
 						// Check if task was modified after it was deleted
@@ -141,6 +141,8 @@ function get(comp, el) {
 							// Update the server with the entire task (including attributes and timestamps)
 							server.tasks[task] = comp.tasks[task];
 
+							//Breaks, we only need to do the thing once.
+							break;
 						}
 
 					// Task has not been deleted
