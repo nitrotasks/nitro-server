@@ -1,27 +1,31 @@
 server = {
-	index: 5,
-	4: {
-		1: {"content":"The first task","notes":""},
-		2: {"content":"The second task","notes":""}
+	1: {
+		content: { value: "The first task", time: 0 },
+		notes: { value:"", time: 0 },
+		priority: { value:"none", time: 0 }
 	},
-	5: {
-		1: {"content":"The first task","notes":"","priority": "none"},
-		2: {"content":"The second task","notes":"","priority": "none"},
-		3: {"content":"The third task","notes":"","priority": "none"}
+	2: {
+		content: { value: "The second task", time: 0 },
+		notes: { value:"", time: 0 },
+		priority: { value:"none", time: 0 }
+	},
+	3: {
+		content: { value: "The third task", time: 0 },
+		notes: { value:"", time: 0 },
+		priority: { value:"none", time: 0 }
 	}
-};
+}
 
 $(document).ready(function() {
 
-	for (var key in server[server.index]) {
-		add(server[server.index][key], key, 'server');
+	for (var key in server) {
+		add(server[key], key, 'server');
 	}
-	$('#server .rev').text(server.index);
 
 });
 
 function add(task, id, device) {
-	$('#' + device + ' ul').append('<li class="' + id + '" data-priority="' + task.priority + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span></li>');
+	$('#' + device + ' ul').append('<li class="' + id + '" data-priority="' + task.priority.value + '" data-time="' + task.content.time + '|' + task.notes.time + '|' + task.priority.time + '"><span class="content">' + task.content.value + '</span><span class="notes">' + task.notes.value + '</span></li>');
 }
 
 function clone(input) {
@@ -30,162 +34,50 @@ function clone(input) {
 
 function get(computer) {
 
-	// Create computer
-	comp = new Object()
-
-	// Get the computers revision number and whether it's data has been changed
-	compRev = parseInt($('#' + computer + ' .rev').text());
-	compChanged = $('#' + computer + ' .rev').attr('data-changed');
+	var comp = {};
 
 	//Gets Tasks from computer
 	$('#' + computer + ' ul').find('li').map(function() {
-		comp[$(this).attr('class')] = {};
-		comp[$(this).attr('class')]['content'] = $(this).find('.content').text();
-		comp[$(this).attr('class')]['notes'] = $(this).find('.notes').text();
-		comp[$(this).attr('class')]['priority'] = $(this).attr('data-priority');
+
+		// Get timestamps (content | notes | priority)
+		var time = $(this).attr('data-time').split('|');
+
+		// Convert strings to integers
+		for(var x in time) {
+			time[x] = parseInt(time[x]);
+		}
+
+		// Create computer
+		comp[$(this).attr('class')] = {
+			content:  {
+				value: $(this).find('.content').text(),
+				time: time[0]
+			},
+			notes: {
+				value: $(this).find('.notes').text(),
+				time: time[1]
+			},
+			priority: {
+				value: $(this).attr('data-priority'),
+				time: time[2]
+			}
+		}
 		console.log(comp);
 	});
 
-	//Makes sure there's been a change
-	if (compChanged == 'true') {
-
-		//If the server is on the same rev as one computer, we can overwrite =)
-		if (server.index == compRev) {
-
-			//We go up a rev
-			server.index++;
-			compRev++;
-
-			//Sets Data
-			server[server.index] = comp;
-
-			//Replaces Server List
-			$('#server ul').html('');
-			for (var key in server[server.index]) {
-				add(server[server.index][key], key, 'server');
+	for(var task in comp) {
+		for(var key in comp[task]) {
+			if(comp[task][key].time > server[task][key].time) {
+				server[task][key] = clone(comp[task][key]);
 			}
-
-			// Display revisions
-			$('#server .rev').text(server.index);
-			$('#' + computer + ' .rev').text(compRev);
-
-			$('#' + computer + ' .rev').attr('data-changed', 'false');
-
-		} else {
-
-			/* New Code */
-
-			// Create a difference object where data will be deleted from
-			newRev = clone(server[server.index]);
-			difference = clone(comp);
-			modified = [];
-
-			// For each key on the server, it has to check against the new data
-			for (var key in server[compRev]) {
-				if (JSON.stringify(server[compRev][key]) == JSON.stringify(comp[key])) {
-					//Deletes if Data is identical
-					delete difference[key];
-				} else {
-					//The object exists on the server but has been modified
-					modified.push(key);
-					delete difference[key];
-				}
-			}
-
-			/* Block of code that modification detection will go in */
-
-			// Loops through modifed shit
-			for(var key=0; key<modified.length; key++) {
-
-				// Check if key exists on the server
-				if(comp.hasOwnProperty(modified[key]) && server[server.index].hasOwnProperty(modified[key])) {
-
-					// Loop through each attribute
-					for(var attr in comp[modified[key]]) {
-
-						// Checks if content is the same on both revs
-						if (server[compRev][modified[key]][attr] == server[server.index][modified[key]][attr]) {
-							
-							// Content is the same on both revs so we can use the new data
-							newRev[modified[key]][attr] = comp[modified[key]][attr]
-
-						// Conflict! Ask user what to do...
-						} else if(confirm('Do you want to keep ' + attr + ': "' + comp[modified[key]][attr] + '"?')) {
-							// Replace current with user's choice
-							newRev[modified[key]][attr] = comp[modified[key]][attr]
-						}
-					}
-				} else {
-					// Key is deleted
-
-					newRev[modified[key]] = {content: '', notes: ''};
-
-					if(server[server.index].hasOwnProperty(modified[key])) {
-						for(var attr in server[server.index][modified[key]]) {
-							newRev[modified[key]][attr] = server[server.index][modified[key]][attr];
-						}
-					} else {
-						for(var attr in comp[modified[key]]) {
-							newRev[modified[key]][attr] = comp[modified[key]][attr]
-						}
-					}
-				}
-			}
-
-
-			//Finds length of server obj
-			var count = 0;
-			for (var i in server[server.index]) {
-			    if (server[server.index].hasOwnProperty(i)) {
-			        count++;
-			    }
-			}
-
-			//Joins server data to difference
-			for (var i in difference) {
-				count++;
-				newRev[count] = difference[i]
-			}
-
-			//Merges newrev with server
-			server.index++;
-			server[server.index] = newRev;
-
-			/**** PRINT TO UI ****/
-
-			//Replaces Server and Computer List
-			$('#server ul').html('');
-			$('#' + computer + ' ul').html('');
-			for (var key in server[server.index]) {
-				add(server[server.index][key], key, 'server');
-			}
-			for (var key in server[server.index]) {
-				add(server[server.index][key], key, computer);
-			}
-
-			// Display revisions
-			$('#server .rev').text(server.index);
-			$('#' + computer + ' .rev').text(server.index);
-			$('#' + computer + ' .rev').attr('data-changed', 'false');
-
-		}
-	} else {
-		//No Change? Great. We can bypass all this =)
-
-		//Only push data if on diffrent revs
-		if (server.index != compRev) {
-
-			comp = server[server.index];
-
-			//Replaces Comp list
-			$('#' + computer + ' ul').html('');
-			for (var key in comp) {
-				add(comp[key], key, computer);
-			}
-
-			//Changes Rev to latest
-			$('#' + computer + ' .rev').text(server.index);
 		}
 	}
-	
+
+	$('#server ul').html('');
+	$('#' + computer + ' ul').html('');
+	for(var task in server) {
+		add(server[task], task, 'server');
+		add(server[task], task, computer)
+	}
+
 }

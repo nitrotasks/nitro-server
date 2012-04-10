@@ -15,7 +15,13 @@ h1, h2, h3, p, li, div {
 li {
 	padding: 5px;
 	border-radius: 4px;
-	max-width: 250px;
+	max-width: 550px;
+}
+li:after {
+	content: attr(data-time);
+	display: block;
+	float: right;
+	font-family: menlo;
 }
 [data-priority=low] {
 	background: #6CC0E5;

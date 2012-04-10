@@ -9,37 +9,42 @@
 </head>
 <body>
 <div id="server">
-	<h2>Server</h2><span class="rev"></span>
+	<h2>Server</h2>
 	<ul>
 
 	</ul>
 </div>
+<hr>
 <div id="comp1">
-	<h2>Comp1</h2><span class="rev" data-changed="true">5</span>
+	<h2>Comp1</h2>
 	<ul>
-		<li class="1" data-priority="low"><span class="content">The first task</span><span class="notes"></span></li>
-		<li class="2" data-priority="none"><span class="content">The second task</span><span class="notes"></span></li>
-		<li class="3" data-priority="none"><span class="content">The third task but changed</span><span class="notes"></span></li>
+		<li class="1" data-time="0|0|1" data-priority="low"><span class="content">The first task</span><span class="notes"></span></li>
+		<li class="2" data-time="0|1|0" data-priority="none"><span class="content">The second task</span><span class="notes">Some notes</span></li>
+		<li class="3" data-time="1|0|0" data-priority="none"><span class="content">The third task but changed</span><span class="notes"></span></li>
 	</ul>
 </div>
+<hr>
 <div id="comp2">
-	<h2>Comp2</h2><span class="rev" data-changed="true">5</span>
+	<h2>Comp2</h2>
 	<ul>
-		<li class="1" data-priority="none"><span class="content">The first task</span><span class="notes"></span></li>
-		<li class="2" data-priority="medium"><span class="content">The second task but changed</span><span class="notes"></span></li>
-		<li class="3" data-priority="none"><span class="content">The third task</span><span class="notes"></span></li>
+		<li class="1" data-time="0|1|0" data-priority="none"><span class="content">The first task</span><span class="notes">more notes</span></li>
+		<li class="2" data-time="1|0|1" data-priority="medium"><span class="content">The second task but changed</span><span class="notes"></span></li>
+		<li class="3" data-time="0|0|0" data-priority="none"><span class="content">The third task</span><span class="notes"></span></li>
 	</ul>
 </div>
+<hr>
 <div id="comp3">
-	<h2>Comp3</h2><span class="rev" data-changed="true">5</span>
+	<h2>Comp3</h2>
 	<ul>
-		<li class="1" data-priority="none"><span class="content">The first task</span><span class="notes">And with notes!</span></li>
-		<li class="2" data-priority="none"><span class="content">The second task</span><span class="notes"></span></li>
-		<li class="3" data-priority="high"><span class="content">The third task</span><span class="notes"></span></li>
+		<li class="1" data-time="1|0|0" data-priority="none"><span class="content">The first task but changed</span><span class="notes"></span></li>
+		<li class="2" data-time="0|0|0" data-priority="none"><span class="content">The second task</span><span class="notes"></span></li>
+		<li class="3" data-time="0|1|1" data-priority="high"><span class="content">The third task</span><span class="notes">I love notes</span></li>
 	</ul>
 </div>
+<hr>
 <button class="comp1" onclick="get('comp1')">Sync Comp1</button>
 <button class="comp2" onclick="get('comp2')">Sync Comp2</button>
 <button class="comp3" onclick="get('comp3')">Sync Comp3</button><br>
 </body>
 </html>
+<!-- content | notes | priority -->
