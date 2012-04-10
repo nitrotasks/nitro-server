@@ -60,7 +60,27 @@
 			"logged": 0
 		}
 	},
-	"length":3
+	"3": {
+		"content":     "The fourth task",
+		"priority":    "none",
+		"date":        "",
+		"notes":       "",
+		"today":       "false",
+		"showInToday": "1",
+		"list":        "1",
+		"logged":      false,
+		"time": {
+			"content": 3,
+			"priority": 0,
+			"date": 0,
+			"notes": 0,
+			"today": 0,
+			"showInToday": 0,
+			"list": 0,
+			"logged": 0
+		}
+	},
+	"length":4
 },
 "lists": {
 	"order": [1],
@@ -70,7 +90,7 @@
 		},
 		"1":{
 			"name": "Comp1",
-			"order": [2,1,0],
+			"order": [3,2,1,0],
 			"time": 4
 		},
 		"today": {

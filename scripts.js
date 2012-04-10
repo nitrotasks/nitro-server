@@ -41,51 +41,17 @@ function clone(input) {
 
 function get(comp, el) {
 
-	// var comp = {};
-
-	// //Gets Tasks from computer
-	// $('#' + computer + ' ul').find('li').map(function() {
-
-	// 	// Get timestamps (content | notes | priority)
-	// 	var time = $(this).attr('data-time').split('|');
-
-	// 	// Convert strings to integers
-	// 	for(var x in time) {
-	// 		time[x] = parseInt(time[x]);
-	// 	}
-		
-	// 	if($(this).attr('data-deleted') == 'true') {
-
-	// 		// Task has been deleted!
-	// 		comp[$(this).attr('class')] = {
-	// 			deleted: time[0]
-	// 		}
-
-	// 	} else {
-
-	// 		// Get attributes
-	// 		comp[$(this).attr('class')] = {
-	// 			content:  {
-	// 				value: $(this).find('.content').text(),
-	// 				time: time[0]
-	// 			},
-	// 			notes: {
-	// 				value: $(this).find('.notes').text(),
-	// 				time: time[1]
-	// 			},
-	// 			priority: {
-	// 				value: $(this).attr('data-priority'),
-	// 				time: time[2]
-	// 			}
-	// 		}
-	// 	}
-	// });
-
 	// Loop through each task
 	for(var task in comp.tasks) {
 
+		// If task does not exist on the server
+		if(!server.tasks.hasOwnProperty(task)) {
+
+			// Add the task to the server
+			server.tasks[task] = clone(comp.tasks[task]);
+
 		// Task was deleted on computer but not on the server
-		if(comp.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
+		} else if(comp.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
 
 			// We use this to check whether the task was modified AFTER it was deleted
 			var deleteTask = true;
