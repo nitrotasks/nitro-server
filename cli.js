@@ -44,7 +44,17 @@ var cli = {
 			today: 'false',
 			showInToday: '1',
 			list: list,
-			logged: false
+			logged: false,
+			time: {
+				content: 0,
+				priority: 0,
+				date: 0,
+				notes: 0,
+				today: 0,
+				showInToday: 0,
+				list: 0,
+				logged: 0,
+			}
 		};
 
 		if (list == 'today') {
@@ -55,7 +65,7 @@ var cli = {
 		};
 
 		//Saves to disk
-		// cli.storage.save();
+		cli.storage.save();
 
 		//Returns something
 		console.log("Created Task: '" + name + "' with id: " + id + " in list: " + list);
@@ -80,7 +90,7 @@ var cli = {
 		delete cli.storage.tasks[id];
 
 		//Saves
-		// cli.storage.save();
+		cli.storage.save();
 	},
 	populate: function(type, query) {
 		query = cli.escape(query);
@@ -189,7 +199,7 @@ var cli = {
 		// Save
 		cli.taskData(id).edit(task);
 		cli.storage.lists.items = lists;
-		// cli.storage.save();
+		cli.storage.save();
 
 		console.log('The task with the id: ' + id + ' has been moved to the ' + list + ' list')
 	},
@@ -201,7 +211,7 @@ var cli = {
 
 				task.today = 'manual';
 				task.showInToday = '1';
-				cli.today(id).calculate()
+				cli.today(id).calculate();
 
 			},
 			remove: function() {
@@ -234,6 +244,8 @@ var cli = {
 				cli.calc.removeFromList(id, 'next');
 				
 				console.log('List: ' + task.list);
+
+				cli.storage.tasks[id].time.today = Date.now();
 
 				//If the task is due to be deleted, then delete it
 				if (task.list == 0) {
@@ -273,7 +285,7 @@ var cli = {
 				}
 				
 				//Saves data
-				// cli.storage.save();
+				cli.storage.save();
 			}
 		}
 	},
@@ -315,9 +327,10 @@ var cli = {
 			console.log("Task with id: " + id + " has been uncompleted");	
 		}
 
+		cli.storage.tasks[id].time.logged = Date.now();
 		cli.taskData(id).edit(task);
 		cli.storage.lists.items = lists;
-		// cli.storage.save();
+		cli.storage.save();
 	},
 	priority: function(id) {
 		return {
@@ -341,8 +354,9 @@ var cli = {
 						priority = "low";
 						break;
 				}
+				cli.storage.tasks[id].time.priority = Date.now();
 				cli.storage.tasks[id].priority = priority;
-				// cli.storage.save();
+				cli.storage.save();
 				return priority;
 			}
 		}
@@ -356,14 +370,17 @@ var cli = {
 			},
 			edit: function(obj) {
 				// Edit taskData
-				$.each(obj, function(index, value) { 
+				$.each(obj, function(i, value) { 
   					if (typeof value == "string") {
-  						obj[index] = cli.escape(value);
+  						obj[i] = cli.escape(value);
+  					}
+  					if(obj[i] != $.jStorage.get('tasks')[id][i] && i!='time') {
+  						cli.storage.tasks[id].time[i] =  Date.now();
   					}
 				});
 
 				cli.storage.tasks[id] = obj;
-				// cli.storage.save();
+				cli.storage.save();
 				
 			}
 		};
@@ -387,14 +404,14 @@ var cli = {
 
 				//Updates Total
 				cli.storage.lists.items.length++;
-				// cli.storage.save();
+				cli.storage.save();
 			},
 			rename: function() {
 				// Renames a list
 				cli.storage.lists.items[id].name = name;
 
 				//Saves to localStorage
-				// cli.storage.save();
+				cli.storage.save();
 
 				//Returns something
 				console.log("Renamed List: " + id + " to: '" + name + "'");
@@ -412,7 +429,7 @@ var cli = {
 				cli.storage.lists.order.splice(jQuery.inArray(parseInt(id), cli.storage.lists.order), 1);
 
 				//Saves to disk
-				// cli.storage.save();
+				cli.storage.save();
 
 				//Returns something
 				console.log("Deleted List: " + id);
@@ -420,12 +437,12 @@ var cli = {
 			taskOrder: function(order) {
 				//Order of tasks
 				cli.storage.lists.items[id].order = order;
-				// cli.storage.save();
+				cli.storage.save();
 			},
 			order: function(order) {
 				// Order of lists
 				cli.storage.lists.order = order;
-				// cli.storage.save();
+				cli.storage.save();
 			}
 		}
 	},
@@ -450,7 +467,7 @@ var cli = {
 
 			// cli.taskData(id).edit(task);
 			cli.storage.lists.items = lists;
-			// cli.storage.save();
+			cli.storage.save();
 		},
 
 		date: function(id) {
@@ -479,7 +496,7 @@ var cli = {
 
 					cli.storage.queue[id] = final;
 
-					// cli.storage.save();
+					cli.storage.save();
 
 					//Refreshes Date Queue
 					cli.calc.todayQueue.refresh();
@@ -577,28 +594,28 @@ var cli = {
 							//Wait till tomorrow.
 							cli.storage.tasks[key].today = 'noAuto';
 					    };
-						// cli.storage.save();
+						cli.storage.save();
 					};
 				};
 			}
 		}
 	},
 
-	// storage: {
-	// 	//Object where data is stored
-	// 	tasks: $.jStorage.get('tasks', {length: 0}),
-	// 	queue: $.jStorage.get('queue', {}),
-	// 	lists: $.jStorage.get('lists', {order: [], items:{today: {name: "Today", order:[]}, next: {name: "Next", order:[]}, someday: {name: "Someday", order:[]}, 0: {order:[]}, length: 1}}),
-	// 	prefs: $.jStorage.get('prefs', {deleteWarnings: false, gpu: false, nextAmount: 'threeItems', over50: true, lang: 'english'}),
-	// 	// NB: Over 50 caps amount of tasks in List to 50 but causes drag and drop problems.
-	// 	// I CBF fixing it.
+	storage: {
+		//Object where data is stored
+		tasks: $.jStorage.get('tasks', {length: 0}),
+		queue: $.jStorage.get('queue', {}),
+		lists: $.jStorage.get('lists', {order: [], items:{today: {name: "Today", order:[]}, next: {name: "Next", order:[]}, someday: {name: "Someday", order:[]}, 0: {order:[]}, length: 1}}),
+		prefs: $.jStorage.get('prefs', {deleteWarnings: false, gpu: false, nextAmount: 'threeItems', over50: true, lang: 'english'}),
+		// NB: Over 50 caps amount of tasks in List to 50 but causes drag and drop problems.
+		// I CBF fixing it.
 
-	// 	save: function() {
-	// 		//Saves to localStorage
-	// 		$.jStorage.set('tasks', cli.storage.tasks);
-	// 		$.jStorage.set('lists', cli.storage.lists);
-	// 		$.jStorage.set('queue', cli.storage.queue);
-	// 		$.jStorage.set('prefs', cli.storage.prefs);
-	// 	}
-	// }
+		save: function() {
+			//Saves to localStorage
+			$.jStorage.set('tasks', cli.storage.tasks);
+			$.jStorage.set('lists', cli.storage.lists);
+			$.jStorage.set('queue', cli.storage.queue);
+			$.jStorage.set('prefs', cli.storage.prefs);
+		}
+	}
 }
