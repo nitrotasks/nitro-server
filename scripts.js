@@ -146,16 +146,11 @@ function get(comp, el) {
 						// If the attribute was updated after the server
 						if(comp.tasks[task].time[key] > server.tasks[task].time[key]) {
 
-							//Due to the shitty nature of Nitro, a task can be updated without being updated
-							//We need to check for this.
-							if (comp.tasks[task][key] != server.tasks[task][key]) {
+							// Update the servers version
+							server.tasks[task][key] = comp.tasks[task][key];
 
-								// Update the servers version
-								server.tasks[task][key] = comp.tasks[task][key];
-
-								// Update the timestamp
-								server.tasks[task].time[key] = comp.tasks[task].time[key];
-							}
+							// Update the timestamp
+							server.tasks[task].time[key] = comp.tasks[task].time[key];
 						}
 					}
 				}
