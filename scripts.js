@@ -1,29 +1,22 @@
-server = {
-	1: {
-		content: { value: "The first task", time: 0 },
-		notes: { value:"", time: 0 },
-		priority: { value:"none", time: 0 }
-	},
-	2: {
-		content: { value: "The second task", time: 0 },
-		notes: { value:"", time: 0 },
-		priority: { value:"none", time: 0 }
-	},
-	3: {
-		content: { value: "The third task", time: 0 },
-		notes: { value:"", time: 0 },
-		priority: { value:"none", time: 0 }
-	}
-}
-
-// Real legit Nitro database
-
 
 $(document).ready(function() {
 
-	for (var key in server) {
-		add(server[key], key, 'server');
+	function loadJSON(data, device) {
+		for (var task in data.tasks) {
+			if(task != 'length') add(data.tasks[task], task, device);
+		}
 	}
+
+	$.getJSON('json/server.json', function(data) {
+		loadJSON(data, 'server');
+	});
+	$.getJSON('json/comp1.json', function(data) {
+		loadJSON(data, 'comp1');
+	});
+	$.getJSON('json/comp2.json', function(data) {
+		loadJSON(data, 'comp2');
+	});
+
 
 });
 
@@ -35,7 +28,7 @@ function add(task, id, device) {
 
 	// Else show task as normal
 	} else {
-		$('#' + device + ' ul').append('<li class="' + id + '" data-priority="' + task.priority.value + '" data-time="' + task.content.time + '|' + task.notes.time + '|' + task.priority.time + '"><span class="content">' + task.content.value + '</span><span class="notes">' + task.notes.value + '</span></li>');
+		$('#' + device + ' ul').append('<li class="' + id + '" data-priority="' + task.priority + '" data-time="' + task.time.content + '|' + task.time.notes + '|' + task.time.priority + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span></li>');
 	}
 }
 

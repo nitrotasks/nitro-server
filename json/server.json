@@ -1,0 +1,100 @@
+{
+"tasks": {
+	"0": {
+		"content":     "The first task",
+		"priority":    "none",
+		"date":        "",
+		"notes":       "",
+		"today":       "false",
+		"showInToday": "1",
+		"list":        "1",
+		"logged":      false,
+		"time": {
+			"content": 1,
+			"priority": 0,
+			"date": 0,
+			"notes": 0,
+			"today": 0,
+			"showInToday": 0,
+			"list": 0,
+			"logged": 0
+		}
+	},
+	"1": {
+		"content":     "The second task",
+		"priority":    "none",
+		"date":        "",
+		"notes":       "",
+		"today":       "false",
+		"showInToday": "1",
+		"list":        "1",
+		"logged":      false,
+		"time": {
+			"content": 2,
+			"priority": 0,
+			"date": 0,
+			"notes": 0,
+			"today": 0,
+			"showInToday": 0,
+			"list": 0,
+			"logged": 0
+		}
+	},
+	"2": {
+		"content":     "The third task",
+		"priority":    "none",
+		"date":        "",
+		"notes":       "",
+		"today":       "false",
+		"showInToday": "1",
+		"list":        "1",
+		"logged":      false,
+		"time": {
+			"content": 3,
+			"priority": 0,
+			"date": 0,
+			"notes": 0,
+			"today": 0,
+			"showInToday": 0,
+			"list": 0,
+			"logged": 0
+		}
+	},
+	"length":3
+},
+"lists": {
+	"order": [1],
+	"items": {
+		"0": {
+			"order": []
+		},
+		"1":{
+			"name": "Comp1",
+			"order": [2,1,0],
+			"time": 4
+		},
+		"today": {
+			"name": "Today",
+			"order": []
+		},
+		"next": {
+			"name": "Next",
+			"order": []
+		},
+		"someday": {
+			"name": "Someday",
+			"order": []
+		},
+		"length": 2
+	}
+},
+"queue": {},
+"prefs": {
+	"deleteWarnings": false,
+	"gpu": false,
+	"nextAmount": "threeItems",
+	"over50": true,
+	"lang": "english",
+	"theme": "default"
+}
+}
