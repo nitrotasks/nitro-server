@@ -2,7 +2,7 @@
 "tasks": {
 	"0": {
 		"content":     "The first task",
-		"priority":    "none",
+		"priority":    "high",
 		"date":        "",
 		"notes":       "",
 		"today":       "false",
@@ -11,7 +11,7 @@
 		"logged":      false,
 		"time": {
 			"content": 1,
-			"priority": 0,
+			"priority": 2,
 			"date": 0,
 			"notes": 0,
 			"today": 0,

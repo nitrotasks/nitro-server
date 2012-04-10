@@ -7,14 +7,17 @@ $(document).ready(function() {
 		}
 	}
 
-	$.getJSON('json/server.json', function(data) {
+	$.getJSON('json/server.json?n=1', function(data) {
 		loadJSON(data, 'server');
+		server = data;
 	});
-	$.getJSON('json/comp1.json', function(data) {
+	$.getJSON('json/comp1.json?n=1', function(data) {
 		loadJSON(data, 'comp1');
+		comp1 = data;
 	});
-	$.getJSON('json/comp2.json', function(data) {
+	$.getJSON('json/comp2.json?n=1', function(data) {
 		loadJSON(data, 'comp2');
+		comp2 = data;
 	});
 
 
@@ -36,62 +39,62 @@ function clone(input) {
 	return JSON.parse(JSON.stringify(input));
 }
 
-function get(computer) {
+function get(comp) {
 
-	var comp = {};
+	// var comp = {};
 
-	//Gets Tasks from computer
-	$('#' + computer + ' ul').find('li').map(function() {
+	// //Gets Tasks from computer
+	// $('#' + computer + ' ul').find('li').map(function() {
 
-		// Get timestamps (content | notes | priority)
-		var time = $(this).attr('data-time').split('|');
+	// 	// Get timestamps (content | notes | priority)
+	// 	var time = $(this).attr('data-time').split('|');
 
-		// Convert strings to integers
-		for(var x in time) {
-			time[x] = parseInt(time[x]);
-		}
+	// 	// Convert strings to integers
+	// 	for(var x in time) {
+	// 		time[x] = parseInt(time[x]);
+	// 	}
 		
-		if($(this).attr('data-deleted') == 'true') {
+	// 	if($(this).attr('data-deleted') == 'true') {
 
-			// Task has been deleted!
-			comp[$(this).attr('class')] = {
-				deleted: time[0]
-			}
+	// 		// Task has been deleted!
+	// 		comp[$(this).attr('class')] = {
+	// 			deleted: time[0]
+	// 		}
 
-		} else {
+	// 	} else {
 
-			// Get attributes
-			comp[$(this).attr('class')] = {
-				content:  {
-					value: $(this).find('.content').text(),
-					time: time[0]
-				},
-				notes: {
-					value: $(this).find('.notes').text(),
-					time: time[1]
-				},
-				priority: {
-					value: $(this).attr('data-priority'),
-					time: time[2]
-				}
-			}
-		}
-	});
+	// 		// Get attributes
+	// 		comp[$(this).attr('class')] = {
+	// 			content:  {
+	// 				value: $(this).find('.content').text(),
+	// 				time: time[0]
+	// 			},
+	// 			notes: {
+	// 				value: $(this).find('.notes').text(),
+	// 				time: time[1]
+	// 			},
+	// 			priority: {
+	// 				value: $(this).attr('data-priority'),
+	// 				time: time[2]
+	// 			}
+	// 		}
+	// 	}
+	// });
 
 	// Loop through each task
-	for(var task in comp) {
+	for(var task in comp.tasks) {
 
 		// Task was deleted on computer but not on the server
-		if(comp[task].hasOwnProperty('deleted') && !server[task].hasOwnProperty('deleted')) {
+		if(comp.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
 
 			// We use this to check whether the task was modified AFTER it was deleted
 			var deleteTask = true;
 
 			// Loop through each attribute on server
-			for(var key in server[task]) {
+			for(var key in server.tasks[task]) {
 
 				// Check if server task was modified after task was deleted
-				if(server[task][key].time > comp[task].deleted) {
+				if(server.tasks[task].time[key] > comp.tasks[task].deleted) {
 
 					// Since it has been modified after it was deleted, we don't delete the task
 					deleteTask = false;
@@ -103,34 +106,34 @@ function get(computer) {
 			if(deleteTask) {
 
 				// Clone computer's task to server
-				server[task] = clone(comp[task]);
+				server.tasks[task] = clone(comp.tasks[task]);
 
 			}
 
 		// Task is deleted on the server and the computer
-		} else if(comp[task].hasOwnProperty('deleted') && server[task].hasOwnProperty('deleted')){
+		} else if(comp.tasks[task].hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')){
 
 			// Use the latest time stamp
-			if(comp[task].deleted > server[task].deleted) {
+			if(comp.tasks[task].deleted > server.tasks[task].deleted) {
 
 				// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
-				server[task].deleted = comp[task].deleted;
+				server.tasks[task].deleted = comp.tasks[task].deleted;
 
 			}
 
 		} else {
 
 			// Loop through each attribute on computer
-			for(var key in comp[task]) {
+			for(var key in comp.tasks[task]) {
 
 				// Check if task was deleted on server
-				 if (server[task].hasOwnProperty('deleted')) {
+				 if (server.tasks[task].hasOwnProperty('deleted')) {
 
 					// Check if task was modified after it was deleted
-					if(comp[task][key].time > server[task].deleted) {
+					if(comp.tasks[task].time[key] > server.tasks[task].deleted) {
 
 						// Update the server with the non-deleted version
-						server[task] = clone(comp[task]);
+						server.tasks[task] = clone(comp.tasks[task]);
 
 					}
 
@@ -138,10 +141,10 @@ function get(computer) {
 				} else {
 
 					// If the attribute was updated after the server
-					if(comp[task][key].time > server[task][key].time) {
+					if(comp.tasks[task].time[key] > server.tasks[task].time[key]) {
 
 						// Update the servers version
-						server[task][key] = clone(comp[task][key]);
+						server.tasks[task][key] = clone(comp.tasks[task][key]);
 
 					}
 				}		
@@ -151,10 +154,10 @@ function get(computer) {
 
 	// Print to UI
 	$('#server ul').html('');
-	$('#' + computer + ' ul').html('');
-	for(var task in server) {
-		add(server[task], task, 'server');
-		add(server[task], task, computer)
+	$('#comp1 ul').html('');
+	for(var task in server.tasks) {
+		if(task != 'length') add(server.tasks[task], task, 'server');
+		if(task != 'length') add(server.tasks[task], task, 'comp1')
 	}
 
 }
