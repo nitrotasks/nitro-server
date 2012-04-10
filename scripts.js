@@ -126,31 +126,39 @@ function get(comp, el) {
 			// Loop through each attribute on computer
 			for(var key in comp.tasks[task]) {
 
-				// Check if task was deleted on server
-				 if (server.tasks[task].hasOwnProperty('deleted')) {
+				//Don't loop through timestamps
+				if (key != 'time') {
 
-					// Check if task was modified after it was deleted
-					if(comp.tasks[task].time[key] > server.tasks[task].deleted) {
+					// Check if task was deleted on server
+					 if (server.tasks[task].hasOwnProperty('deleted')) {
 
-						// Update the server with the entire task (including attributes and timestamps)
-						server.tasks[task] = comp.tasks[task];
+						// Check if task was modified after it was deleted
+						if(comp.tasks[task].time[key] > server.tasks[task].deleted) {
 
+							// Update the server with the entire task (including attributes and timestamps)
+							server.tasks[task] = comp.tasks[task];
+
+						}
+
+					// Task has not been deleted
+					} else {
+
+						// If the attribute was updated after the server
+						if(comp.tasks[task].time[key] > server.tasks[task].time[key]) {
+
+							//Due to the shitty nature of Nitro, a task can be updated without being updated
+							//We need to check for this.
+							if (comp.tasks[task][key] != server.tasks[task][key]) {
+
+								// Update the servers version
+								server.tasks[task][key] = comp.tasks[task][key];
+
+								// Update the timestamp
+								server.tasks[task].time[key] = comp.tasks[task].time[key];
+							}
+						}
 					}
-
-				// Task has not been deleted
-				} else {
-
-					// If the attribute was updated after the server
-					if(comp.tasks[task].time[key] > server.tasks[task].time[key]) {
-
-						// Update the servers version
-						server.tasks[task][key] = comp.tasks[task][key];
-
-						// Update the timestamp
-						server.tasks[task].time[key] = comp.tasks[task].time[key];
-
-					}
-				}		
+				}
 			}
 		}
 	}
