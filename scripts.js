@@ -10,6 +10,7 @@ $(document).ready(function() {
 	$.getJSON('json/server.json?n=1', function(data) {
 		loadJSON(data, 'server');
 		server = data;
+		cli.storage = server;
 	});
 	$.getJSON('json/comp1.json?n=1', function(data) {
 		loadJSON(data, 'comp1');
@@ -129,7 +130,7 @@ function get(comp, el) {
 					}
 
 					if (changedAttrs.length > 0) {
-						alert(changedAttrs)
+						console.log(changedAttrs)
 					}
 					
 				}
