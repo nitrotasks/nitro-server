@@ -39,7 +39,7 @@ function clone(input) {
 	return JSON.parse(JSON.stringify(input));
 }
 
-function get(comp) {
+function get(comp, el) {
 
 	// var comp = {};
 
@@ -157,10 +157,10 @@ function get(comp) {
 
 	// Print to UI
 	$('#server ul').html('');
-	$('#comp1 ul').html('');
+	$('#' + el + ' ul').html('');
 	for(var task in server.tasks) {
 		if(task != 'length') add(server.tasks[task], task, 'server');
-		if(task != 'length') add(server.tasks[task], task, 'comp1')
+		if(task != 'length') add(server.tasks[task], task, el)
 	}
 
 }
