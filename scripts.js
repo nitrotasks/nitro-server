@@ -132,8 +132,8 @@ function get(comp) {
 					// Check if task was modified after it was deleted
 					if(comp.tasks[task].time[key] > server.tasks[task].deleted) {
 
-						// Update the server with the non-deleted version
-						server.tasks[task] = clone(comp.tasks[task]);
+						// Update the server with the entire task (including attributes and timestamps)
+						server.tasks[task] = comp.tasks[task];
 
 					}
 
@@ -144,7 +144,10 @@ function get(comp) {
 					if(comp.tasks[task].time[key] > server.tasks[task].time[key]) {
 
 						// Update the servers version
-						server.tasks[task][key] = clone(comp.tasks[task][key]);
+						server.tasks[task][key] = comp.tasks[task][key];
+
+						// Update the timestamp
+						server.tasks[task].time[key] = comp.tasks[task].time[key];
 
 					}
 				}		
