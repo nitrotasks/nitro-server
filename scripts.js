@@ -88,41 +88,68 @@ function get(computer) {
 	// Loop through each task
 	for(var task in comp) {
 
-		// Task was deleted on computer
-		if(comp[task].hasOwnProperty('deleted')) {
+		// Task was deleted on computer but not on the server
+		if(comp[task].hasOwnProperty('deleted') && !server[task].hasOwnProperty('deleted')) {
 
+			// We use this to check whether the task was modified AFTER it was deleted
 			var deleteTask = true;
 
 			// Loop through each attribute on server
 			for(var key in server[task]) {
+
 				// Check if server task was modified after task was deleted
 				if(server[task][key].time > comp[task].deleted) {
 
+					// Since it has been modified after it was deleted, we don't delete the task
 					deleteTask = false;
 
 				}
 			}
 
+			// If there have been no modifications to the task after it has been deleted
 			if(deleteTask) {
+
+				// Clone computer's task to server
 				server[task] = clone(comp[task]);
+
+			}
+
+		// Task is deleted on the server and the computer
+		} else if(comp[task].hasOwnProperty('deleted') && server[task].hasOwnProperty('deleted')){
+
+			// Use the latest time stamp
+			if(comp[task].deleted > server[task].deleted) {
+
+				// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
+				server[task].deleted = comp[task].deleted;
+
 			}
 
 		} else {
+
 			// Loop through each attribute on computer
 			for(var key in comp[task]) {
+
 				// Check if task was deleted on server
 				 if (server[task].hasOwnProperty('deleted')) {
+
 					// Check if task was modified after it was deleted
 					if(comp[task][key].time > server[task].deleted) {
+
 						// Update the server with the non-deleted version
 						server[task] = clone(comp[task]);
+
 					}
+
 				// Task has not been deleted
 				} else {
+
 					// If the attribute was updated after the server
 					if(comp[task][key].time > server[task][key].time) {
+
 						// Update the servers version
 						server[task][key] = clone(comp[task][key]);
+						
 					}
 				}		
 			}

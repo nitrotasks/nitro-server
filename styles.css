@@ -25,12 +25,15 @@ li:after {
 }
 [data-priority=low] {
 	background: #6CC0E5;
+	color: #fff;
 }
 [data-priority=medium] {
 	background: #FBC93D;
+	color: #fff;
 }
 [data-priority=high] {
 	background: #FB4F4F;
+	color: #fff;
 }
 [data-deleted=true] {
 	background: #ccc;
