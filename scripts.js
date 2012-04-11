@@ -29,6 +29,23 @@ function clone(input) {
 
 function get(comp, el) {
 
+	// If computer has never been synced before
+	if(comp.prefs.hasOwnProperty('synced')) {
+
+		// Loop through each task
+		for(var task in comp.tasks) {
+			
+			// Does not sync the length key
+			if(task != 'length') {
+
+				// Mess with task id's
+				comp.tasks[parseInt(task) + server.tasks.length] = clone(comp.tasks[task]);
+				delete comp.tasks[task]
+
+			}
+		}
+	}
+
 	// Loop through each task
 	for(var task in comp.tasks) {
 
