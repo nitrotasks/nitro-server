@@ -34,7 +34,7 @@ function get(comp, el) {
 
 		// Loop through each task
 		for(var task in comp.tasks) {
-			
+
 			// Does not sync the length key
 			if(task != 'length') {
 
@@ -44,6 +44,9 @@ function get(comp, el) {
 
 			}
 		}
+
+		// Remove the synced property
+		delete comp.prefs.synced;
 	}
 
 	// Loop through each task
