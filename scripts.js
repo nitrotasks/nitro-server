@@ -1,40 +1,26 @@
 
 $(document).ready(function() {
 
-	function loadJSON(data, device) {
-		for (var task in data.tasks) {
-			if(task != 'length') add(data.tasks[task], task, device);
-		}
-	}
-
 	$.getJSON('json/server.json?n=1', function(data) {
-		loadJSON(data, 'server');
+		add(data, 'server');
 		server = data;
 		cli.storage = server;
 		cli.storage.save = function() {};
 	});
 	$.getJSON('json/comp1.json?n=1', function(data) {
-		loadJSON(data, 'comp1');
+		add(data, 'client1');
 		comp1 = data;
 	});
 	$.getJSON('json/comp2.json?n=1', function(data) {
-		loadJSON(data, 'comp2');
+		add(data, 'client2');
 		comp2 = data;
 	});
 
 
 });
 
-function add(task, id, device) {
-
-	// If task is deleted, show greyed out task
-	if(task.hasOwnProperty('deleted')) {
-		$('#' + device + ' ul').append('<li class="' + id + '" data-deleted="true"><span class="content">Deleted</span></li>');
-
-	// Else show task as normal
-	} else {
-		$('#' + device + ' ul').append('<li class="' + id + '" data-logged="' + task.logged + '" data-priority="' + task.priority + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span><span class="date">' + task.date + '</span><span class="today">' + task.today + '</span></li>');
-	}
+function add(obj, column) {
+	$('#' + column + ' pre').html(JSON.stringify(obj, null, 4))
 }
 
 function clone(input) {
@@ -187,11 +173,7 @@ function get(comp, el) {
 	}
 
 	// Print to UI
-	$('#server ul').html('');
-	$('#' + el + ' ul').html('');
-	for(var task in server.tasks) {
-		if(task != 'length') add(server.tasks[task], task, 'server');
-		if(task != 'length') add(server.tasks[task], task, el)
-	}
+	add(server, 'server');
+	add(server, el);
 
 }

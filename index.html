@@ -9,29 +9,21 @@
 	<script src="scripts.js"></script>
 </head>
 <body>
-<div id="server">
+<div id="client1" class="column client">
+	<h2>Client 1</h2>
+	<pre class="json"></pre>
+</div>
+<div id="server" class="column">
 	<h2>Server</h2>
-	<ul>
-
-	</ul>
+	<pre class="json"></pre>
 </div>
-<hr>
-<div id="comp1">
-	<h2>Comp1</h2>
-	<ul>
-
-	</ul>
+<div id="client2" class="column">
+	<h2>Client 2</h2>
+	<pre class="json"></pre>
 </div>
-<hr>
-<div id="comp2">
-	<h2>Comp2</h2>
-	<ul>
-
-	</ul>
+<div id="control">
+	<button onclick="get(comp1, 'client1')">Sync Client 1</button>
+	<button onclick="get(comp2, 'client2')">Sync Client 2</button>
 </div>
-<hr>
-<button class="comp1" onclick="get(comp1, 'comp1')">Sync Comp1</button>
-<button class="comp2" onclick="get(comp2, 'comp2')">Sync Comp2</button><br>
 </body>
 </html>
-<!-- content | notes | priority -->

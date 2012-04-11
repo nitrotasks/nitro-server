@@ -1,45 +1,132 @@
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+/********* END RESET **********/
+
+body {
+	height: 100%:
+}
+
 h1, h2, h3, p, li, div {
 	font-family: Helvetica, Arial, sans-serif;
 }
-.rev {
+
+h2 {
 	font-weight: bold;
+	width: 33%;
+	height: 30px;
+	top: 0px;
+	text-align: center;
+	margin-top: 10px;
+	position: fixed;
+
 }
-.rev:before {
-	content: 'Rev: ';
+
+.column {
+	width: 33%;
+	position: absolute;
+	top: 30px; bottom: 0;
+	overflow: auto;
+}
+
+#client1 {
+	left: 0;
+}
+#server {
+	left: 33%;
+}
+#client2 {
+	left: 66%;
+}
+#control {
+	width: 100%;
+	height: 30px;
+}
+button {
+	font-size: 14px;
+	padding: 5px 8px 7px;
+	background-image: #484848;
+	background-image: -webkit-linear-gradient(top, #595959 0%, #363636 100%);
+	background-image: -moz-linear-gradient(top, #595959 0%, #363636 100%);
+	background-image: -o-linear-gradient(top, #595959 0%, #363636 100%);
+	background-image: -ms-linear-gradient(top, #595959 0%, #363636 100%);
+	background-image: linear-gradient(top, #595959 0%, #363636 100%);
+	background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #595959), color-stop(1, #363636));
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#595959', endColorstr='#363636',GradientType=1);
+	color: white;
 	font-weight: bold;
+	line-height: 1;
+	text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.25);
+	display: inline-block;
+	border-radius: 5px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+	border: 0;
+	outline: 0;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+	position: relative;
+	cursor: pointer;
 }
-.notes {
-	font-style: italic;
-	margin-left: 20px;
+button:hover {
+	background-image: #3c3c3c;
+	background-image: -webkit-linear-gradient(top, #4b4b4b 0%, #2d2d2d 100%);
+	background-image: -moz-linear-gradient(top, #4b4b4b 0%, #2d2d2d 100%);
+	background-image: -o-linear-gradient(top, #4b4b4b 0%, #2d2d2d 100%);
+	background-image: -ms-linear-gradient(top, #4b4b4b 0%, #2d2d2d 100%);
+	background-image: linear-gradient(top, #4b4b4b 0%, #2d2d2d 100%);
+	background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #4b4b4b), color-stop(1, #2d2d2d));
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#4b4b4b', endColorstr='#2d2d2d',GradientType=1);
 }
-li {
-	list-style-type: none;
-	padding: 5px;
-	border-radius: 4px;
-	max-width: 700px;
+button:active {
+	top: 1px;
 }
-li:after {
-	content: attr(data-time);
-	display: block;
-	float: right;
-	font-family: menlo;
-}
-[data-priority=low] {
-	background: #6CC0E5;
-	color: #fff;
-}
-[data-priority=medium] {
-	background: #FBC93D;
-	color: #fff;
-}
-[data-priority=important] {
-	background: #FB4F4F;
-	color: #fff;
-}
-[data-deleted=true] {
-	background: #ccc;
-	color: #fff;
-}
-[data-logged=true] {
-	background: green;
+pre {
+	font: 12px/18px menlo, monaco, monospace;
+	background: #fff;
+	color: #545454;
 }
