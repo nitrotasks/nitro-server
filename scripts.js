@@ -33,7 +33,7 @@ function add(task, id, device) {
 
 	// Else show task as normal
 	} else {
-		$('#' + device + ' ul').append('<li class="' + id + '" data-priority="' + task.priority + '" data-time="' + task.time.content + '|' + task.time.notes + '|' + task.time.priority + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span></li>');
+		$('#' + device + ' ul').append('<li class="' + id + '" data-logged="' + task.logged + '" data-priority="' + task.priority + '" data-time="' + task.time.content + '|' + task.time.notes + '|' + task.time.priority + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span><span class="date">' + task.date + '</span><span class="today">' + task.today + '</span></li>');
 	}
 }
 
@@ -54,6 +54,7 @@ function get(comp, el) {
 			server.tasks[task] = clone(comp.tasks[task]);
 
 			//Calculate Today etc? - Do later
+			cli.today(task).calculate();
 
 		// Task was deleted on computer but not on the server
 		} else if(comp.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
@@ -94,11 +95,11 @@ function get(comp, el) {
 
 		} else {
 
+			//Stores the Attrs we'll be needing later
+			var changedAttrs = [];
+
 			// Loop through each attribute on computer
 			for(var key in comp.tasks[task]) {
-
-				//Stores the Attrs we'll be needing later
-				var changedAttrs = [];
 
 				//Don't loop through timestamps
 				if (key != 'time') {
@@ -131,12 +132,31 @@ function get(comp, el) {
 							//Adds the changed Attr to the array
 							changedAttrs.push(key);
 						}
-					}
+					}	
+				}
+			}
 
-					if (changedAttrs.length > 0) {
-						console.log(changedAttrs)
-					}
-					
+			if (changedAttrs.length > 0) {
+				if(changedAttrs.indexOf('logged') != -1) {
+					// Logged
+					console.log("The logged one was changed", task);
+					cli.logbook(task)
+					cli.logbook(task)
+				} else if(changedAttrs.indexOf('date') != -1 || changedAttrs.indexOf('showInToday') != -1) {
+					// Date is changed
+					console.log('The date was changed');
+					cli.calc.date(task);
+					cli.today(task).calculate();
+				} else if(changedAttrs.indexOf('today') != -1) {
+					// Today
+					console.log('Today was changed');
+					cli.today(task).calculate();
+				}
+
+				if(changedAttrs.indexOf('list') != -1) {
+					// List
+					console.log('The list was changed')
+					cli.moveTask(task, comp.tasks[task].list)
 				}
 			}
 		}

@@ -40,3 +40,6 @@ li:after {
 	background: #ccc;
 	color: #fff;
 }
+[data-logged=true] {
+	background: green;
+}

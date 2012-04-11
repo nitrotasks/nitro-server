@@ -283,6 +283,10 @@ var cli = {
 						};
 					};
 				}
+
+				// Crazy bug
+				cli.storage.lists.items.today.order = eliminateDuplicates(cli.storage.lists.items.today.order);
+				cli.storage.lists.items.next.order = eliminateDuplicates(cli.storage.lists.items.next.order);
 				
 				//Saves data
 				cli.storage.save();
@@ -373,9 +377,6 @@ var cli = {
 				$.each(obj, function(i, value) { 
   					if (typeof value == "string") {
   						obj[i] = cli.escape(value);
-  					}
-  					if(obj[i] != $.jStorage.get('tasks')[id][i] && i!='time') {
-  						cli.storage.tasks[id].time[i] =  Date.now();
   					}
 				});
 
@@ -608,4 +609,19 @@ var cli = {
 			// Not really
 		}
 	}
+}
+
+function eliminateDuplicates(arr) {
+  var i,
+      len=arr.length,
+      out=[],
+      obj={};
+
+  for (i=0;i<len;i++) {
+    obj[arr[i]]=0;
+  }
+  for (i in obj) {
+    out.push(i);
+  }
+  return out;
 }
