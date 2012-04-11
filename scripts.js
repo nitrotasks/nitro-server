@@ -29,11 +29,11 @@ function add(task, id, device) {
 
 	// If task is deleted, show greyed out task
 	if(task.hasOwnProperty('deleted')) {
-		$('#' + device + ' ul').append('<li class="' + id + '" data-deleted="true" data-time="' + task.deleted + '"><span class="content">Deleted</span></li>');
+		$('#' + device + ' ul').append('<li class="' + id + '" data-deleted="true"><span class="content">Deleted</span></li>');
 
 	// Else show task as normal
 	} else {
-		$('#' + device + ' ul').append('<li class="' + id + '" data-logged="' + task.logged + '" data-priority="' + task.priority + '" data-time="' + task.time.content + '|' + task.time.notes + '|' + task.time.priority + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span><span class="date">' + task.date + '</span><span class="today">' + task.today + '</span></li>');
+		$('#' + device + ' ul').append('<li class="' + id + '" data-logged="' + task.logged + '" data-priority="' + task.priority + '"><span class="content">' + task.content + '</span><span class="notes">' + task.notes + '</span><span class="date">' + task.date + '</span><span class="today">' + task.today + '</span></li>');
 	}
 }
 
@@ -49,12 +49,23 @@ function get(comp, el) {
 		// If task does not exist on the server
 		if(!server.tasks.hasOwnProperty(task)) {
 
-			// Add the task to the server
-			cli.addTask(comp.tasks[task].content, comp.tasks[task].list);
-			server.tasks[task] = clone(comp.tasks[task]);
+			// If task hasn't been deleted
+			if(!comp.tasks[task].hasOwnProperty('deleted')) {
 
-			//Calculate Today etc? - Do later
-			cli.today(task).calculate();
+				// Add the task to the server
+				cli.addTask(comp.tasks[task].content, comp.tasks[task].list);
+				server.tasks[task] = clone(comp.tasks[task]);
+
+				//Calculate Today etc? - Do later
+				cli.today(task).calculate();
+
+			// The task is new, but the client deleted it
+			} else {
+
+				// Add the task to the server, but don't touch lists and stuff
+				server.tasks[task] = clone(comp.tasks[task]);
+
+			}
 
 		// Task was deleted on computer but not on the server
 		} else if(comp.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
