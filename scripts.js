@@ -11,6 +11,7 @@ $(document).ready(function() {
 		loadJSON(data, 'server');
 		server = data;
 		cli.storage = server;
+		cli.storage.save = function() {};
 	});
 	$.getJSON('json/comp1.json?n=1', function(data) {
 		loadJSON(data, 'comp1');
@@ -49,7 +50,10 @@ function get(comp, el) {
 		if(!server.tasks.hasOwnProperty(task)) {
 
 			// Add the task to the server
+			cli.addTask(comp.tasks[task].content, comp.tasks[task].list);
 			server.tasks[task] = clone(comp.tasks[task]);
+
+			//Calculate Today etc? - Do later
 
 		// Task was deleted on computer but not on the server
 		} else if(comp.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {

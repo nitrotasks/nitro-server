@@ -602,20 +602,10 @@ var cli = {
 	},
 
 	storage: {
-		//Object where data is stored
-		tasks: $.jStorage.get('tasks', {length: 0}),
-		queue: $.jStorage.get('queue', {}),
-		lists: $.jStorage.get('lists', {order: [], items:{today: {name: "Today", order:[]}, next: {name: "Next", order:[]}, someday: {name: "Someday", order:[]}, 0: {order:[]}, length: 1}}),
-		prefs: $.jStorage.get('prefs', {deleteWarnings: false, gpu: false, nextAmount: 'threeItems', over50: true, lang: 'english'}),
-		// NB: Over 50 caps amount of tasks in List to 50 but causes drag and drop problems.
-		// I CBF fixing it.
 
 		save: function() {
 			//Saves to localStorage
-			$.jStorage.set('tasks', cli.storage.tasks);
-			$.jStorage.set('lists', cli.storage.lists);
-			$.jStorage.set('queue', cli.storage.queue);
-			$.jStorage.set('prefs', cli.storage.prefs);
+			// Not really
 		}
 	}
 }

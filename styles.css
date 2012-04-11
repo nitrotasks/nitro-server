@@ -16,7 +16,7 @@ li {
 	list-style-type: none;
 	padding: 5px;
 	border-radius: 4px;
-	max-width: 550px;
+	max-width: 700px;
 }
 li:after {
 	content: attr(data-time);
@@ -32,7 +32,7 @@ li:after {
 	background: #FBC93D;
 	color: #fff;
 }
-[data-priority=high] {
+[data-priority=important] {
 	background: #FB4F4F;
 	color: #fff;
 }
