@@ -245,8 +245,6 @@ var cli = {
 				
 				console.log('List: ' + task.list);
 
-				cli.storage.tasks[id].time.today = Date.now();
-
 				//If the task is due to be deleted, then delete it
 				if (task.list == 0) {
 					return;
@@ -331,7 +329,6 @@ var cli = {
 			console.log("Task with id: " + id + " has been uncompleted");	
 		}
 
-		cli.storage.tasks[id].time.logged = Date.now();
 		cli.taskData(id).edit(task);
 		cli.storage.lists.items = lists;
 		cli.storage.save();
@@ -358,7 +355,7 @@ var cli = {
 						priority = "low";
 						break;
 				}
-				cli.storage.tasks[id].time.priority = Date.now();
+				
 				cli.storage.tasks[id].priority = priority;
 				cli.storage.save();
 				return priority;
