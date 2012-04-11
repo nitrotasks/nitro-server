@@ -56,7 +56,10 @@ function get(comp, el) {
 				cli.addTask(comp.tasks[task].content, comp.tasks[task].list);
 				server.tasks[task] = clone(comp.tasks[task]);
 
-				//Calculate Today etc? - Do later
+				// Calculate date
+				cli.calc.date(task);
+
+				// Calculate Today etc? - Do later
 				cli.today(task).calculate();
 
 			// The task is new, but the client deleted it
@@ -88,8 +91,15 @@ function get(comp, el) {
 			// If there have been no modifications to the task after it has been deleted
 			if(deleteTask) {
 
-				// Clone computer's task to server
+				// Delete the task
+				cli.deleteTask(task);
+
+				// Get the timestamp
 				server.tasks[task] = clone(comp.tasks[task]);
+
+				// Update stuff
+				// cli.calc.date(task);
+				// cli.today(task).calculate();
 
 			}
 
