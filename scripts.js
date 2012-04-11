@@ -123,9 +123,12 @@ function get(comp, el) {
 						// If the attribute was updated after the server
 						if(comp.tasks[task].time[key] > server.tasks[task].time[key]) {
 
-							// Update the servers version
-							server.tasks[task][key] = comp.tasks[task][key];
 
+							if (key != 'list') {
+								// Update the servers version
+								server.tasks[task][key] = comp.tasks[task][key];
+							}
+							
 							// Update the timestamp
 							server.tasks[task].time[key] = comp.tasks[task].time[key];
 
