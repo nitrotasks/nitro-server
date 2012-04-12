@@ -49,6 +49,24 @@ function get(comp, el) {
 		delete comp.prefs.synced;
 	}
 
+	// Loop through each list
+	for(var list in comp.lists.items) {
+
+		// Check to see if list exist on server
+		if(!server.lists.items.hasOwnProperty(list)) {
+
+			// If the list doesn't exist on the server, create it
+			server.lists.items[list] = {
+				name: "",
+				order: []
+			}
+
+			// Copy the name over // TODO: Add timestamps to the list name
+			server.lists.items[list].name = comp.lists.items[list].name;
+
+		}
+	}
+
 	// Loop through each task
 	for(var task in comp.tasks) {
 
