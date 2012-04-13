@@ -64,6 +64,12 @@ function get(comp, el) {
 			// Copy the name over // TODO: Add timestamps to the list name
 			server.lists.items[list].name = comp.lists.items[list].name;
 
+		// Check to see if list was updated
+		} else if(comp.lists.items[id].time > server.lists.items[id].time) {
+
+			// If so, update list name
+			server.lists.items[id].name = comp.lists.items[id].name;
+			
 		}
 	}
 
