@@ -1,6 +1,15 @@
-// Initiate socket.io on port 8080
-var io = require('socket.io').listen(8080),
-$ = require('jQuery');
+// Initiate socket.io
+var express = require('express').createServer(),
+	// socket = require("socket.io"),
+	io = require('socket.io').listen(8080),
+	$ = require('jquery');
+	// dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" });
+
+// io = socket.listen(express);
+// io.configure(function() { 
+//   io.set("transports", ["xhr-polling"]); 
+//   io.set("polling duration", 10); 
+// });
 
 // Create server
 var server = {
@@ -15,18 +24,31 @@ var server = {
 			},
 			today: {
 				name: "Today",
-				order: []
+				order: [],
+				time: {
+					name: 0,
+					order: 0
+				}
 			},
 			next: {
 				name: "Next",
-				order: []
+				order: [],
+				time: {
+					name: 0,
+					order: 0
+				}
 			},
 			someday: {
 				name: "Someday",
-				order: []
+				order: [],
+				time: {
+					name: 0,
+					order: 0
+				}
 			},
 			length: 1
-		}
+		},
+		time: 0
 	},
 	queue: {},
 	prefs: {
@@ -35,12 +57,38 @@ var server = {
 		nextAmount: "threeItems",
 		over50: true,
 		lang: "english",
-		theme: "default"
+		theme: "default",
+		sync: 'manual'
 	}
 }
 
 // Client connects to server
 io.sockets.on('connection', function(socket) {
+
+/*	var client;
+
+	dbox.request_token(function(status, request_token){
+		socket.emit('token', request_token.authorize_url);
+		socket.on('allowed', function() {
+
+			console.log("ALLOWED")
+
+			dbox.access_token(request_token, function(status, access_token){
+
+				console.log("GOT CLIENT")
+			 	client = dbox.createClient(access_token);
+
+			 	client.put("foo/hello.txt", "here is some text", function(status, reply){
+				 	console.log(reply)
+				})
+			});
+
+		});
+	});
+
+	dbox.access_token(request_token, function(status, access_token){
+		token.access = access_token;
+	})*/
 
 	// Client uploads data to server
 	socket.on('upload', function(data) {
@@ -52,6 +100,9 @@ io.sockets.on('connection', function(socket) {
 		});
 	});
 });
+
+// port = process.env.PORT || 3000;
+// express.listen(port);
 
 function clone(input) {
 	return JSON.parse(JSON.stringify(input));
@@ -102,11 +153,16 @@ function merge(client, callback) {
 			server.lists.items.length++;
 
 		// Check to see if list was updated
-		} else if(client.lists.items[list].time > server.lists.items[list].time) {
+		} else {
 
-			// If so, update list name
-			server.lists.items[list].name = client.lists.items[list].name;
-			
+			for(var key in client.lists.items[list].time) {
+				if(client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
+
+					// If so, update list key and time
+					server.lists.items[list][key] = client.lists.items[list][key];
+					server.lists.items[list].time[key] = client.lists.items[list].time[key];
+				}
+			}
 		}
 	}
 
@@ -258,6 +314,8 @@ function merge(client, callback) {
 		}
 	}
 
+	console.log(server.lists.items['1'].order)
+
 	// Update length
 	server.tasks.length = 0;
 	for (i in server.tasks) {
@@ -265,6 +323,13 @@ function merge(client, callback) {
 			server.tasks.length++;
 		}
 	}
+
+	// Get rid of duplicates TODO: just fix sync so it doesn't have duplicates
+	// for(var list in server.lists.items) {
+	// 	if(list != 'length') server.lists.items[list].order = eliminateDuplicates(server.lists.items[list].order);
+	// }
+
+	console.log(server.lists.items['1'].order)
 
 	callback();
 }
@@ -316,7 +381,11 @@ var cli = {
 			cli.today(id).add();
 		} else {
 			//Pushes to array
-			server.lists.items[list].order.push(id);
+			var verify = true;
+			for(var i in server.lists.items[list].order) {
+				if(i == id) verify = false;
+			}
+			if(verify) server.lists.items[list].order.push(id);
 		};
 
 		//Saves to disk
@@ -438,7 +507,11 @@ var cli = {
 		cli.calc.removeFromList(id, task.list);
 
 		// Add task to new list
-		lists[list].order.push(id);
+		var verify = true;
+		for(var i in server.lists.items[list].order) {
+			if(i == id) verify = false;
+		}
+		if(verify) lists[list].order.push(id);
 
 		// Update task.list
 		task.list = list;
@@ -482,11 +555,7 @@ var cli = {
 
 				cli.today(id).calculate();
 			},
-			calculate: function() {
-				/* This is the function that I wish I had.
-				 * Removes from today or next then
-				 * Depending on the due date etc, the function chucks it into today, next etc
-				 */
+			calculate: function() {				 
 				 
 				//Removes from Today & Next
 				var task = cli.taskData(id).display(),
