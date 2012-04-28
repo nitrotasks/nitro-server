@@ -1,49 +1,107 @@
-// Pretty Colors
-var color = require('./lib/ansi-color').set,
-	app = require('express').createServer();
+/* Nitro Sync 
+ *
+ * Copyright (C) 2012 Caffeinated Code <http://caffeinatedco.de>
+ * Copyright (C) 2012 Jono Cooper
+ * Copyright (C) 2012 George Czabania
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * Neither the name of Caffeinated Code nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
+console.info('Nitro Sync 1.2\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
+
+// Node Packages
+var color = require('./lib/ansi-color').set,
+	app = require('express').createServer(),
+	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" }),
+	client = {};
+
+// Enable cross browser ajax
 app.enable("jsonp callback");
 
-/* Handles HTTP Requests. It's crude, I know. */
+// Handles HTTP Requests
 app.get('/', function(req, res){
-    res.send('This is the Nitro API. Undocumented because I\'m lazy.');
+    res.send('This is the Nitro Sync API. Hello.');
 });
 
-//Initial Auth
+// Initial Auth
 app.get('/auth/', function(req, res){
-    res.send('Don\'t know how auth works, so put in your own variables');
+
+	console.log(color("Starting Initial Auth", "blue"));
+
+	dbox.request_token(function (status, request_token) {
+		if (req.query['getURL']) {
+			console.log(color("Sending authorize_url", "blue"));
+			res.json(request_token.authorize_url);
+
+			var count = 0;
+
+			function checkServer () {
+				console.log(color('Connecting to dropbox', "blue"));
+				dbox.access_token(request_token, function (status, access_token) {
+					if (status == 200) {
+						console.log(color('Attempt '+count+' - Connected!', "yellow"));
+						client = dbox.createClient(access_token)
+						getServer();
+					} else {
+						console.log(color('Attempt '+count+' - Failed!', "red"));
+						count++;
+						setTimeout(checkServer, 1000);
+					}
+				});
+			}
+
+			checkServer();
+		}
+	});
 });
 
-//Timestamps Only
+// Timestamps Only
 app.get('/update/', function(req, res){
 	res.send('token: ' + req.query["token"] + '<br>timestamp: ' + req.query["timestamp"]);
 });
 
-//Actual Sync
+// Actual Sync
 app.get('/sync/', function(req, res){
-	console.log(req.query['data']);
 	// Merge data
 	merge(req.query['data'], function() {
 		// Send data back to client
 		console.log("Merge complete. Updating client.")
 		res.json(server);
+		saveServer();
 	});
 });
 
 app.listen(3000);
 
+function getServer() {
+	console.log(color("Getting server.json from dropbox", 'blue'));
+	client.get("server.json", function (status, reply) {
+		reply = JSON.parse(reply.toString());
+		// Check if file exists
+		if(reply.hasOwnProperty('error')) {
+			console.log(color("Server.json doesn't exist on the clients dropbox :(", 'red'));
+			console.log(color("So let's make one :D", 'blue'));
+			saveServer();
+		} else {
+			console.log(color("Got the server!", 'yellow'));
+			server = clone(reply);
+		}
+	});
+}
 
-/*Initiate socket.io
-var express = require('express').createServer(),
-	// socket = require("socket.io"),
-	io = require('socket.io').listen(8080),
-	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" });
-
-io = socket.listen(express);
-io.configure(function() { 
-  io.set("transports", ["xhr-polling"]); 
-  io.set("polling duration", 10); 
-});*/
+function saveServer() {
+	console.log(color("Saving to server (starting)", 'blue'));
+	var output = JSON.stringify(server);
+	client.put("server.json", output, function () {
+		console.log(color("Saving to server (complete!)", 'yellow'));
+	});
+}
 
 // Create server
 var server = {
@@ -86,69 +144,6 @@ var server = {
 	},
 	queue: {}
 }
-
-var code;
-
-/*Client connects to server
-io.sockets.on('connection', function(socket) {
-
-	var client;
-
-	if(code) {
-		console.log("ALREADY HAVE ACCESS TOKEN", code);
-		client = dbox.createClient(code);
-		getServer();
-	} else {
-		console.log("GETTING ACCESS TOKEN")
-		dbox.request_token(function (status, request_token) {
-			socket.emit('token', request_token.authorize_url);
-			socket.on('allowed', function() {
-				dbox.access_token(request_token, function (status, access_token) {
-					code = access_token;
-					client = dbox.createClient(access_token);
-					getServer();
-				});
-			});
-		});
-	}
-
-	function getServer() {
-		console.log("GETTING FROM SERVER");
-		client.get("server.json", function (status, reply) {
-			reply = JSON.parse(reply.toString());
-			// Check if file exists
-			if(reply.hasOwnProperty('error')) {
-				saveServer();
-			} else {
-				server = clone(reply);
-				console.log(server);
-				socket.emit('ready');
-			}
-		});
-	}
-
-	function saveServer() {
-		console.log("SAVING TO SERVER - START");
-		var output = JSON.stringify(server);
-		client.put("server.json", output, function () {
-			console.log("SAVING TO SERVER - COMPLETE");
-		});
-	}
-
-	// Client uploads data to server
-	socket.on('upload', function(data) {
-		// Merge data with server
-		merge(data, function() {
-			// Send data back to client
-			socket.emit('download', server);
-			// Save to Server
-			saveServer();
-		});
-	});
-});
-
-port = process.env.PORT || 3000;
-express.listen(port);*/
 
 function clone(input) {
 	return JSON.parse(JSON.stringify(input));
@@ -439,22 +434,6 @@ function merge(client, callback) {
 	callback();
 }
 
-/* Nitro CLI 
- *
- * Copyright (C) 2012 Caffeinated Code <http://caffeinatedco.de>
- * Copyright (C) 2012 Jono Cooper
- * Copyright (C) 2012 George Czabania
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * Neither the name of Caffeinated Code nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-console.info('Nitro 1.2\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 var cli = {
 	timestamp: {
 		update: function (id, key) {
