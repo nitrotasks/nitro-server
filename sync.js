@@ -1,11 +1,43 @@
 // Pretty Colors
-var color = require('./lib/ansi-color').set;
+var color = require('./lib/ansi-color').set,
+	app = require('express').createServer();
+
+app.enable("jsonp callback");
+
+/* Handles HTTP Requests. It's crude, I know. */
+app.get('/', function(req, res){
+    res.send('This is the Nitro API. Undocumented because I\'m lazy.');
+});
+
+//Initial Auth
+app.get('/auth/', function(req, res){
+    res.send('Don\'t know how auth works, so put in your own variables');
+});
+
+//Timestamps Only
+app.get('/update/', function(req, res){
+	res.send('token: ' + req.query["token"] + '<br>timestamp: ' + req.query["timestamp"]);
+});
+
+//Actual Sync
+app.get('/sync/', function(req, res){
+	console.log(req.query['data']);
+	// Merge data
+	merge(req.query['data'], function() {
+		// Send data back to client
+		console.log("Merge complete. Updating client.")
+		res.json(server);
+	});
+});
+
+app.listen(3000);
+
 
 // Initiate socket.io
-var express = require('express').createServer(),
-	// socket = require("socket.io"),
-	io = require('socket.io').listen(8080),
-	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" });
+// var express = require('express').createServer(),
+// 	// socket = require("socket.io"),
+// 	io = require('socket.io').listen(8080),
+// 	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" });
 
 // io = socket.listen(express);
 // io.configure(function() { 
@@ -58,62 +90,62 @@ var server = {
 var code;
 
 // Client connects to server
-io.sockets.on('connection', function(socket) {
+// io.sockets.on('connection', function(socket) {
 
-	var client;
+// 	var client;
 
-	if(code) {
-		console.log("ALREADY HAVE ACCESS TOKEN", code);
-		client = dbox.createClient(code);
-		getServer();
-	} else {
-		console.log("GETTING ACCESS TOKEN")
-		dbox.request_token(function (status, request_token) {
-			socket.emit('token', request_token.authorize_url);
-			socket.on('allowed', function() {
-				dbox.access_token(request_token, function (status, access_token) {
-					code = access_token;
-					client = dbox.createClient(access_token);
-					getServer();
-				});
-			});
-		});
-	}
+// 	if(code) {
+// 		console.log("ALREADY HAVE ACCESS TOKEN", code);
+// 		client = dbox.createClient(code);
+// 		getServer();
+// 	} else {
+// 		console.log("GETTING ACCESS TOKEN")
+// 		dbox.request_token(function (status, request_token) {
+// 			socket.emit('token', request_token.authorize_url);
+// 			socket.on('allowed', function() {
+// 				dbox.access_token(request_token, function (status, access_token) {
+// 					code = access_token;
+// 					client = dbox.createClient(access_token);
+// 					getServer();
+// 				});
+// 			});
+// 		});
+// 	}
 
-	function getServer() {
-		console.log("GETTING FROM SERVER");
-		client.get("server.json", function (status, reply) {
-			reply = JSON.parse(reply.toString());
-			// Check if file exists
-			if(reply.hasOwnProperty('error')) {
-				saveServer();
-			} else {
-				server = clone(reply);
-				console.log(server);
-				socket.emit('ready');
-			}
-		});
-	}
+// 	function getServer() {
+// 		console.log("GETTING FROM SERVER");
+// 		client.get("server.json", function (status, reply) {
+// 			reply = JSON.parse(reply.toString());
+// 			// Check if file exists
+// 			if(reply.hasOwnProperty('error')) {
+// 				saveServer();
+// 			} else {
+// 				server = clone(reply);
+// 				console.log(server);
+// 				socket.emit('ready');
+// 			}
+// 		});
+// 	}
 
-	function saveServer() {
-		console.log("SAVING TO SERVER - START");
-		var output = JSON.stringify(server);
-		client.put("server.json", output, function () {
-			console.log("SAVING TO SERVER - COMPLETE");
-		});
-	}
+// 	function saveServer() {
+// 		console.log("SAVING TO SERVER - START");
+// 		var output = JSON.stringify(server);
+// 		client.put("server.json", output, function () {
+// 			console.log("SAVING TO SERVER - COMPLETE");
+// 		});
+// 	}
 
-	// Client uploads data to server
-	socket.on('upload', function(data) {
-		// Merge data with server
-		merge(data, function() {
-			// Send data back to client
-			socket.emit('download', server);
-			// Save to Server
-			saveServer();
-		});
-	});
-});
+// 	// Client uploads data to server
+// 	socket.on('upload', function(data) {
+// 		// Merge data with server
+// 		merge(data, function() {
+// 			// Send data back to client
+// 			socket.emit('download', server);
+// 			// Save to Server
+// 			saveServer();
+// 		});
+// 	});
+// });
 
 // port = process.env.PORT || 3000;
 // express.listen(port);
