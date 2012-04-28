@@ -33,17 +33,17 @@ app.get('/sync/', function(req, res){
 app.listen(3000);
 
 
-// Initiate socket.io
-// var express = require('express').createServer(),
-// 	// socket = require("socket.io"),
-// 	io = require('socket.io').listen(8080),
-// 	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" });
+/*Initiate socket.io
+var express = require('express').createServer(),
+	// socket = require("socket.io"),
+	io = require('socket.io').listen(8080),
+	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" });
 
-// io = socket.listen(express);
-// io.configure(function() { 
-//   io.set("transports", ["xhr-polling"]); 
-//   io.set("polling duration", 10); 
-// });
+io = socket.listen(express);
+io.configure(function() { 
+  io.set("transports", ["xhr-polling"]); 
+  io.set("polling duration", 10); 
+});*/
 
 // Create server
 var server = {
@@ -89,66 +89,66 @@ var server = {
 
 var code;
 
-// Client connects to server
-// io.sockets.on('connection', function(socket) {
+/*Client connects to server
+io.sockets.on('connection', function(socket) {
 
-// 	var client;
+	var client;
 
-// 	if(code) {
-// 		console.log("ALREADY HAVE ACCESS TOKEN", code);
-// 		client = dbox.createClient(code);
-// 		getServer();
-// 	} else {
-// 		console.log("GETTING ACCESS TOKEN")
-// 		dbox.request_token(function (status, request_token) {
-// 			socket.emit('token', request_token.authorize_url);
-// 			socket.on('allowed', function() {
-// 				dbox.access_token(request_token, function (status, access_token) {
-// 					code = access_token;
-// 					client = dbox.createClient(access_token);
-// 					getServer();
-// 				});
-// 			});
-// 		});
-// 	}
+	if(code) {
+		console.log("ALREADY HAVE ACCESS TOKEN", code);
+		client = dbox.createClient(code);
+		getServer();
+	} else {
+		console.log("GETTING ACCESS TOKEN")
+		dbox.request_token(function (status, request_token) {
+			socket.emit('token', request_token.authorize_url);
+			socket.on('allowed', function() {
+				dbox.access_token(request_token, function (status, access_token) {
+					code = access_token;
+					client = dbox.createClient(access_token);
+					getServer();
+				});
+			});
+		});
+	}
 
-// 	function getServer() {
-// 		console.log("GETTING FROM SERVER");
-// 		client.get("server.json", function (status, reply) {
-// 			reply = JSON.parse(reply.toString());
-// 			// Check if file exists
-// 			if(reply.hasOwnProperty('error')) {
-// 				saveServer();
-// 			} else {
-// 				server = clone(reply);
-// 				console.log(server);
-// 				socket.emit('ready');
-// 			}
-// 		});
-// 	}
+	function getServer() {
+		console.log("GETTING FROM SERVER");
+		client.get("server.json", function (status, reply) {
+			reply = JSON.parse(reply.toString());
+			// Check if file exists
+			if(reply.hasOwnProperty('error')) {
+				saveServer();
+			} else {
+				server = clone(reply);
+				console.log(server);
+				socket.emit('ready');
+			}
+		});
+	}
 
-// 	function saveServer() {
-// 		console.log("SAVING TO SERVER - START");
-// 		var output = JSON.stringify(server);
-// 		client.put("server.json", output, function () {
-// 			console.log("SAVING TO SERVER - COMPLETE");
-// 		});
-// 	}
+	function saveServer() {
+		console.log("SAVING TO SERVER - START");
+		var output = JSON.stringify(server);
+		client.put("server.json", output, function () {
+			console.log("SAVING TO SERVER - COMPLETE");
+		});
+	}
 
-// 	// Client uploads data to server
-// 	socket.on('upload', function(data) {
-// 		// Merge data with server
-// 		merge(data, function() {
-// 			// Send data back to client
-// 			socket.emit('download', server);
-// 			// Save to Server
-// 			saveServer();
-// 		});
-// 	});
-// });
+	// Client uploads data to server
+	socket.on('upload', function(data) {
+		// Merge data with server
+		merge(data, function() {
+			// Send data back to client
+			socket.emit('download', server);
+			// Save to Server
+			saveServer();
+		});
+	});
+});
 
-// port = process.env.PORT || 3000;
-// express.listen(port);
+port = process.env.PORT || 3000;
+express.listen(port);*/
 
 function clone(input) {
 	return JSON.parse(JSON.stringify(input));
@@ -166,52 +166,13 @@ function fixLength(obj) {
 
 function merge(client, callback) {
 
-	// If computer has never been synced before
-/*	if(client.prefs.hasOwnProperty('synced')) {
-
-		console.log("116: Computer has never been synced before.")
-
-		// Loop through each task
-		for(var task in client.tasks) {
-
-			// Does not sync the length key
-			if(task != 'length' && (parseInt(task) + server.tasks.length) != parseInt(task)) {
-
-				console.log("124: Task '" + task + "' has been cloned to task '" + (parseInt(task) + server.tasks.length) + "'");
-
-				// Mess with task id's
-				client.tasks[parseInt(task) + server.tasks.length] = clone(client.tasks[task]);
-				delete client.tasks[task]
-
-				console.log("130: The old task '" + task + "' has been deleted from the client");
-
-			}
-		}
-
-		// Loop through each list
-		for(var list in client.lists.items) {
-
-			if(list != 'length' && list != '0' && list != 'today' && list != 'next' && list != 'someday' && (parseInt(list) + server.lists.items.length) != parseInt(list)) {
-
-				console.log("124: List '" + list + "' has been cloned to list '" + (parseInt(list) + server.lists.items.length) + "'");
-
-				// Mess with task id's
-				client.lists.items[parseInt(list) + server.lists.items.length] = clone(client.lists.items[list]);
-				delete client.tasks[task]
-
-				console.log("130: The old list '" + list + "' has been deleted from the client");
-
-			}
-		}
-	}*/
-
 	// Loop through each list
 	for (var list in client.lists.items) {
 
 		if(list != '0' && list != 'length') {
 
 			// Check if it is a new list
-			if (client.lists.items[list].synced === false) {
+			if (client.lists.items[list].synced === false || client.lists.items[list].synced == 'false') {
 
 				console.log(color("170", "blue"), ": List '" + list + "' has never been synced before");
 
@@ -275,7 +236,7 @@ function merge(client, callback) {
 			/***** ADDING NEW TASKS TO THE SERVER *****/
 
 			// If task has never been synced before
-			if(client.tasks[task].synced === false) {
+			if(client.tasks[task].synced === false || client.tasks[task].synced === 'false') {
 
 				console.log(color("209", "blue"), ": Task '" + task + "' has never been synced before");
 
