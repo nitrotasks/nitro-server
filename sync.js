@@ -1,8 +1,7 @@
 // Initiate socket.io
 var express = require('express').createServer(),
 	// socket = require("socket.io"),
-	io = require('socket.io').listen(8080),
-	$ = require('jquery');
+	io = require('socket.io').listen(8080);
 	// dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" });
 
 // io = socket.listen(express);
@@ -557,7 +556,7 @@ var cli = {
 				localStorage.jStorage = localStorage.jStorage.replace(/\\\\/g, "&#92;").replace(/\|/g, "&#124").replace(/\\"/g, "&#34;").replace(/\'/g, "&#39;");
 
 				//Reloads jStorage
-				$.jStorage.reInit()
+				// $.jStorage.reInit()
 			}
 		}
 	},
@@ -952,18 +951,14 @@ var cli = {
 			},
 			edit: function (obj) {
 				// Edit taskData
-				$.each(obj, function (i, value) {
-					if (typeof value === "string") {
+				for(var value in obj) {
+					if(typeof obj[value] === 'string') {
 						obj[i] = cli.escape(value);
 					}
-					if (obj[i] !== $.jStorage.get('tasks')[id][i] && i !== 'time') {
-						cli.timestamp.update(id, i).task();
-					}
-				});
+				}
 
 				server.tasks[id] = obj;
 				// server.save();
-				
 			}
 		};
 	},
