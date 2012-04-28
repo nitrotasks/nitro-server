@@ -1,8 +1,8 @@
 // Initiate socket.io
 var express = require('express').createServer(),
 	// socket = require("socket.io"),
-	io = require('socket.io').listen(8080);
-	// dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" });
+	io = require('socket.io').listen(8080),
+	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" });
 
 // io = socket.listen(express);
 // io.configure(function() { 
@@ -52,41 +52,62 @@ var server = {
 	queue: {}
 }
 
+var code;
+
 // Client connects to server
 io.sockets.on('connection', function(socket) {
 
-/*	var client;
+	var client;
 
-	dbox.request_token(function(status, request_token){
-		socket.emit('token', request_token.authorize_url);
-		socket.on('allowed', function() {
-
-			console.log("ALLOWED")
-
-			dbox.access_token(request_token, function(status, access_token){
-
-				console.log("GOT CLIENT")
-			 	client = dbox.createClient(access_token);
-
-			 	client.put("foo/hello.txt", "here is some text", function(status, reply){
-				 	console.log(reply)
-				})
+	if(code) {
+		console.log("ALREADY HAVE ACCESS TOKEN", code);
+		client = dbox.createClient(code);
+		getServer();
+	} else {
+		console.log("GETTING ACCESS TOKEN")
+		dbox.request_token(function (status, request_token) {
+			socket.emit('token', request_token.authorize_url);
+			socket.on('allowed', function() {
+				dbox.access_token(request_token, function (status, access_token) {
+					code = access_token;
+					client = dbox.createClient(access_token);
+					getServer();
+				});
 			});
-
 		});
-	});
+	}
 
-	dbox.access_token(request_token, function(status, access_token){
-		token.access = access_token;
-	})*/
+	function getServer() {
+		console.log("GETTING FROM SERVER");
+		client.get("server.json", function (status, reply) {
+			reply = JSON.parse(reply.toString());
+			// Check if file exists
+			if(reply.hasOwnProperty('error')) {
+				saveServer();
+			} else {
+				server = clone(reply);
+				console.log(server);
+				socket.emit('ready');
+			}
+		});
+	}
+
+	function saveServer() {
+		console.log("SAVING TO SERVER - START");
+		var output = JSON.stringify(server);
+		client.put("server.json", output, function () {
+			console.log("SAVING TO SERVER - COMPLETE");
+		});
+	}
 
 	// Client uploads data to server
 	socket.on('upload', function(data) {
-
 		// Merge data with server
 		merge(data, function() {
 			// Send data back to client
 			socket.emit('download', server);
+			// Save to Server
+			saveServer();
 		});
 	});
 });

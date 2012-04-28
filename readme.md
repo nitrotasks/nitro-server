@@ -7,5 +7,6 @@ You need to have these node packages for it to work:
 
 * Socket.IO
 * Express
+* dBox
 
 Just ignore the package.json file. It has a lot of stuff that doesn't need to be in there.
