@@ -50,16 +50,7 @@ var server = {
 		},
 		time: 0
 	},
-	queue: {},
-	prefs: {
-		deleteWarnings: false,
-		gpu: false,
-		nextAmount: "threeItems",
-		over50: true,
-		lang: "english",
-		theme: "default",
-		sync: 'manual'
-	}
+	queue: {}
 }
 
 // Client connects to server
@@ -108,10 +99,20 @@ function clone(input) {
 	return JSON.parse(JSON.stringify(input));
 }
 
+function fixLength(obj) {
+	// Update length
+	[obj].length = 0;
+	for (i in [obj]) {
+		if ([obj].hasOwnProperty(i) && i != 'length') {
+			[obj].length++;
+		}
+	}
+}
+
 function merge(client, callback) {
 
 	// If computer has never been synced before
-	if(client.prefs.hasOwnProperty('synced')) {
+/*	if(client.prefs.hasOwnProperty('synced')) {
 
 		console.log("116: Computer has never been synced before.")
 
@@ -121,7 +122,7 @@ function merge(client, callback) {
 			// Does not sync the length key
 			if(task != 'length' && (parseInt(task) + server.tasks.length) != parseInt(task)) {
 
-				console.log("124: Task '" + task + "' has been cloned to task '" + parseInt(task) + server.tasks.length + "'");
+				console.log("124: Task '" + task + "' has been cloned to task '" + (parseInt(task) + server.tasks.length) + "'");
 
 				// Mess with task id's
 				client.tasks[parseInt(task) + server.tasks.length] = clone(client.tasks[task]);
@@ -131,40 +132,71 @@ function merge(client, callback) {
 
 			}
 		}
-	}
+
+		// Loop through each list
+		for(var list in client.lists.items) {
+
+			if(list != 'length' && list != '0' && list != 'today' && list != 'next' && list != 'someday' && (parseInt(list) + server.lists.items.length) != parseInt(list)) {
+
+				console.log("124: List '" + list + "' has been cloned to list '" + (parseInt(list) + server.lists.items.length) + "'");
+
+				// Mess with task id's
+				client.lists.items[parseInt(list) + server.lists.items.length] = clone(client.lists.items[list]);
+				delete client.tasks[task]
+
+				console.log("130: The old list '" + list + "' has been deleted from the client");
+
+			}
+		}
+	}*/
 
 	// Loop through each list
-	for(var list in client.lists.items) {
+	for (var list in client.lists.items) {
 
 		if(list != '0' && list != 'length') {
 
-			// Check to see if list exist on server
-			if(!server.lists.items.hasOwnProperty(list)) {
+			// Check if it is a new list
+			if (client.lists.items[list].synced === false) {
 
-				console.log("138: List '" + list + "' does not exist on server. Adding to server.")
+				console.log("170: List '" + list + "' has never been synced before");
+
+				client.lists.items[list].synced = true;
+
+				// If a list with that id already exists on the server
+				if (server.lists.items.hasOwnProperty(list)) {
+
+					console.log("177: List '" + list + "' already exists on the server");
+
+					// Change the list ID
+					client.lists.items[server.lists.items.length] = clone(client.lists.items[list]);
+					delete client.lists.items[list];
+
+					console.log("177: List '" + list + "' has been moved to '" + server.lists.items.length + "'");
+
+					list = server.lists.items.length;
+
+				} else {
+					console.log("188: List '" + list + "' does not exist on server. Adding to server.")
+				}
 
 				// If the list doesn't exist on the server, create it
 				server.lists.items[server.lists.items.length] = {
-					name: "",
+					name: client.lists.items[list].name,
 					order: [],
-					time: 0
+					time: client.lists.items[list].time,
+					synced: true
 				}
 
-				// Copy the name and timestamp over
-				server.lists.items[server.lists.items.length].name = client.lists.items[list].name;
-				server.lists.items[server.lists.items.length].time = client.lists.items[list].time;
-
 				// Update order
-				server.lists.order.push(list);
-
+				server.lists.order.push(Number(list));
 				server.lists.items.length++;
 
-			// Check to see if list was updated
 			} else {
 
-				console.log("159: List '" + list + "' exists on server.")
+				console.log("204: List '" + list + "' exists on server.")
 
 				for(var key in client.lists.items[list].time) {
+
 					if(client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
 
 						console.log("164: The key '" + key + "' in list '" + list + "' has been modified.")
@@ -185,15 +217,39 @@ function merge(client, callback) {
 		// This should only be modified by the server side cli.js
 		if(task != 'length') {
 
-			// If task does not exist on the server
-			if(!server.tasks.hasOwnProperty(task)) {
+			/***** ADDING NEW TASKS TO THE SERVER *****/
 
-				console.log("184: Task '" + task + "' does not exist on server.")
+			// If task has never been synced before
+			if(client.tasks[task].synced === false) {
+
+				console.log("209: Task '" + task + "' has never been synced before");
+
+				// Task is going to be added to the server so we delete the synced property
+				client.tasks[task].synced = true;
+
+				// If task already exists on the server (Don't be fooled, it's a different task...)
+				if(server.tasks.hasOwnProperty(task)) {
+
+					console.log("217: A task with the ID '" + task + "' already exists on the server");
+
+					// Does not mess with ID's if it isn't going to change
+					if(server.tasks.length != parseInt(task)) {
+
+						// Add task to task (ID + server.tasks.length)
+						client.tasks[server.tasks.length] = clone(client.tasks[task]);
+						delete client.tasks[task];
+
+						console.log("226: Task '" + task + "' has been moved to task '" + server.tasks.length  + "'");
+
+						task = server.tasks.length;
+
+					}
+				} 
 
 				// If task hasn't been deleted
 				if(!client.tasks[task].hasOwnProperty('deleted')) {
 
-					console.log("189: Task '" + task + "' is being added to the server.")
+					console.log("237: Task '" + task + "' is being added to the server.")
 
 					// Add the task to the server
 					cli.addTask("New Task", client.tasks[task].list);
@@ -205,20 +261,25 @@ function merge(client, callback) {
 					// Calculate Today etc? - Do later
 					cli.today(task).calculate();
 
+					// Fix task length
+					fixLength(server.tasks)
+
 				// The task is new, but the client deleted it
 				} else {
 
-					console.log("204: Task '" + task + "' is new, but the client deleted it")
+					console.log("252: Task '" + task + "' is new, but the client deleted it")
 
 					// Add the task to the server, but don't touch lists and stuff
 					server.tasks[task] = clone(client.tasks[task]);
 
 				}
 
+			/***** CLIENT DELETED TASK *****/
+
 			// Task was deleted on computer but not on the server
 			} else if(client.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
 
-				console.log("214: Task '" + task + "' was deleted on computer but not on the server")
+				console.log("266: Task '" + task + "' was deleted on computer but not on the server")
 
 				// We use this to check whether the task was modified AFTER it was deleted
 				var deleteTask = true;
@@ -229,7 +290,7 @@ function merge(client, callback) {
 					// Check if server task was modified after task was deleted
 					if(server.tasks[task].time[key] > client.tasks[task].deleted) {
 
-						console.log("225: Task '" + task + "' was modified after task was deleted")
+						console.log("277: Task '" + task + "' was modified after task was deleted")
 
 						// Since it has been modified after it was deleted, we don't delete the task
 						deleteTask = false;
@@ -252,24 +313,28 @@ function merge(client, callback) {
 
 				}
 
+			/***** SERVER DELETED TASK *****/
+
 			// Task is deleted on the server and the computer
 			} else if(client.tasks[task].hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')){
 
-				console.log("251: Task '" + task + "' is deleted on the server and the computer")
+				console.log("305: Task '" + task + "' is deleted on the server and the computer")
 
 				// Use the latest time stamp
 				if(client.tasks[task].deleted > server.tasks[task].deleted) {
 
-					console.log("256: Task '" + task + "' is deleted, but has a newer timestamp")
+					console.log("310: Task '" + task + "' is deleted, but has a newer timestamp")
 
 					// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
 					server.tasks[task].deleted = client.tasks[task].deleted;
 
 				}
 
+			/***** OLD TASK THAT HASN'T BEEN DELETED BUT POSSIBLY MODIFIED *****/
+
 			} else {
 
-				console.log("265: Task '" + task + "' exists on the server and hasn't been deleted")
+				console.log("321: Task '" + task + "' exists on the server and hasn't been deleted")
 
 				//Stores the Attrs we'll be needing later
 				var changedAttrs = [];
@@ -283,12 +348,12 @@ function merge(client, callback) {
 						// Check if task was deleted on server or 
 						 if (server.tasks[task].hasOwnProperty('deleted')) {
 
-						 	console.log("279: Task '" + task + "' was deleted on the server");
+						 	console.log("335: Task '" + task + "' was deleted on the server");
 
 							// Check if task was modified after it was deleted
 							if(client.tasks[task].time[key] > server.tasks[task].deleted) {
 
-								console.log("284: Task " + task + " was modified on the client after it was deleted on the server");
+								console.log("340: Task " + task + " was modified on the client after it was deleted on the server");
 
 								// Update the server with the entire task (including attributes and timestamps)
 								server.tasks[task] = client.tasks[task];
@@ -303,7 +368,7 @@ function merge(client, callback) {
 							// If the attribute was updated after the server
 							if(client.tasks[task].time[key] > server.tasks[task].time[key]) {
 
-								console.log("301: Key '" + key + "'  in task " + task + " has been updated by the client");
+								console.log("355: Key '" + key + "'  in task " + task + " has been updated by the client");
 
 								if (key != 'list') {
 									// Update the servers version
@@ -323,23 +388,23 @@ function merge(client, callback) {
 				if (changedAttrs.length > 0) {
 					if(changedAttrs.indexOf('logged') != -1) {
 						// Logged
-						console.log("321: Task " + task + " has been updated --> LOGGED");
+						console.log("375: Task " + task + " has been updated --> LOGGED");
 						cli.logbook(task)
 						cli.logbook(task)
 					} else if(changedAttrs.indexOf('date') != -1 || changedAttrs.indexOf('showInToday') != -1) {
 						// Date is changed
-						console.log("326: Task " + task + " has been updated --> DATE");
+						console.log("380: Task " + task + " has been updated --> DATE");
 						cli.calc.date(task);
 						cli.today(task).calculate();
 					} else if(changedAttrs.indexOf('today') != -1) {
 						// Today
-						console.log("331: Task " + task + " has been updated --> TODAY");
+						console.log("385: Task " + task + " has been updated --> TODAY");
 						cli.today(task).calculate();
 					}
 
 					if(changedAttrs.indexOf('list') != -1) {
 						// List
-						console.log("337: Task " + task + " has been updated --> LIST");
+						console.log("391: Task " + task + " has been updated --> LIST");
 						cli.moveTask(task, client.tasks[task].list)
 					}
 				}
@@ -347,36 +412,171 @@ function merge(client, callback) {
 		}
 	}
 
-	// Update length
-	server.tasks.length = 0;
-	for (i in server.tasks) {
-		if (server.tasks.hasOwnProperty(i) && i != 'length') {
-			server.tasks.length++;
-		}
-	}
+	// Fix task length
+	fixLength(server.tasks)
 
 	// Get rid of duplicates
 	for(var list in server.lists.items) {
-		if(list != 'length') server.lists.items[list].order = eliminateDuplicates(server.lists.items[list].order);
+		if(list != 'length') server.lists.items[list].order = deDupe(server.lists.items[list].order);
 	}
 
 	callback();
 }
 
+/* Nitro CLI 
+ *
+ * Copyright (C) 2012 Caffeinated Code <http://caffeinatedco.de>
+ * Copyright (C) 2012 Jono Cooper
+ * Copyright (C) 2012 George Czabania
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * Neither the name of Caffeinated Code nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+console.info('Nitro 1.2\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 var cli = {
-	escape: function(str) {
+	timestamp: {
+		update: function (id, key) {
+			return {
+				task: function () {
+					// server.tasks[id].time[key] = Date.now();
+					// cli.timestamp.sync();
+				},
+				list: function () {
+					if (id !== 0) {
+						// server.lists.items[id].time[key] = Date.now();
+						// cli.timestamp.sync();
+					}
+				}
+			};
+		},
+		sync: function () {
+			if (server.prefs.sync === 'auto') {
+				ui.sync.running();
+				server.sync();
+			} else {
+				ui.sync.active();
+			}
+		},
+		upgrade: function () {
+
+			var passCheck = true;
+
+			// Check tasks for timestamps
+			for(var id in server.tasks) {
+				if (id !== 'length') {
+
+					// Check task has time object
+					if (!server.tasks[id].hasOwnProperty('time')) {
+						console.log("Upgrading task: '" + id + "' to Nitro 1.1 (timestamps)");
+						passCheck = false;
+
+						server.tasks[id].time = {
+							content: 0,
+							priority: 0,
+							date: 0,
+							notes: 0,
+							today: 0,
+							showInToday: 0,
+							list: 0,
+							logged: 0
+						};
+					}
+
+					// Check task has sync status
+					if (server.tasks[id].hasOwnProperty('synced')) {
+						console.log("Upgrading task: '" + id + "' to Nitro 1.2 (sync)");
+						passCheck = false;
+
+						server.tasks[id].synced = false;
+					}
+					break;
+				}
+			}
+
+			// Check lists for timestamps
+			for(var id in server.lists.items) {
+				if (id !== 'length' && id !== '0') {
+
+					// Check list has time object
+					if (!server.lists.items[id].hasOwnProperty('time') || typeof(server.lists.items[id].time) === 'number') {
+						console.log("Upgrading list: '" + id + "' to Nitro 1.2 (timestamp)");
+						passCheck = false;
+
+						// Add or reset time object
+						server.lists.items[id].time = {
+							name: 0,
+							order: 0
+						};						
+					}
+
+					if (id !== 'today' && id !== 'next' && id !== 'someday') {
+						// Check list has synced status
+						if (!server.lists.items[id].hasOwnProperty('synced')) {
+							console.log("Upgrading list: '" + id + "' to Nitro 1.2 (sync)");
+							passCheck = false;
+
+							server.lists.items[id].synced = 'false';
+						}
+					}
+
+					// Convert everything to numbers
+					for  (var x = 0; x < server.lists.items[id].order.length; x++) {
+						if(typeof server.lists.items[id].order[x] === 'string') {
+							server.lists.items[id].order[x] = server.lists.items[id].order[x].toNum();
+						}
+					}
+				}
+			}
+
+			// Check preferences exist. If not, set to default
+			server.lists.time     = server.prefs.time     || 0;
+			server.prefs.sync     = server.prefs.sync     || 'manual';
+			server.prefs.lang     = server.prefs.lang     || 'english';
+			server.prefs.bg       = server.prefs.bg       || {};
+			server.prefs.bg.color = server.prefs.bg.color || '';
+			server.prefs.bg.size  = server.prefs.bg.size  || 'zoom';
+
+			// Save
+			// server.save();
+
+			if (passCheck) {
+				// Database is up to date
+				console.log("Database is up to date")
+			} else {
+				// Database was old
+				console.log("Database was old")
+				console.log("Regex all the things!")
+
+				//Regexes for funny chars
+				localStorage.jStorage = localStorage.jStorage.replace(/\\\\/g, "&#92;").replace(/\|/g, "&#124").replace(/\\"/g, "&#34;").replace(/\'/g, "&#39;");
+
+				//Reloads jStorage
+				$.jStorage.reInit()
+			}
+		}
+	},
+	escape: function (str) {
 		//Regexes a bunch of shit that breaks the Linux version
 
-		if (typeof str == 'string') {
-			//Backslash, Pipe, newline, quote
-			str = str.replace(/\\/g, "&#92;").replace(/\|/g, "&#124").replace(/\"/g, "&#34;").replace(/\'/g, "&#39;");
+		if (typeof str === 'string') {
+			str = str
+				.replace(/\\/g, "&#92;") // Backslash
+				.replace(/\|/g, "&#124") // Pipe
+				.replace(/\"/g, "&#34;") // Quote
+				.replace(/\'/g, "&#39;"); // Apostrophe
 			return str;
 		} else {
 			return str;
 		}
 		
 	},
-	addTask: function(name, list) {
+	addTask: function (name, list) {
 		name = cli.escape(name);
 		// Creates a task
 
@@ -385,7 +585,7 @@ var cli = {
 		server.tasks.length++;
 
 		//Saves to Localstorage
-		server.tasks[id] = { 
+		server.tasks[id] = {
 			content: name,
 			priority: 'none',
 			date: '',
@@ -402,16 +602,20 @@ var cli = {
 				today: 0,
 				showInToday: 0,
 				list: 0,
-				logged: 0,
-			}
+				logged: 0
+			},
+			synced: false
 		};
 
-		if (list == 'today') {
+		if (list === 'today') {
 			cli.today(id).add();
 		} else {
 			//Pushes to array
-			server.lists.items[list].order.push(parseInt(id));
-		};
+			server.lists.items[list].order.unshift(id);
+		}
+
+		// Timestamp (list order)
+		cli.timestamp.update(list, 'order').list();
 
 		//Saves to disk
 		// server.save();
@@ -420,8 +624,11 @@ var cli = {
 		console.log("Created Task: '" + name + "' with id: " + id + " in list: " + list);
 
 	},
-	deleteTask: function(id) {
+	deleteTask: function (id) {
 		var task = cli.taskData(id).display();
+
+		// Timestamp (list order)
+		cli.timestamp.update(task.list, 'order').list();
 
 		cli.calc.removeFromList(id, task.list);
 
@@ -435,45 +642,47 @@ var cli = {
 		//Removes from list
 		cli.calc.removeFromList(id, 0);
 
-		//Deletes Data - nonononononono
-		// delete server.tasks[id];
+		//Deletes Data
+		server.tasks[id] = { deleted: Date.now() };
 
 		//Saves
 		// server.save();
 	},
-	populate: function(type, query) {
+	populate: function (type, query) {
 		query = cli.escape(query);
 		// Displays a list
 		switch(type) {
 			case "list":
 				// Get tasks from list
 
-				switch(query) {
-					case "logbook":
+				if (query === 'logbook') {
+					var logbook = [];
 
-						var logbook = [];
+					for (var t = 0; t < server.tasks.length; t++) {
+						// looooooping through the tasks
+						if (server.tasks[t]) {
+							if (server.tasks[t].logged) {
+								var data = cli.taskData(t).display();
+								//remove today & date data
+								data.date = '';
+								data.today = 'false';
+								cli.taskData(t).edit(data);
 
-						for (var t = 0; t < server.tasks.length; t++) {
-							// looooooping through the tasks
-							if (server.tasks[t]) {
-								if(server.tasks[t].logged) {
-									var data = cli.taskData(t).display()
-									//remove today & date data
-									data.date = '';
-									data.today = 'false';
-									cli.taskData(t).edit(data);
-
-									logbook.push(t)
-								}
+								logbook.push(t);
 							}
 						}
+					}
 
-						return logbook;
+					return logbook;
 
-						break;
-					default:
-						if(query in server.lists.items) return server.lists.items[query].order;
-						else return [];
+				} else {
+
+					if (query in server.lists.items) {
+						return server.lists.items[query].order;
+					} else {
+						return [];
+					}
+
 				}
 
 				break;
@@ -493,7 +702,7 @@ var cli = {
 					if (server.tasks[t]) {
 
 						// Exclude logged tasks
-						if(!server.tasks[t].logged) {
+						if (!server.tasks[t].logged) {
 
 							var pass1 = [],
 								pass2  = true;
@@ -505,28 +714,35 @@ var cli = {
 								search = new RegExp(query[q], 'i');
 
 								// Search
-								if (search.test(server.tasks[t]['content'] + server.tasks[t]['notes'])) pass1.push(true);
-								else pass1.push(false);
+								if (search.test(server.tasks[t].content + server.tasks[t].notes)) {
+									pass1.push(true);
+								} else {
+									pass1.push(false);
+								}
 							}
 
 							// This makes sure that the task has matched each word in the query
 							for (var p = 0; p < pass1.length; p++) {
-								if(pass1[p] == false) pass2 = false;
+								if (pass1[p] === false) {
+									pass2 = false;
+								}
 							}
 
 							// If all terms match then add task to the results array
-							if(pass2) results.push(t)
+							if (pass2) {
+								results.push(t);
+							}
 						}
 					}
 				}
 				return results;
 		}
 	},
-	moveTask: function(id, list) {
+	moveTask: function (id, list) {
 		// Moves task to list
 
 		var task = cli.taskData(id).display(),
-			lists = server.lists.items
+			lists = server.lists.items;
 
 		// Remove task from old list
 		cli.calc.removeFromList(id, task.list);
@@ -534,13 +750,18 @@ var cli = {
 		// Add task to new list
 		lists[list].order.push(id);
 
+		// Update timestamp
+		cli.timestamp.update(id, 'list').task();
+		cli.timestamp.update(task.list, 'order').list();
+		cli.timestamp.update(list, 'order').list();
+
 		// Update task.list
 		task.list = list;
 
 		cli.today(id).calculate();
 
 		//If it's dropped in Someday, we strip the date & today
-		if (list == 'someday') {
+		if (list === 'someday') {
 			task.date = '';
 			cli.today(id).remove();
 		}
@@ -550,11 +771,11 @@ var cli = {
 		server.lists.items = lists;
 		// server.save();
 
-		console.log('The task with the id: ' + id + ' has been moved to the ' + list + ' list')
+		console.log('The task with the id: ' + id + ' has been moved to the ' + list + ' list');
 	},
-	today: function(id) {
+	today: function (id) {
 		return {
-			add: function() {
+			add: function () {
 				// Adds to Today Manually
 				var task = cli.taskData(id).display();
 
@@ -563,22 +784,25 @@ var cli = {
 				cli.today(id).calculate();
 
 			},
-			remove: function() {
+			remove: function () {
 				// Removes from Today Manually
 				var task = cli.taskData(id).display();
 
 				task.today = 'false';
 				task.showInToday = 'none';
 
-				if (task.list == 'today') {
+				if (task.list === 'today') {
 					task.list = 'next';
-				};
+				}
 
 				cli.today(id).calculate();
 			},
-			calculate: function() {				 
-				 
-				//Removes from Today & Next
+			calculate: function () {
+				/* This is the function that I wish I had.
+				Removes from today or next then
+				Depending on the due date etc, the function chucks it into today, next etc */
+
+				// Removes from Today & Next
 				var task = cli.taskData(id).display(),
 					lists = server.lists.items;
 				
@@ -589,9 +813,14 @@ var cli = {
 				cli.calc.removeFromList(id, 'next');
 				
 				console.log('List: ' + task.list);
+				cli.timestamp.update(id, 'showInToday').task();
+				cli.timestamp.update(id, 'list').task();
+
+				// Update timestamp
+				cli.timestamp.update(id, 'today').task();
 
 				//If the task is due to be deleted, then delete it
-				if (task.list == 0) {
+				if (task.list === 0) {
 					return;
 				}
 
@@ -603,8 +832,8 @@ var cli = {
 				//Calculates date. Changes today Status
 				cli.calc.date(id);
 				
-				//If the list is today, we place back in today & next
-				if (task.list == 'today') {
+				//If the task.list is today, we place back in today & next
+				if (task.list === 'today') {
 					
 					lists.today.order.unshift(id);
 					lists.next.order.unshift(id);
@@ -612,7 +841,7 @@ var cli = {
 					console.log('List in today, placed in today');
 				} else {
 					//If the task is either manually in today, or has a date, we place in Today and next
-					if (task.today == 'manual' || task.today == 'yesAuto') {
+					if (task.today === 'manual' || task.today === 'yesAuto') {
 						//Adds to Today & Next arrays
 						console.log('List either manually set or Date set. In today');
 						lists.today.order.unshift(id);
@@ -620,30 +849,30 @@ var cli = {
 					} else {
 						console.log('Not in today');
 						//Do nothing unless in Next list
-						if (task.list == 'next') {
+						if (task.list === 'next') {
 							//Adds to Next array
 							lists.next.order.unshift(id);
-						};
-					};
+						}
+					}
 				}
 
-				// Crazy bug
-				server.lists.items.today.order = eliminateDuplicates(server.lists.items.today.order);
-				server.lists.items.next.order = eliminateDuplicates(server.lists.items.next.order);
+				// DeDupe today and next lists
+				server.lists.items.today.order = deDupe(server.lists.items.today.order);
+				server.lists.items.next.order = deDupe(server.lists.items.next.order)
 				
 				//Saves data
 				// server.save();
 			}
-		}
+		};
 	},
-	logbook: function(id) {
+	logbook: function (id) {
 		// Toggles an item to/from the logbook
 
 		var task = cli.taskData(id).display(),
 			lists = server.lists.items;
 
 		// Check if task exists
-		if(!task) {
+		if (!task) {
 			console.log('No task with id: ' + id + ' exists');
 			return;
 		}
@@ -651,9 +880,11 @@ var cli = {
 		task.logged = !task.logged;
 
 		//If list is deleted, set to next
-		if(!(task.list in lists)) task.list = 'next';
+		if (!(task.list in lists)) {
+			task.list = 'next';
+		}
 
-		if(task.logged) { // Uncomplete -> Complete
+		if (task.logged) { // Uncomplete -> Complete
 			//Gets name of list
 			var oldlist = task.list;
 
@@ -671,20 +902,23 @@ var cli = {
 			// Add task to list
 			lists[task.list].order.push(id);
 
-			console.log("Task with id: " + id + " has been uncompleted");	
+			console.log("Task with id: " + id + " has been uncompleted");
 		}
+
+		// Update timestamp
+		cli.timestamp.update(id, 'logged').task();
 
 		cli.taskData(id).edit(task);
 		server.lists.items = lists;
 		// server.save();
 	},
-	priority: function(id) {
+	priority: function (id) {
 		return {
-			get: function() {
+			get: function () {
 				var priority = server.tasks[id].priority;
 				return priority;
 			},
-			set: function() {
+			set: function () {
 				var priority = server.tasks[id].priority;
 				switch(priority) {
 					case "low":
@@ -700,26 +934,31 @@ var cli = {
 						priority = "low";
 						break;
 				}
-				
+
+				cli.timestamp.update(id, 'priority').task();
+
 				server.tasks[id].priority = priority;
 				// server.save();
 				return priority;
 			}
-		}
+		};
 	},
-	taskData: function(id) {
+	taskData: function (id) {
 		return {
 			display: function () {
 				// Returns taskData as object
 				return server.tasks[id];
 
 			},
-			edit: function(obj) {
+			edit: function (obj) {
 				// Edit taskData
-				$.each(obj, function(i, value) { 
-  					if (typeof value == "string") {
-  						obj[i] = cli.escape(value);
-  					}
+				$.each(obj, function (i, value) {
+					if (typeof value === "string") {
+						obj[i] = cli.escape(value);
+					}
+					if (obj[i] !== $.jStorage.get('tasks')[id][i] && i !== 'time') {
+						cli.timestamp.update(id, i).task();
+					}
 				});
 
 				server.tasks[id] = obj;
@@ -728,16 +967,24 @@ var cli = {
 			}
 		};
 	},
-	list: function(id, name) {
+	list: function (id, name) {
 		name = cli.escape(name);
 
 		return {
-			add: function() {
+			add: function () {
 				// Adds a list
 				var newId = server.lists.items.length;
 
 				//Chucks data in object
-				server.lists.items[newId] = { name: name, order: []};
+				server.lists.items[newId] = {
+					name: name,
+					order: [],
+					time: {
+						name: 0,
+						order: 0
+					},
+					synced: false
+				};
 
 				//Adds to order array
 				server.lists.order.push(newId);
@@ -745,13 +992,17 @@ var cli = {
 				//Returns something
 				console.log("Created List: '" + name + "' with id: " + newId);
 
+				// Update timestamp for list order
+				server.lists.time = Date.now();
+
 				//Updates Total
 				server.lists.items.length++;
 				// server.save();
 			},
-			rename: function() {
+			rename: function () {
 				// Renames a list
 				server.lists.items[id].name = name;
+				cli.timestamp.update(id, 'name').list();
 
 				//Saves to localStorage
 				// server.save();
@@ -759,17 +1010,19 @@ var cli = {
 				//Returns something
 				console.log("Renamed List: " + id + " to: '" + name + "'");
 			},
-			delete: function() {
+			remove: function () {
 				//Deletes data in list
 				for (var i=0; i<server.lists.items[id].order.length; i++) {
 					cli.today(server.lists.items[id].order[i]).remove();
 					delete server.tasks[server.lists.items[id].order[i]];
-				};
-
+				}
 
 				//Deletes actual list
 				delete server.lists.items[id];
-				server.lists.order.splice(jQuery.inArray(parseInt(id), server.lists.order), 1);
+				server.lists.order.splice(jQuery.inArray(id, server.lists.order), 1);
+
+				// Update timestamp for list order
+				server.lists.time = Date.now();
 
 				//Saves to disk
 				// server.save();
@@ -777,21 +1030,23 @@ var cli = {
 				//Returns something
 				console.log("Deleted List: " + id);
 			},
-			taskOrder: function(order) {
+			taskOrder: function (order) {
 				//Order of tasks
+				cli.timestamp.update(id, 'order').list();
 				server.lists.items[id].order = order;
 				// server.save();
 			},
-			order: function(order) {
+			order: function (order) {
 				// Order of lists
+				server.lists.time = Date.now();
 				server.lists.order = order;
 				// server.save();
 			}
-		}
+		};
 	},
 	calc: {
 		//Another object where calculations are done
-		removeFromList: function(id, list) {
+		removeFromList: function (id, list) {
 
 			var task = cli.taskData(id).display(),
 				lists = server.lists.items;
@@ -802,39 +1057,39 @@ var cli = {
 			
 			// Remove task from Today
 			for(var i = 0; i < lists[list].order.length; i++) {
-				if(lists[list].order[i] == id) {
+				if (lists[list].order[i] === id) {
 					lists[list].order.splice(i, 1);
 					console.log('Removed: ' + id + ' from ' + list);
-				};
-			};
+				}
+			}
 
 			// cli.taskData(id).edit(task);
 			server.lists.items = lists;
 			// server.save();
 		},
 
-		date: function(id) {
+		date: function (id) {
 			var task = cli.taskData(id).display(),
-			lists = server.lists.items;
+				lists = server.lists.items;
 
 			//If it's already in today, do nothing. If it doesn't have a date, do nothing.
-			if (task.today != 'manual' && task.date != '') {
-				if (task.showInToday == 'none') {
+			if (task.today !== 'manual' && task.date !== '') {
+				if (task.showInToday === 'none') {
 					//Remove from today
 					task.today = 'false';
-					console.log('Specified to not show in today')
+					console.log('Specified to not show in today');
 
 					//Remove from queue
 					if (server.queue[id]) {
 						delete server.queue[id];
-					};
+					}
 
 				} else {
-					console.log('Due date, running queue function')
+					console.log('Due date, running queue function');
 
 					//Due date + days to show in today
 					var date = new Date(task.date);
-					date.setDate(date.getDate() - parseInt(task.showInToday));
+					date.setDate(date.getDate() - parseInt(task.showInToday, 10));
 					var final = (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getUTCFullYear();
 
 					server.queue[id] = final;
@@ -843,10 +1098,10 @@ var cli = {
 
 					//Refreshes Date Queue
 					cli.calc.todayQueue.refresh();
-				};
-			};
+				}
+			}
 		},
-		dateConvert: function(olddate) {
+		dateConvert: function (olddate) {
 			//Due date + days to show in today
 			var date = new Date(olddate);
 			var final = (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getUTCFullYear();
@@ -854,21 +1109,21 @@ var cli = {
 			return final;
 		},
 		prettyDate: {
-			convert: function(date) {
+			convert: function (date) {
 				date = date.split('/');
 				date = new Date(date[2], date[0] - 1, date[1]);
 				//If it's the current year, don't add the year.
-				if (date.getFullYear() == new Date().getFullYear()) {
+				if (date.getFullYear() === new Date().getFullYear()) {
 					date = date.toDateString().substring(4).replace(" 0"," ").replace(" " + new Date().getFullYear(), '');
 				} else {
 					date = date.toDateString().substring(4).replace(" 0"," ");
-				};
+				}
 				return date;
 			},
-			difference: function(date) {
+			difference: function (date) {
 
-				if (date == '') {
-					return ['', '']
+				if (date === '') {
+					return ['', ''];
 				} else {
 					var	now = new Date(),
 						date = date.split('/'),
@@ -882,86 +1137,152 @@ var cli = {
 					difference = Math.ceil((date.getTime() - now.getTime()) / oneDay);
 
 					// Show difference nicely
-					if(difference < 0) {
+					if (difference < 0) {
 						// Overdue
 						difference = Math.abs(difference);
-						if(difference != 1) return [$.i18n._('daysOverdue', [difference]), 'due'];
-						else return [$.i18n._('dayOverdue'), 'due'];
-					} else if(difference == 0) {
+						if (difference !== 1) {
+							return [$.i18n._('daysOverdue', [difference]), 'overdue'];
+						} else {
+							return [$.i18n._('dayOverdue'), 'overdue'];
+						}
+					} else if (difference === 0) {
 						// Due
-						return ["due today", 'due']
-					} else if(difference < 15) {
+						return ["due today", 'due'];
+					} else if (difference < 15) {
 						// Due in the next 15 days
-						if(difference != 1) return [$.i18n._('daysLeft', [difference]), ''];
-						else return [$.i18n._('dayLeft'), '']
+						if (difference !== 1) {
+							return [$.i18n._('daysLeft', [difference]), ''];
+						} else {
+							return [$.i18n._('dayLeft'), ''];
+						}
 					} else {
 						// Due after 15 days
 						var month = $.i18n._('month');
 						return [month[date.getMonth()] + " " + date.getDate(), ''];
-					};	
-				};
+					}
+				}
 			}
 		},
 		todayQueue: {
 			
-			refresh: function() {
+			refresh: function () {
 
 				for (var key in server.queue) {
-					if (server.queue.hasOwnProperty(key)) {
-					    console.log(key +  " -> " + server.queue[key]);
+					key = Number(key);
+					console.log(key +  " -> " + server.queue[key]);
 
-						var targetdate = new Date(server.queue[key]);
-					    var todaydate = new Date();
+					var targetdate = new Date(server.queue[key]);
+					var todaydate = new Date();
 
-						//Reset to 0:00
-						todaydate.setSeconds(0);
-						todaydate.setMinutes(0);
-					    todaydate.setSeconds(0);
+					//Reset to 0:00
+					todaydate.setSeconds(0);
+					todaydate.setMinutes(0);
+					todaydate.setSeconds(0);
 
-						//If today is the same date as the queue date or greater, put the task in today and next
-					    if (todaydate >= targetdate) {
-					    	
-					    	server.tasks[key].today = 'yesAuto';
+					//If today is the same date as the queue date or greater, put the task in today and next
+					if (todaydate >= targetdate) {
+						
+						server.tasks[key].today = 'yesAuto';
 
-					    	//Adds to today & next lists
-					    	server.lists.items.today.order.push(key);
+						//Adds to today & next lists
+						server.lists.items.today.order.push(key);
 
-					    	//Makes sure it doesn't it doesn't double add to next
-					    	if (server.tasks[key].list != 'next') {
-					    		server.lists.items.next.order.push(key);
-					    	}
+						//Makes sure it doesn't it doesn't double add to next
+						if (server.tasks[key].list !== 'next') {
+							server.lists.items.next.order.push(key);
+						}
 
-					    	delete server.queue[key];
+						delete server.queue[key];
 
-					    } else {
-							//Wait till tomorrow.
-							server.tasks[key].today = 'noAuto';
-					    };
-						// server.save();
-					};
-				};
+					} else {
+						//Wait till tomorrow.
+						server.tasks[key].today = 'noAuto';
+					}
+					// server.save();
+				}
 			}
 		}
 	},
 
 	storage: {
+		//Object where data is stored
+		// tasks: $.jStorage.get('tasks', {length: 0}),
+		// queue: $.jStorage.get('queue', {}),
+		// lists: $.jStorage.get('lists', {order: [], items:{today: {name: "Today", order:[], time: {name: 0, order: 0}}, next: {name: "Next", order:[], time: {name: 0, order: 0}}, someday: {name: "Someday", order:[], time: {name: 0, order: 0}}, 0: {order:[]}, length: 1}, time: 0}),
+		// prefs: $.jStorage.get('prefs', {deleteWarnings: false, gpu: false, nextAmount: 'threeItems', over50: true, lang: 'english', bg: {color: '', size: 'zoom'}, sync: 'manual'}),
+		// NB: Over 50 caps amount of tasks in List to 50 but causes drag and drop problems.
+		// I CBF fixing it.
 
-		save: function() {
+		save: function () {
 			//Saves to localStorage
-			// Not really
+			// $.jStorage.set('tasks', server.tasks);
+			// $.jStorage.set('lists', server.lists);
+			// $.jStorage.set('queue', server.queue);
+			// $.jStorage.set('prefs', server.prefs);
+		},
+
+		sync: function () {
+
+			console.log("Running sync");
+
+			// Upload to server
+			// var socket = io.connect('http://hollow-wind-1576.herokuapp.com/');
+			var socket = io.connect('http://localhost:8080/');
+			var client = {
+				tasks: server.tasks,
+				queue: server.queue,
+				lists: server.lists
+			};
+			/*socket.on('token', function (data) {
+				window.open(data);
+				if (verify()) {
+					socket.emit('allowed', '');
+				}
+			});
+			function verify() {
+				if (confirm("Did you allow Nitro?")) {
+					return true;
+				} else {
+					verify();
+				}
+			}*/
+			console.log(client);
+			socket.emit('upload', client);
+
+			// Get from server
+			socket.on('download', function (data) {
+				console.log("Finished sync");
+				server.tasks = data.tasks;
+				server.queue = data.queue;
+				server.lists = data.lists;
+				// server.save();
+				ui.sync.reload();
+			});
 		}
 	}
-}
+};
 
-function eliminateDuplicates(arr) {
-	var r = new Array();
+function deDupe(arr) {
+	var r = [];
 	o:for(var i = 0, n = arr.length; i < n; i++) {
 		for(var x = 0, y = r.length; x < y; x++) {
-			if(r[x]==arr[i]) {
+			if (r[x] == arr[i]) {
 				continue o;
 			}
 		}
-		r[r.length] = arr[i];
+		r[r.length] = Number(arr[i]);
 	}
 	return r;
+}
+
+// My super awesome function that converts a string to a number
+// "421".toNum()  -> 421
+// "word".toNum() -> "word"
+String.prototype.toNum = function () {
+	var x = parseInt(this, 10);
+	if(x > -100) {
+		return x;
+	} else {
+		return this.toString();
+	}
 }
