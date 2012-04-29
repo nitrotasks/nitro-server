@@ -117,12 +117,13 @@ app.post('/update/', function(req, res){
 // Actual Sync
 app.post('/sync/', function(req, res){
 
-	req.param('data').tasks = JSON.parse(deflate(JSON.stringify(req.param('data').tasks)));
+	console.log(color(JSON.stringify(req.param('data', null)), 'green'));
+
 	// Merge data
-	merge(req.param('data', null), function() {
+	merge(decompress(req.param('data', null)), function() {
 		// Send data back to client
 		console.log("Merge complete. Updating client.")
-		res.json(server);
+		res.json(compress(server));
 		saveServer();
 	});
 });
@@ -212,8 +213,8 @@ function fixLength(obj) {
 
 function merge(client, callback) {
 
-	console.log(color(JSON.stringify(client), 'green'));
-	console.log(color(JSON.stringify(server), 'yellow'));
+	console.log(color(JSON.stringify(client), 'yellow'));
+	console.log(color(JSON.stringify(server), 'cyan'));
 
 	// Loop through each list
 	for (var list in client.lists.items) {
@@ -256,7 +257,7 @@ function merge(client, callback) {
 				server.lists.order.push(Number(list));
 				server.lists.items.length++;
 
-			} else {
+			} else if (server.lists.items.hasOwnProperty(list)) {
 
 				console.log(color("204", "blue"), ": List '" + list + "' exists on server.")
 
@@ -1334,35 +1335,84 @@ String.prototype.toNum = function () {
 	}
 }
 
-//Compresses & Deflates data
-function compress(str) {
-	var final = str
-		.replace(/\"content\"/g, "\"a\"")
-		.replace(/\"priority\"/g, "\"b\"")
-		.replace(/\"date\"/g, "\"c\"")
-		.replace(/\"notes\"/g, "\"d\"")
-		.replace(/\"today\"/g, "\"e\"")
-		.replace(/\"showInToday\"/g, "\"f\"")
-		.replace(/\"list\"/g, "\"g\"")
-		.replace(/\"logged\"/g, "\"h\"")
-		.replace(/\"time\"/g, "\"i\"")
-		.replace(/\"synced\"/g, "\"j\"")
+function decompress(obj) {
+	var chart = {
+		a: 'name',
+		b: 'tasks',
+		c: 'content',
+		d: 'priority',
+		e: 'date',
+		f: 'today',
+		g: 'showInToday',
+		h: 'list',
+		i: 'lists',
+		j: 'logged',
+		k: 'time',
+		l: 'sync',
+		m: 'synced',
+		n: 'order',
+		o: 'queue',
+		p: 'length',
+		q: 'notes',
+		r: 'items',
+		s: 'next',
+		t: 'someday'
+	},
+	out = {};
 
-	return final;
+	for (var key in obj) {
+		if (chart.hasOwnProperty(key)) {
+			out[chart[key]] = obj[key];
+			if (typeof obj[key] === 'object') {
+				out[chart[key]] = decompress(out[chart[key]]);
+			}
+		} else {
+			out[key] = obj[key];
+			if (typeof obj[key] === 'object') {
+				out[key] = decompress(out[key]);
+			}
+		}
+	}
+	return out;
 }
 
-function deflate(str) {
-	var final = str
-		.replace(/\"a\"/g, "\"content\"")
-		.replace(/\"b\"/g, "\"priority\"")
-		.replace(/\"c\"/g, "\"date\"")
-		.replace(/\"d\"/g, "\"notes\"")
-		.replace(/\"e\"/g, "\"today\"")
-		.replace(/\"f\"/g, "\"showInToday\"")
-		.replace(/\"g\"/g, "\"list\"")
-		.replace(/\"h\"/g, "\"logged\"")
-		.replace(/\"i\"/g, "\"time\"")
-		.replace(/\"j\"/g, "\"synced\"")
+function compress(obj) {
+	var chart = {
+		name :       'a',
+		tasks:       'b',
+		content:     'c',
+		priority:    'd',
+		date:        'e',
+		today:       'f',
+		showInToday: 'g',
+		list:        'h',
+		lists:       'i',
+		logged:      'j',
+		time:        'k',
+		sync:        'l',
+		synced:      'm',
+		order:       'n',
+		queue:       'o',
+		length:      'p',
+		notes:       'q',
+		items:       'r',
+		next:        's',
+		someday:     't'
+	},
+	out = {};
 
-	return final;
+	for (var key in obj) {
+		if (chart.hasOwnProperty(key)) {
+			out[chart[key]] = obj[key];
+			if (typeof obj[key] === 'object') {
+				out[chart[key]] = compress(out[chart[key]]);
+			}
+		} else {
+			out[key] = obj[key];
+			if (typeof obj[key] === 'object') {
+				out[key] = compress(out[key]);
+			}
+		}
+	}
+	return out;
 }
