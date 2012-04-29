@@ -20,7 +20,8 @@ var color = require('./lib/ansi-color').set,
 	express = require('express'),
 	app = express.createServer(),
 	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" }),
-	client = {};
+	client = {},
+	server = {};
 
 // Enable cross browser ajax
 // app.enable("jsonp callback");
@@ -135,6 +136,7 @@ function getServer() {
 		if(reply.hasOwnProperty('error')) {
 			console.log(color("Server.json doesn't exist on the clients dropbox :(", 'red'));
 			console.log(color("So let's make one :D", 'blue'));
+			server = clone(emptyServer);
 			saveServer();
 		} else {
 			console.log(color("Got the server!", 'yellow'));
@@ -145,14 +147,14 @@ function getServer() {
 
 function saveServer() {
 	console.log(color("Saving to server (starting)", 'blue'));
-	var output = JSON.stringify(server);
+	var output = JSON.stringify(server, null, 4);
 	client.put("server.json", output, function () {
 		console.log(color("Saving to server (complete!)", 'yellow'));
 	});
 }
 
 // Create server
-var server = {
+var emptyServer = {
 	tasks: {
 		length: 0
 	},
@@ -208,6 +210,8 @@ function fixLength(obj) {
 }
 
 function merge(client, callback) {
+
+	console.log(color(JSON.stringify(client), 'green'));
 
 	// Loop through each list
 	for (var list in client.lists.items) {
@@ -1089,6 +1093,8 @@ var cli = {
 
 			var task = cli.taskData(id).display(),
 				lists = server.lists.items;
+
+			console.log(color("Runing cli.calc.removeFromList", "red"), JSON.stringify(lists));
 
 			// DOES NOT REMOVE LIST FROM TASK
 			// List must be manually removed from task.list
