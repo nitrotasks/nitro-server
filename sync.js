@@ -34,42 +34,50 @@ app.post('/auth/', function (req, res) {
 
 	console.log(color("** Starting Auth **", "blue"));
 
+	// If the client has never been connected before
 	if (req.query.reqURL) {
 
+		// Request a token from dropbox
 		dbox.request_token(function (status, request_token) {
 			console.log(request_token)
 			console.log(color("Sending authorize_url", "blue"));
+
+			// Send it to the client
 			res.json(request_token);
 		});
 
+	// Client has a token but not oauth
 	} else if (req.query.token) {
 
 		var count = 0;
 
 		function checkServer () {
-
 			console.log(color('Connecting to dropbox', "blue"));
 
+			// Check token 
 			dbox.access_token(req.query.token, function (status, access_token) {
 
+				// Token is good :D
 				if (status == 200) {
-
 					console.log(color('Attempt '+count+' - Connected!', "yellow"));
 
+					// Create client
 					client = dbox.createClient(access_token);
 
+					// Get server.json
 					getServer();
 
+					// Send access token to client so they can use it again
 					client.account(function (status, reply) {
 						res.json(access_token);
 					});
 
+				// Nitro hasn't been allowed yet :(
 				} else {
-
 					console.log(color('Attempt '+count+' - Failed!', "red"));
-
 					count++;
 
+					// Try again in a second
 					setTimeout(checkServer, 1000);
 				}
 			});
@@ -77,12 +85,15 @@ app.post('/auth/', function (req, res) {
 
 		checkServer();
 
+	// Server has been authorised before
 	} else if (req.query.access) {
 
 		console.log(color("Using client stored key", "blue"));
 
+		// Create client
 		client = dbox.createClient(req.query.access);
 
+		// Check to see if it worked
 		client.account(function (status, reply) {
 			if (status == 200) {
 				console.log(color("Connected!", "yellow"));
