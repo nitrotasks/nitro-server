@@ -1,4 +1,4 @@
-/* Nitro Sync 
+/* Nitro Sync
  *
  * Copyright (C) 2012 Caffeinated Code <http://caffeinatedco.de>
  * Copyright (C) 2012 Jono Cooper
@@ -56,11 +56,11 @@ app.post('/auth/', function (req, res) {
 		function checkServer () {
 			console.log(color('Connecting to dropbox', "blue"));
 
-			// Check token 
+			// Check token
 			dbox.access_token(req.param('token', null), function (status, access_token) {
 
 				// Token is good :D
-				if (status == 200) {
+				if (status === 200) {
 					console.log(color('Attempt '+count+' - Connected!', "yellow"));
 
 					// Create client
@@ -97,7 +97,7 @@ app.post('/auth/', function (req, res) {
 
 		// Check to see if it worked
 		dropbox.account(function (status, reply) {
-			if (status == 200) {
+			if (status === 200) {
 				console.log(color("Connected!", "yellow"));
 				res.json("success");
 				getServer();
@@ -110,21 +110,28 @@ app.post('/auth/', function (req, res) {
 });
 
 // Timestamps Only
-app.post('/update/', function(req, res){
-	res.send('token: ' + req.query["token"] + '<br>timestamp: ' + req.query["timestamp"]);
+app.post('/update/', function (req, res){
+	res.send('token: ' + req.query.token + '<br>timestamp: ' + req.query.timestamp);
 });
 
 // Actual Sync
-app.post('/sync/', function(req, res){
+app.post('/sync/', function (req, res){
 
 	console.log(color(JSON.stringify(req.param('data', null)), 'green'));
 	//req.param('data', null).tasks = decompress(req.param('data', null).tasks);
 
 	// Merge data
+<<<<<<< HEAD
 	merge(req.param('data', null), function() {
 		// Send data back to client
 		console.log("Merge complete. Updating client.")
 		res.json(server);
+=======
+	merge(decompress(req.param('data', null)), function () {
+		// Send data back to client
+		console.log("Merge complete. Updating client.");
+		res.json(compress(server));
+>>>>>>> Cleaned up code
 		saveServer();
 	});
 });
@@ -136,7 +143,7 @@ function getServer() {
 	dropbox.get("server.json", function (status, reply) {
 		reply = JSON.parse(reply.toString());
 		// Check if file exists
-		if(reply.hasOwnProperty('error')) {
+		if (reply.hasOwnProperty('error')) {
 			console.log(color("Server.json doesn't exist on the clients dropbox :(", 'red'));
 			console.log(color("So let's make one :D", 'blue'));
 			server = clone(emptyServer);
@@ -196,21 +203,7 @@ var emptyServer = {
 		time: 0
 	},
 	queue: {}
-}
-
-function clone(input) {
-	return JSON.parse(JSON.stringify(input));
-}
-
-function fixLength(obj) {
-	// Update length
-	[obj].length = 0;
-	for (i in [obj]) {
-		if ([obj].hasOwnProperty(i) && i != 'length') {
-			[obj].length++;
-		}
-	}
-}
+};
 
 function merge(client, callback) {
 
@@ -220,10 +213,10 @@ function merge(client, callback) {
 	// Loop through each list
 	for (var list in client.lists.items) {
 
-		if(list != '0' && list != 'length') {
+		if (list != '0' && list !== 'length') {
 
 			// Check if it is a new list
-			if (client.lists.items[list].synced === false || client.lists.items[list].synced == 'false') {
+			if (client.lists.items[list].synced === false || client.lists.items[list].synced === 'false') {
 
 				console.log(color("170", "blue"), ": List '" + list + "' has never been synced before");
 
@@ -243,7 +236,7 @@ function merge(client, callback) {
 					list = server.lists.items.length;
 
 				} else {
-					console.log(color("188", "blue"), ": List '" + list + "' does not exist on server. Adding to server.")
+					console.log(color("188", "blue"), ": List '" + list + "' does not exist on server. Adding to server.");
 				}
 
 				// If the list doesn't exist on the server, create it
@@ -252,7 +245,7 @@ function merge(client, callback) {
 					order: [],
 					time: client.lists.items[list].time,
 					synced: true
-				}
+				};
 
 				// Update order
 				server.lists.order.push(Number(list));
@@ -260,21 +253,24 @@ function merge(client, callback) {
 
 			} else if (server.lists.items.hasOwnProperty(list)) {
 
-				console.log(color("204", "blue"), ": List '" + list + "' exists on server.")
+				console.log(color("204", "blue"), ": List '" + list + "' exists on server.");
 
 				for(var key in client.lists.items[list].time) {
 
-					if(client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
+					if (client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
 
-						console.log(color("164", "blue"), ": The key '" + key + "' in list '" + list + "' has been modified.")
+						console.log(color("164", "blue"), ": The key '" + key + "' in list '" + list + "' has been modified.");
 
 						// If so, update list key and time
 						server.lists.items[list][key] = client.lists.items[list][key];
 						server.lists.items[list].time[key] = client.lists.items[list].time[key];
 					}
 				}
+
+			} else {
+				console.log(color("ERROR: Client has a list that has been synced before but it doesn't exist on the server...", "red"));
 			}
-		}	
+		}
 	}
 
 	// Loop through each task
@@ -282,12 +278,12 @@ function merge(client, callback) {
 
 		// Do not sync the tasks.length propery
 		// This should only be modified by the server side cli.js
-		if(task != 'length') {
+		if (task !== 'length') {
 
 			/***** ADDING NEW TASKS TO THE SERVER *****/
 
 			// If task has never been synced before
-			if(client.tasks[task].synced === false || client.tasks[task].synced === 'false') {
+			if (client.tasks[task].synced === false || client.tasks[task].synced === 'false') {
 
 				console.log(color("209", "blue"), ": Task '" + task + "' has never been synced before");
 
@@ -295,12 +291,12 @@ function merge(client, callback) {
 				client.tasks[task].synced = true;
 
 				// If task already exists on the server (Don't be fooled, it's a different task...)
-				if(server.tasks.hasOwnProperty(task)) {
+				if (server.tasks.hasOwnProperty(task)) {
 
 					console.log(color("217", "blue"), ": A task with the ID '" + task + "' already exists on the server");
 
 					// Does not mess with ID's if it isn't going to change
-					if(server.tasks.length != parseInt(task)) {
+					if (server.tasks.length !== Number(task)) {
 
 						// Add task to task (ID + server.tasks.length)
 						client.tasks[server.tasks.length] = clone(client.tasks[task]);
@@ -311,12 +307,12 @@ function merge(client, callback) {
 						task = server.tasks.length;
 
 					}
-				} 
+				}
 
 				// If task hasn't been deleted
-				if(!client.tasks[task].hasOwnProperty('deleted')) {
+				if (!client.tasks[task].hasOwnProperty('deleted')) {
 
-					console.log(color("237", "blue"), ": Task '" + task + "' is being added to the server.")
+					console.log(color("237", "blue"), ": Task '" + task + "' is being added to the server.");
 
 					// Add the task to the server
 					cli.addTask("New Task", client.tasks[task].list);
@@ -329,12 +325,12 @@ function merge(client, callback) {
 					cli.today(task).calculate();
 
 					// Fix task length
-					fixLength(server.tasks)
+					fixLength(server.tasks);
 
 				// The task is new, but the client deleted it
 				} else {
 
-					console.log(color("252", "blue"), ": Task '" + task + "' is new, but the client deleted it")
+					console.log(color("252", "blue"), ": Task '" + task + "' is new, but the client deleted it");
 
 					// Add the task to the server, but don't touch lists and stuff
 					server.tasks[task] = clone(client.tasks[task]);
@@ -344,9 +340,9 @@ function merge(client, callback) {
 			/***** CLIENT DELETED TASK *****/
 
 			// Task was deleted on computer but not on the server
-			} else if(client.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
+			} else if (client.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
 
-				console.log(color("266", "blue"), ": Task '" + task + "' was deleted on computer but not on the server")
+				console.log(color("266", "blue"), ": Task '" + task + "' was deleted on computer but not on the server");
 
 				// We use this to check whether the task was modified AFTER it was deleted
 				var deleteTask = true;
@@ -355,9 +351,9 @@ function merge(client, callback) {
 				for(var key in server.tasks[task]) {
 
 					// Check if server task was modified after task was deleted
-					if(server.tasks[task].time[key] > client.tasks[task].deleted) {
+					if (server.tasks[task].time[key] > client.tasks[task].deleted) {
 
-						console.log(color("277", "blue"), ": Task '" + task + "' was modified after task was deleted")
+						console.log(color("277", "blue"), ": Task '" + task + "' was modified after task was deleted");
 
 						// Since it has been modified after it was deleted, we don't delete the task
 						deleteTask = false;
@@ -366,7 +362,7 @@ function merge(client, callback) {
 				}
 
 				// If there have been no modifications to the task after it has been deleted
-				if(deleteTask) {
+				if (deleteTask) {
 
 					// Delete the task
 					cli.deleteTask(task);
@@ -383,14 +379,14 @@ function merge(client, callback) {
 			/***** SERVER DELETED TASK *****/
 
 			// Task is deleted on the server and the computer
-			} else if(client.tasks[task].hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')){
+			} else if (client.tasks[task].hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')){
 
-				console.log(color("305", "blue"), ": Task '" + task + "' is deleted on the server and the computer")
+				console.log(color("305", "blue"), ": Task '" + task + "' is deleted on the server and the computer");
 
 				// Use the latest time stamp
-				if(client.tasks[task].deleted > server.tasks[task].deleted) {
+				if (client.tasks[task].deleted > server.tasks[task].deleted) {
 
-					console.log(color("310", "blue"), ": Task '" + task + "' is deleted, but has a newer timestamp")
+					console.log(color("310", "blue"), ": Task '" + task + "' is deleted, but has a newer timestamp");
 
 					// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
 					server.tasks[task].deleted = client.tasks[task].deleted;
@@ -401,7 +397,7 @@ function merge(client, callback) {
 
 			} else {
 
-				console.log(color("321", "blue"), ": Task '" + task + "' exists on the server and hasn't been deleted")
+				console.log(color("321", "blue"), ": Task '" + task + "' exists on the server and hasn't been deleted");
 
 				//Stores the Attrs we'll be needing later
 				var changedAttrs = [];
@@ -410,15 +406,15 @@ function merge(client, callback) {
 				for(var key in client.tasks[task]) {
 
 					//Don't loop through timestamps
-					if (key != 'time') {
+					if (key !== 'time') {
 
-						// Check if task was deleted on server or 
-						 if (server.tasks[task].hasOwnProperty('deleted')) {
+						// Check if task was deleted on server or
+						if (server.tasks[task].hasOwnProperty('deleted')) {
 
-						 	console.log(color("335", "blue"), ": Task '" + task + "' was deleted on the server");
+							console.log(color("335", "blue"), ": Task '" + task + "' was deleted on the server");
 
 							// Check if task was modified after it was deleted
-							if(client.tasks[task].time[key] > server.tasks[task].deleted) {
+							if (client.tasks[task].time[key] > server.tasks[task].deleted) {
 
 								console.log(color("340", "blue"), ": Task " + task + " was modified on the client after it was deleted on the server");
 
@@ -433,11 +429,11 @@ function merge(client, callback) {
 						} else {
 
 							// If the attribute was updated after the server
-							if(client.tasks[task].time[key] > server.tasks[task].time[key]) {
+							if (client.tasks[task].time[key] > server.tasks[task].time[key]) {
 
 								console.log(color("355", "blue"), ": Key '" + key + "'  in task " + task + " has been updated by the client");
 
-								if (key != 'list') {
+								if (key !== 'list') {
 									// Update the servers version
 									server.tasks[task][key] = client.tasks[task][key];
 								}
@@ -448,31 +444,31 @@ function merge(client, callback) {
 								//Adds the changed Attr to the array
 								changedAttrs.push(key);
 							}
-						}	
+						}
 					}
 				}
 
 				if (changedAttrs.length > 0) {
-					if(changedAttrs.indexOf('logged') != -1) {
+					if (changedAttrs.indexOf('logged') != -1) {
 						// Logged
 						console.log(color("375", "blue"), ": Task " + task + " has been updated --> LOGGED");
-						cli.logbook(task)
-						cli.logbook(task)
-					} else if(changedAttrs.indexOf('date') != -1 || changedAttrs.indexOf('showInToday') != -1) {
+						cli.logbook(task);
+						cli.logbook(task);
+					} else if (changedAttrs.indexOf('date') != -1 || changedAttrs.indexOf('showInToday') != -1) {
 						// Date is changed
 						console.log(color("380", "blue"), ": Task " + task + " has been updated --> DATE");
 						cli.calc.date(task);
 						cli.today(task).calculate();
-					} else if(changedAttrs.indexOf('today') != -1) {
+					} else if (changedAttrs.indexOf('today') != -1) {
 						// Today
 						console.log(color("385", "blue"), ": Task " + task + " has been updated --> TODAY");
 						cli.today(task).calculate();
 					}
 
-					if(changedAttrs.indexOf('list') != -1) {
+					if (changedAttrs.indexOf('list') != -1) {
 						// List
 						console.log(color("391", "blue"), ": Task " + task + " has been updated --> LIST");
-						cli.moveTask(task, client.tasks[task].list)
+						cli.moveTask(task, client.tasks[task].list);
 					}
 				}
 			}
@@ -484,7 +480,7 @@ function merge(client, callback) {
 
 	// Get rid of duplicates
 	for(var list in server.lists.items) {
-		if(list != 'length') server.lists.items[list].order = deDupe(server.lists.items[list].order);
+		if (list != 'length') server.lists.items[list].order = deDupe(server.lists.items[list].order);
 	}
 
 	callback();
@@ -563,7 +559,7 @@ var cli = {
 						server.lists.items[id].time = {
 							name: 0,
 							order: 0
-						};						
+						};
 					}
 
 					if (id !== 'today' && id !== 'next' && id !== 'someday') {
@@ -578,7 +574,7 @@ var cli = {
 
 					// Convert everything to numbers
 					for  (var x = 0; x < server.lists.items[id].order.length; x++) {
-						if(typeof server.lists.items[id].order[x] === 'string') {
+						if (typeof server.lists.items[id].order[x] === 'string') {
 							server.lists.items[id].order[x] = server.lists.items[id].order[x].toNum();
 						}
 					}
@@ -598,11 +594,11 @@ var cli = {
 
 			if (passCheck) {
 				// Database is up to date
-				console.log("Database is up to date")
+				console.log("Database is up to date");
 			} else {
 				// Database was old
-				console.log("Database was old")
-				console.log("Regex all the things!")
+				console.log("Database was old");
+				console.log("Regex all the things!");
 
 				//Regexes for funny chars
 				localStorage.jStorage = localStorage.jStorage.replace(/\\\\/g, "&#92;").replace(/\|/g, "&#124").replace(/\\"/g, "&#34;").replace(/\'/g, "&#39;");
@@ -909,7 +905,7 @@ var cli = {
 
 				// DeDupe today and next lists
 				server.lists.items.today.order = deDupe(server.lists.items.today.order);
-				server.lists.items.next.order = deDupe(server.lists.items.next.order)
+				server.lists.items.next.order = deDupe(server.lists.items.next.order);
 				
 				//Saves data
 				// server.save();
@@ -1004,7 +1000,7 @@ var cli = {
 			edit: function (obj) {
 				// Edit taskData
 				for(var value in obj) {
-					if(typeof obj[value] === 'string') {
+					if (typeof obj[value] === 'string') {
 						obj[i] = cli.escape(value);
 					}
 				}
@@ -1309,8 +1305,25 @@ var cli = {
 			});
 		}
 	}
-};
+}
 
+// Clone an object or array
+function clone(input) {
+	return JSON.parse(JSON.stringify(input));
+}
+
+// Fix the length of an object
+function fixLength(obj) {
+	// Update length
+	[obj].length = 0;
+	for (i in [obj]) {
+		if ([obj].hasOwnProperty(i) && i !== 'length') {
+			[obj].length++;
+		}
+	}
+}
+
+// Remove duplicates from an array
 function deDupe(arr) {
 	var r = [];
 	o:for(var i = 0, n = arr.length; i < n; i++) {
@@ -1329,12 +1342,12 @@ function deDupe(arr) {
 // "word".toNum() -> "word"
 String.prototype.toNum = function () {
 	var x = parseInt(this, 10);
-	if(x > -100) {
+	if (x > -100) {
 		return x;
 	} else {
 		return this.toString();
 	}
-}
+};
 
 function decompress(obj) {
 	var chart = {
@@ -1364,12 +1377,12 @@ function decompress(obj) {
 	for (var key in obj) {
 		if (chart.hasOwnProperty(key)) {
 			out[chart[key]] = obj[key];
-			if (typeof obj[key] === 'object') {
+			if (typeof obj[key] === 'object' && isArray(obj[key]) === false) {
 				out[chart[key]] = decompress(out[chart[key]]);
 			}
 		} else {
 			out[key] = obj[key];
-			if (typeof obj[key] === 'object') {
+			if (typeof obj[key] === 'object' && isArray(obj[key]) === false) {
 				out[key] = decompress(out[key]);
 			}
 		}
@@ -1405,15 +1418,20 @@ function compress(obj) {
 	for (var key in obj) {
 		if (chart.hasOwnProperty(key)) {
 			out[chart[key]] = obj[key];
-			if (typeof obj[key] === 'object') {
+			if (typeof obj[key] === 'object' && isArray(obj[key]) === false) {
 				out[chart[key]] = compress(out[chart[key]]);
 			}
 		} else {
 			out[key] = obj[key];
-			if (typeof obj[key] === 'object') {
+			if (typeof obj[key] === 'object' && isArray(obj[key]) === false) {
 				out[key] = compress(out[key]);
 			}
 		}
 	}
 	return out;
+}
+
+// Because typeof is useless here
+function isArray(obj) {
+	return obj.constructor === Array;
 }
