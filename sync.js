@@ -20,7 +20,7 @@ var color = require('./lib/ansi-color').set,
 	express = require('express'),
 	app = express.createServer(),
 	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" }),
-	client = {},
+	dropbox = {},
 	server = {};
 
 // Enable cross browser ajax
@@ -64,13 +64,13 @@ app.post('/auth/', function (req, res) {
 					console.log(color('Attempt '+count+' - Connected!', "yellow"));
 
 					// Create client
-					client = dbox.createClient(access_token);
+					dropbox = dbox.createClient(access_token);
 
 					// Get server.json
 					getServer();
 
 					// Send access token to client so they can use it again
-					client.account(function (status, reply) {
+					dropbox.account(function (status, reply) {
 						res.json(access_token);
 					});
 
@@ -93,13 +93,14 @@ app.post('/auth/', function (req, res) {
 		console.log(color("Using client stored key", "blue"));
 
 		// Create client
-		client = dbox.createClient(req.param('access', null));
+		dropbox = dbox.createClient(req.param('access', null));
 
 		// Check to see if it worked
-		client.account(function (status, reply) {
+		dropbox.account(function (status, reply) {
 			if (status == 200) {
 				console.log(color("Connected!", "yellow"));
 				res.json("success");
+				getServer();
 			} else {
 				console.log(color("Could not connect :(", "red"));
 				res.json("failed");
@@ -130,7 +131,7 @@ app.listen(3000);
 
 function getServer() {
 	console.log(color("Getting server.json from dropbox", 'blue'));
-	client.get("server.json", function (status, reply) {
+	dropbox.get("server.json", function (status, reply) {
 		reply = JSON.parse(reply.toString());
 		// Check if file exists
 		if(reply.hasOwnProperty('error')) {
@@ -148,7 +149,7 @@ function getServer() {
 function saveServer() {
 	console.log(color("Saving to server (starting)", 'blue'));
 	var output = JSON.stringify(server, null, 4);
-	client.put("server.json", output, function () {
+	dropbox.put("server.json", output, function () {
 		console.log(color("Saving to server (complete!)", 'yellow'));
 	});
 }
@@ -212,6 +213,7 @@ function fixLength(obj) {
 function merge(client, callback) {
 
 	console.log(color(JSON.stringify(client), 'green'));
+	console.log(color(JSON.stringify(server), 'yellow'));
 
 	// Loop through each list
 	for (var list in client.lists.items) {
