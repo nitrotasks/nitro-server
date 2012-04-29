@@ -25,40 +25,75 @@ var color = require('./lib/ansi-color').set,
 app.enable("jsonp callback");
 
 // Handles HTTP Requests
-app.get('/', function(req, res){
+app.get('/', function (req, res) {
     res.send('This is the Nitro Sync API. Hello.');
 });
 
 // Initial Auth
-app.get('/auth/', function(req, res){
+app.get('/auth/', function (req, res) {
 
-	console.log(color("Starting Initial Auth", "blue"));
+	console.log(color("** Starting Auth **", "blue"));
 
-	dbox.request_token(function (status, request_token) {
-		if (req.query['getURL']) {
+	if (req.query.reqURL) {
+
+		dbox.request_token(function (status, request_token) {
+			console.log(request_token)
 			console.log(color("Sending authorize_url", "blue"));
-			res.json(request_token.authorize_url);
+			res.json(request_token);
+		});
 
-			var count = 0;
+	} else if (req.query.token) {
 
-			function checkServer () {
-				console.log(color('Connecting to dropbox', "blue"));
-				dbox.access_token(request_token, function (status, access_token) {
-					if (status == 200) {
-						console.log(color('Attempt '+count+' - Connected!', "yellow"));
-						client = dbox.createClient(access_token)
-						getServer();
-					} else {
-						console.log(color('Attempt '+count+' - Failed!', "red"));
-						count++;
-						setTimeout(checkServer, 1000);
-					}
-				});
-			}
+		var count = 0;
 
-			checkServer();
+		function checkServer () {
+
+			console.log(color('Connecting to dropbox', "blue"));
+
+			dbox.access_token(req.query.token, function (status, access_token) {
+
+				if (status == 200) {
+
+					console.log(color('Attempt '+count+' - Connected!', "yellow"));
+
+					client = dbox.createClient(access_token);
+
+					getServer();
+
+					client.account(function (status, reply) {
+						res.json(access_token);
+					});
+
+				} else {
+
+					console.log(color('Attempt '+count+' - Failed!', "red"));
+
+					count++;
+
+					setTimeout(checkServer, 1000);
+				}
+			});
 		}
-	});
+
+		checkServer();
+
+	} else if (req.query.access) {
+
+		console.log(color("Using client stored key", "blue"));
+
+		client = dbox.createClient(req.query.access);
+
+		client.account(function (status, reply) {
+			if (status == 200) {
+				console.log(color("Connected!", "yellow"));
+				res.json("success");
+			} else {
+				console.log(color("Could not connect :(", "red"));
+				res.json("failed");
+			}
+		});
+	}
+
 });
 
 // Timestamps Only
