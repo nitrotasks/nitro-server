@@ -118,13 +118,12 @@ app.post('/update/', function(req, res){
 app.post('/sync/', function(req, res){
 
 	console.log(color(JSON.stringify(req.param('data', null)), 'green'));
-	req.param('data', null).tasks = decompress(req.param('data', null).tasks);
+	//req.param('data', null).tasks = decompress(req.param('data', null).tasks);
 
 	// Merge data
 	merge(req.param('data', null), function() {
 		// Send data back to client
 		console.log("Merge complete. Updating client.")
-		server.tasks = compress(server.tasks)
 		res.json(server);
 		saveServer();
 	});
