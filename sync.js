@@ -121,17 +121,10 @@ app.post('/sync/', function (req, res){
 	//req.param('data', null).tasks = decompress(req.param('data', null).tasks);
 
 	// Merge data
-<<<<<<< HEAD
-	merge(req.param('data', null), function() {
-		// Send data back to client
-		console.log("Merge complete. Updating client.")
-		res.json(server);
-=======
 	merge(decompress(req.param('data', null)), function () {
 		// Send data back to client
 		console.log("Merge complete. Updating client.");
 		res.json(compress(server));
->>>>>>> Cleaned up code
 		saveServer();
 	});
 });
