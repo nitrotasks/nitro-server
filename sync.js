@@ -17,12 +17,14 @@ console.info('Nitro Sync 1.2\nCopyright (C) 2012 Caffeinated Code\nBy George Cza
 
 // Node Packages
 var color = require('./lib/ansi-color').set,
-	app = require('express').createServer(),
+	express = require('express'),
+	app = express.createServer(),
 	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" }),
 	client = {};
 
 // Enable cross browser ajax
-app.enable("jsonp callback");
+// app.enable("jsonp callback");
+app.use(express.bodyParser());
 
 // Handles HTTP Requests
 app.get('/', function (req, res) {
@@ -35,11 +37,10 @@ app.post('/auth/', function (req, res) {
 	console.log(color("** Starting Auth **", "blue"));
 
 	// If the client has never been connected before
-	if (req.query.reqURL) {
+	if (req.param('reqURL', null)) {
 
 		// Request a token from dropbox
 		dbox.request_token(function (status, request_token) {
-			console.log(request_token)
 			console.log(color("Sending authorize_url", "blue"));
 
 			// Send it to the client
@@ -47,7 +48,7 @@ app.post('/auth/', function (req, res) {
 		});
 
 	// Client has a token but not oauth
-	} else if (req.query.token) {
+	} else if (req.param('token', null)) {
 
 		var count = 0;
 
@@ -55,7 +56,7 @@ app.post('/auth/', function (req, res) {
 			console.log(color('Connecting to dropbox', "blue"));
 
 			// Check token 
-			dbox.access_token(req.query.token, function (status, access_token) {
+			dbox.access_token(req.param('token', null), function (status, access_token) {
 
 				// Token is good :D
 				if (status == 200) {
@@ -86,12 +87,12 @@ app.post('/auth/', function (req, res) {
 		checkServer();
 
 	// Server has been authorised before
-	} else if (req.query.access) {
+	} else if (req.param('access', null)) {
 
 		console.log(color("Using client stored key", "blue"));
 
 		// Create client
-		client = dbox.createClient(req.query.access);
+		client = dbox.createClient(req.param('access', null));
 
 		// Check to see if it worked
 		client.account(function (status, reply) {
@@ -104,7 +105,6 @@ app.post('/auth/', function (req, res) {
 			}
 		});
 	}
-
 });
 
 // Timestamps Only
