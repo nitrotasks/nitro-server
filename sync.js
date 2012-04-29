@@ -114,8 +114,10 @@ app.post('/update/', function(req, res){
 
 // Actual Sync
 app.post('/sync/', function(req, res){
+
+	req.param('data').tasks = JSON.parse(deflate(JSON.stringify(req.param('data').tasks)));
 	// Merge data
-	merge(req.query['data'], function() {
+	merge(req.param('data', null), function() {
 		// Send data back to client
 		console.log("Merge complete. Updating client.")
 		res.json(server);
@@ -1322,4 +1324,37 @@ String.prototype.toNum = function () {
 	} else {
 		return this.toString();
 	}
+}
+
+//Compresses & Deflates data
+function compress(str) {
+	var final = str
+		.replace(/\"content\"/g, "\"a\"")
+		.replace(/\"priority\"/g, "\"b\"")
+		.replace(/\"date\"/g, "\"c\"")
+		.replace(/\"notes\"/g, "\"d\"")
+		.replace(/\"today\"/g, "\"e\"")
+		.replace(/\"showInToday\"/g, "\"f\"")
+		.replace(/\"list\"/g, "\"g\"")
+		.replace(/\"logged\"/g, "\"h\"")
+		.replace(/\"time\"/g, "\"i\"")
+		.replace(/\"synced\"/g, "\"j\"")
+
+	return final;
+}
+
+function deflate(str) {
+	var final = str
+		.replace(/\"a\"/g, "\"content\"")
+		.replace(/\"b\"/g, "\"priority\"")
+		.replace(/\"c\"/g, "\"date\"")
+		.replace(/\"d\"/g, "\"notes\"")
+		.replace(/\"e\"/g, "\"today\"")
+		.replace(/\"f\"/g, "\"showInToday\"")
+		.replace(/\"g\"/g, "\"list\"")
+		.replace(/\"h\"/g, "\"logged\"")
+		.replace(/\"i\"/g, "\"time\"")
+		.replace(/\"j\"/g, "\"synced\"")
+
+	return final;
 }
