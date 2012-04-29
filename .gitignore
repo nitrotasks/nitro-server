@@ -37,3 +37,4 @@ Thumbs.db
 # Folders
 ######################
 .sass-cache
+node_modules
