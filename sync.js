@@ -30,7 +30,7 @@ app.get('/', function (req, res) {
 });
 
 // Initial Auth
-app.get('/auth/', function (req, res) {
+app.post('/auth/', function (req, res) {
 
 	console.log(color("** Starting Auth **", "blue"));
 
@@ -97,12 +97,12 @@ app.get('/auth/', function (req, res) {
 });
 
 // Timestamps Only
-app.get('/update/', function(req, res){
+app.post('/update/', function(req, res){
 	res.send('token: ' + req.query["token"] + '<br>timestamp: ' + req.query["timestamp"]);
 });
 
 // Actual Sync
-app.get('/sync/', function(req, res){
+app.post('/sync/', function(req, res){
 	// Merge data
 	merge(req.query['data'], function() {
 		// Send data back to client
