@@ -117,12 +117,10 @@ app.post('/update/', function (req, res){
 // Actual Sync
 app.post('/sync/', function (req, res){
 
-	console.log(color(JSON.stringify(req.param('data', null)), 'green'));
-	//req.param('data', null).tasks = decompress(req.param('data', null).tasks);
-
 	// Merge data
-	merge(decompress(req.param('data', null)), function () {
+	merge(decompress(JSON.parse(req.param('data', null))), function () {
 		// Send data back to client
+		console.log(JSON.stringify(server, null, 4));
 		console.log("Merge complete. Updating client.");
 		res.json(compress(server));
 		saveServer();
@@ -252,11 +250,15 @@ function merge(client, callback) {
 
 					if (client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
 
-						console.log(color("164", "blue"), ": The key '" + key + "' in list '" + list + "' has been modified.");
+						console.log(color("256", "blue"), ": The key '" + key + "' in list '" + list + "' has been modified.");
+
+						console.log(color(JSON.stringify(client.lists.items[list][key]), 'red'))
 
 						// If so, update list key and time
 						server.lists.items[list][key] = client.lists.items[list][key];
 						server.lists.items[list].time[key] = client.lists.items[list].time[key];
+
+						console.log(color(JSON.stringify(server.lists.items[list][key]), 'red'))
 					}
 				}
 
@@ -1087,8 +1089,6 @@ var cli = {
 			var task = cli.taskData(id).display(),
 				lists = server.lists.items;
 
-			console.log(color("Runing cli.calc.removeFromList", "red"), JSON.stringify(lists));
-
 			// DOES NOT REMOVE LIST FROM TASK
 			// List must be manually removed from task.list
 			// task.list = '';
@@ -1342,47 +1342,6 @@ String.prototype.toNum = function () {
 	}
 };
 
-function decompress(obj) {
-	var chart = {
-		a: 'name',
-		b: 'tasks',
-		c: 'content',
-		d: 'priority',
-		e: 'date',
-		f: 'today',
-		g: 'showInToday',
-		h: 'list',
-		i: 'lists',
-		j: 'logged',
-		k: 'time',
-		l: 'sync',
-		m: 'synced',
-		n: 'order',
-		o: 'queue',
-		p: 'length',
-		q: 'notes',
-		r: 'items',
-		s: 'next',
-		t: 'someday'
-	},
-	out = {};
-
-	for (var key in obj) {
-		if (chart.hasOwnProperty(key)) {
-			out[chart[key]] = obj[key];
-			if (typeof obj[key] === 'object' && isArray(obj[key]) === false) {
-				out[chart[key]] = decompress(out[chart[key]]);
-			}
-		} else {
-			out[key] = obj[key];
-			if (typeof obj[key] === 'object' && isArray(obj[key]) === false) {
-				out[key] = decompress(out[key]);
-			}
-		}
-	}
-	return out;
-}
-
 function compress(obj) {
 	var chart = {
 		name :       'a',
@@ -1411,13 +1370,54 @@ function compress(obj) {
 	for (var key in obj) {
 		if (chart.hasOwnProperty(key)) {
 			out[chart[key]] = obj[key];
-			if (typeof obj[key] === 'object' && isArray(obj[key]) === false) {
+			if (typeof obj[key] === 'object' && isArray(obj[key]) == false) {
 				out[chart[key]] = compress(out[chart[key]]);
 			}
 		} else {
 			out[key] = obj[key];
-			if (typeof obj[key] === 'object' && isArray(obj[key]) === false) {
+			if (typeof obj[key] === 'object' && isArray(obj[key]) == false) {
 				out[key] = compress(out[key]);
+			}
+		}
+	}
+	return out;
+}
+
+function decompress(obj) {
+	var chart = {
+		a: 'name',
+		b: 'tasks',
+		c: 'content',
+		d: 'priority',
+		e: 'date',
+		f: 'today',
+		g: 'showInToday',
+		h: 'list',
+		i: 'lists',
+		j: 'logged',
+		k: 'time',
+		l: 'sync',
+		m: 'synced',
+		n: 'order',
+		o: 'queue',
+		p: 'length',
+		q: 'notes',
+		r: 'items',
+		s: 'next',
+		t: 'someday'
+	},
+	out = {};
+
+	for (var key in obj) {
+		if (chart.hasOwnProperty(key)) {
+			out[chart[key]] = obj[key];
+			if (typeof obj[key] === 'object' && isArray(obj[key]) == false) {
+				out[chart[key]] = decompress(out[chart[key]]);
+			}
+		} else {
+			out[key] = obj[key];
+			if (typeof obj[key] === 'object' && isArray(obj[key]) == false) {
+				out[key] = decompress(out[key]);
 			}
 		}
 	}
@@ -1426,5 +1426,5 @@ function compress(obj) {
 
 // Because typeof is useless here
 function isArray(obj) {
-	return obj.constructor === Array;
+    return obj.constructor == Array;
 }
