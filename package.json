@@ -1,31 +1,12 @@
 {
   "name": "nitro-sync",
-  "version": "0.7.0",
+  "version": "1.2.3",
   "engines": {
     "node": "0.6.x",
     "npm":  "1.0.x"
   },
   "dependencies": {
-    "socket.io": "0.8.7",
-    "policyfile": "0.0.4",
-    "redis": "0.6.7",
-    "socket.io-client": "0.8.7",
-    "uglify-js": "1.0.6 ",
-    "websocket-client": "1.0.0",
-    "xmlhttprequest": "1.2.2",
-    "jquery": "1.6.3",
-    "express":"2.5.8",
-    "connect":"1.8.5",
-    "formidable":"1.0.9",
-    "mime":"1.2.4",
-    "mkdirp":"0.3.0",
-    "qs":"0.4.2",
-    "htmlparser":"1.7.6",
-    "jsdom":"0.2.14",
-    "contextify":"0.1.2",
-    "bindings":"0.3.0",
-    "cssom":"0.2.3",
-    "request":"2.9.201",
-    "nib":"0.3.2"
+    "express": "2.5.8",
+    "dbox": "0.4.1"
   }
 }
