@@ -19,7 +19,12 @@ console.info('Nitro Sync 1.2\nCopyright (C) 2012 Caffeinated Code\nBy George Cza
 var color = require('./lib/ansi-color').set,
 	express = require('express'),
 	app = express.createServer(),
-	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" });
+	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" }),
+	OAuth = require("oauth").OAuth;
+ 
+// Ubuntu one settings
+var ubuntu = new OAuth("https://one.ubuntu.com/oauth/request/", "https://one.ubuntu.com/oauth/access/", "ubuntuone", "hammertime", "1.0", "http://localhost:3000/ubuntu-one/", "PLAINTEXT"),
+	users = {};
 
 // Enable cross browser ajax
 // app.enable("jsonp callback");
@@ -27,7 +32,7 @@ app.use(express.bodyParser());
 
 // Handles HTTP Requests
 app.get('/', function (req, res) {
-    res.send('This is the Nitro Sync API. Hello.');
+    res.send('Oh hai. I\'m the Nitro Sync API.');
 });
 
 // Initial Auth
@@ -36,100 +41,186 @@ app.post('/auth/', function (req, res) {
 	console.log(color("** Starting Auth **", "blue"));
 
 	// If the client has never been connected before
-	if (req.param('reqURL', null)) {
+	if (req.param('reqURL')) {
 
-		// Request a token from dropbox
-		dbox.request_token(function (status, request_token) {
-			console.log(color("Sending authorize_url", "blue"));
+		switch (req.param('service')) {
+		case "dropbox":
+			// Request a token from dropbox
+			dbox.request_token(function (status, request_token) {
+				console.log(color("Sending authorize_url", "blue"));
 
-			// Send it to the client
-			res.json(request_token);
-		});
-
-	// Client has a token but not oauth
-	} else if (req.param('token', null)) {
-
-		var count = 0, max = 20;
-
-		function checkServer () {
-			console.log(color('Connecting to dropbox', "blue"));
-
-			// Check token
-			dbox.access_token(req.param('token', null), function (status, access_token) {
-
-				// Token is good :D
-				if (status === 200) {
-					console.log(color('Attempt ' + count + ' - Connected!', "yellow"));
-
-					// Create client
-					user = dbox.createClient(access_token);
-
-					// Get server.json
-					// getServer();
-
-					// Send access token to client so they can use it again
-					user.account(function (status, reply) {
-						res.json(access_token);
-					});
-
-				// Nitro hasn't been allowed yet :(
-				} else {
-					console.log(color('Attempt ' + count + ' - Failed!', "red"));
-					count++;
-
-					// Try again in a second
-					if(count <= max) setTimeout(checkServer, 1000);
-				}
+				// Send it to the client
+				res.json(request_token);
 			});
+			break;
+		case "ubuntu":
+			// Request a token from ubuntu one
+			ubuntu.getOAuthRequestToken(function(e, t, s, r){
+				var reply = {};
+				reply.oauth_token = t;
+				reply.oauth_secret = s;
+				reply.authorize_url = 'https://one.ubuntu.com/oauth/authorize/?oauth_token=' + t;
+				res.json(reply);
+			});
+			break;
 		}
 
-		checkServer();
+	// Client has a token but not oauth
+	} else if (req.param('token')) {
+
+		switch (req.param('service')) {
+		case "dropbox":
+		
+			var count = 0, max = 20;
+
+			function checkServer () {
+				console.log(color('Connecting to dropbox', "blue"));
+
+				// Check token
+				dbox.access_token(req.param('token'), function (status, access_token) {
+
+					// Token is good :D
+					if (status === 200) {
+						console.log(color('Attempt ' + count + ' - Connected!', "yellow"));
+
+						// Send access token to client so they can use it again
+						res.json(access_token);
+
+					// Nitro hasn't been allowed yet :(
+					} else {
+						console.log(color('Attempt ' + count + ' - Failed!', "red"));
+						count++;
+
+						// Try again in a second
+						if(count <= max) setTimeout(checkServer, 1000);
+					}
+				});
+			}
+
+			checkServer();
+			break;
+
+
+		 case "ubuntu":
+
+		 	var user_token = req.param('token');
+
+		 	// Add user
+		 	users[user_token.oauth_token] = {request_secret: user_token.oauth_secret};
+
+		 	console.log(users)
+
+		 	// Keep checking database
+		 	function check() {
+		 		if(users[user_token.oauth_token].hasOwnProperty('oauth_token')) {
+		 			res.json({oauth_token: users[user_token.oauth_token].oauth_token, oauth_secret: users[user_token.oauth_token].oauth_secret});
+		 			delete users[user_token.oauth_token];
+		 		} else {
+		 			console.log("failed, trying again")
+		 			setTimeout(check, 1000);
+		 		}
+		 	}
+
+		 	check();
+
+		 	break;
+		 }
 
 	// Server has been authorised before
-	} else if (req.param('access', null)) {
+	} else if (req.param('access')) {
 
 		console.log(color("Using client stored key", "blue"));
 
-		// Create client
-		user = dbox.createClient(req.param('access', null));
+		switch (req.param('service')) {
 
-		// Check to see if it worked
-		user.account(function (status, reply) {
-			if (status === 200) {
-				console.log(color("Connected!", "yellow"));
-				res.json("success");
-				// getServer();
-			} else {
-				console.log(color("Could not connect :(", "red"));
-				res.json("failed");
-			}
-		});
+		case "dropbox":
+
+			// Create client
+			user = dbox.createClient(req.param('access'));
+
+			// Check to see if it worked
+			user.account(function (status, reply) {
+				if (status === 200) {
+					console.log(color("Connected!", "yellow"));
+					res.json("success");
+				} else {
+					console.log(color("Could not connect :(", "red"));
+					res.json("failed");
+				}
+			});
+			break;
+
+		case "ubuntu":
+
+			// Check to see if it worked
+			ubuntu.get("https://one.ubuntu.com/api/account/", req.param('access').oauth_token, req.param('access').oauth_secret, function (e, d, r) {
+				if(e) {
+					res.json("failed");
+				} else {
+					res.json("success");
+				}
+			});		
+			break;
+		}
+
+		
 	}
 });
 
-// Timestamps Only
-app.post('/update/', function (req, res){
-	res.send('token: ' + req.query.token + '<br>timestamp: ' + req.query.timestamp);
+// Ubuntu callback for oauth verifier
+app.get('/ubuntu-one/', function (req, res) {
+	res.send("Authentication Complete!");
+
+	console.log("Requesting access token");
+
+	var token = req.query.oauth_token;
+
+	if(users.hasOwnProperty(token)) {
+		console.log("Token found :D Going to try and get access token");
+		ubuntu.getOAuthAccessToken(token, users[token].request_secret, req.query.oauth_verifier, function(e, t, s, r) {
+			users[token].oauth_token = t;
+			users[token].oauth_secret = s;
+			console.log(users);
+		});
+	} else {
+		console.log("ERROR: Token not found!?")
+	}
+/*	ubuntu.getOAuthAccessToken(request.token, request.secret, req.query.oauth_verifier, function(error, oauth_access_token, oauth_access_token_secret, results) {
+		console.log('oauth_access_token :' + oauth_access_token)
+		console.log('oauth_token_secret :' + oauth_access_token_secret)
+		console.log("Requesting account details")
+		var data= "";
+		oa.getProtectedResource("https://one.ubuntu.com/api/file_storage/v1", "GET", oauth_access_token, oauth_access_token_secret, function (error, data, response) {
+			console.log(data);
+		});
+	});*/
 });
 
 // Actual Sync
 app.post('/sync/', function (req, res){
 
-	// Get client
-	user = dbox.createClient(req.param('access', null));
+	var service = req.param('service');
 
-	getServer(user, function(server) {
+	// Get client
+	switch (service) {
+	case "dropbox":
+		user = dbox.createClient(req.param('access'));
+		break;
+	case "ubuntu":
+		user = req.param('access');
+	}
+	
+	getServer(service, user, function(server) {
 
 		if(server != 'error') {
 
 			// Merge data
-			merge(server, decompress(JSON.parse(req.param('data', null))), function (server) {
+			merge(server, decompress(JSON.parse(req.param('data'))), function (server) {
 				// Send data back to client
 				console.log(JSON.stringify(server, null, 4));
 				console.log("Merge complete. Updating client.");
 				res.json(compress(server));
-				saveServer(user, server);
-
+				saveServer(service, user, server);
 			});
 
 		} else {
@@ -138,41 +229,80 @@ app.post('/sync/', function (req, res){
 
 		}
 	});
+
+	
 });
 
 port = process.env.PORT || 3000;
 app.listen(port);
 
-function getServer(user, callback) {
-	console.log(color("Getting server.json from dropbox", 'blue'));
-	user.get("server.json", function (status, reply) {
-		reply = decompress(JSON.parse(reply.toString()));
+function getServer(service, user, callback) {
+	console.log(color("Getting server.json from server", 'blue'));
 
-		if(status != 200) {
-			callback('error');
-		}
+	switch (service) {
+	case "dropbox":
+		console.log("Dropbox")
+		user.get("server.json", function (status, reply) {
+			reply = decompress(JSON.parse(reply.toString()));
 
-		// Check if file exists
-		if (!reply.hasOwnProperty('tasks')) {
-			console.log(color("Server.json doesn't exist on the clients dropbox :(", 'red'));
-			console.log(color("So let's make one :D", 'blue'));
-			server = clone(emptyServer);
-			saveServer(user, server);
-			if(callback) callback(server);
-		} else {
-			console.log(color("Got the server!", 'yellow'));
-			if(callback) callback(reply);
-		}
-	});
+			if(status != 200) {
+				callback('error');
+			}
+
+			// Check if file exists
+			if (!reply.hasOwnProperty('tasks')) {
+				console.log(color("Server.json doesn't exist on the clients dropbox :(", 'red'));
+				console.log(color("So let's make one :D", 'blue'));
+				server = clone(emptyServer);
+				saveServer(service, user, server);
+				callback(server);
+			} else {
+				console.log(color("Got the server!", 'yellow'));
+				callback(reply);
+			}
+		});
+		break;
+	case "ubuntu":
+		console.log("Ubuntu")
+		ubuntu.get("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/server.json", user.oauth_token, user.oauth_secret, function (e, d, r) {
+			if(e) {
+				console.log(e);
+				console.log(color("Server.json doesn't exist on the client's ubuntu one account :(", 'red'));
+				console.log(color("So let's make one :D", 'blue'));
+				server = clone(emptyServer);
+				saveServer(service, user, server);
+				callback(server);
+			} else {
+				reply = decompress(JSON.parse(d.toString()));
+				console.log(color("Got the server!", 'yellow'));
+				callback(reply);
+			}
+		});
+		break;
+	}
+	
 }
 
-function saveServer(user, server) {
+function saveServer(service, user, server) {
 	console.log(color("Saving to server (starting)", 'blue'));
 	var output = JSON.stringify(compress(server));
 
-	user.put("server.json", output, function () {
-		console.log(color("Saving to server (complete!)", 'yellow'));
-	});
+	switch (service) {
+	case "dropbox":
+		console.log("Dropbox");
+		user.put("server.json", output, function () {
+			console.log(color("Saving to server (complete!)", 'yellow'));
+		});
+		break;
+	case "ubuntu":
+		ubuntu.put("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/server.json", user.oauth_token, user.oauth_secret, output, "application/json", function (e, d, r) {
+			if(e) {
+				callback("Error saving server.json");
+			} else {
+				console.log(color("Saving to server (complete!)", 'yellow'));
+			}
+		});
+	}
 }
 
 // Create server
