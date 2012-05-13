@@ -30,10 +30,8 @@ var ubuntu = new OAuth("https://one.ubuntu.com/oauth/request/", "https://one.ubu
 // app.enable("jsonp callback");
 app.use(express.bodyParser());
 
-// Handles HTTP Requests
-app.get('/', function (req, res) {
-    res.send('Oh hai. I\'m the Nitro Sync API.');
-});
+// Handles Static HTTP Requests
+app.use(express.static(__dirname + '/site'));
 
 // Initial Auth
 app.post('/auth/', function (req, res) {
