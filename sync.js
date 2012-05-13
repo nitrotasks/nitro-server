@@ -26,9 +26,17 @@ var color = require('./lib/ansi-color').set,
 var ubuntu = new OAuth("https://one.ubuntu.com/oauth/request/", "https://one.ubuntu.com/oauth/access/", "ubuntuone", "hammertime", "1.0", "http://localhost:3000/ubuntu-one/", "PLAINTEXT"),
 	users = {};
 
+//Funky Headers =)
+app.use(function (req, res, next) {
+	res.header("X-powered-by", "NitrOS 2000");
+	next();
+});
+
 // Enable cross browser ajax
 // app.enable("jsonp callback");
 app.use(express.bodyParser());
+
+
 
 // Handles Static HTTP Requests
 app.use(express.static(__dirname + '/site'));
