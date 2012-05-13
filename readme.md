@@ -1,12 +1,10 @@
 ##Nitro Sync
-This is a prototype of what's to come for Nitro Sync.
+This is Nitro Sync & The Nitro Website.
 
 To run it just use 'node sync.js'.
 
 You need to have these node packages for it to work:
 
-* Socket.IO
-* Express
-* dBox
-
-Just ignore the package.json file. It has a lot of stuff that doesn't need to be in there.
+* [Express](http://expressjs.com)
+* [dbox](https://github.com/sintaxi/node-dbox)
+* [Modified Node-Oauth](http://github.com/stayradiated/node-oauth)
