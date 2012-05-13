@@ -85,7 +85,25 @@
   <div id="donate">
     <div class="inner">
       <h2>Donate and help us out!</h2>
-      <p>Nitro is open source software developed by two teenagers. They are not brogrammers. They can't even drive cars. You should help us out.</p>
+      <div id="sliderThing">
+        <div id="inputthing">
+          <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+            <p>Use the slider to set your donation amount.</p>
+            <input type="text" id="amount"  name="amount" value="15"><input type="range" value="15">
+            <input type="hidden" name="cmd" value="_xclick">
+            <input type="hidden" name="business" value="jono@caffeinatedco.de">
+            <input type="hidden" name="currency_code" value="NZD">
+            <input type="hidden" name="item_name" value="Nitro Donation">
+            <input type="image" src="http://www.paypal.com/en_US/i/btn/btn_buynow_LG.gif" border="0" name="submit" alt="Make payments with PayPal - it's fast, free and secure!">
+          </form>
+        </form>
+        </div>
+        <div id="face">
+          <div id="mouth-box">
+          <div id="mouth"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <footer>

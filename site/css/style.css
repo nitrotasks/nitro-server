@@ -378,6 +378,74 @@ background-image: radial-gradient(50% 50%, ellipse closest-side, rgba(255,255,25
   line-height: 1;
 }
 
+#sliderThing {
+  width: 500px;
+  height: 150px;
+  background: #fafafa;
+  background-image: -webkit-linear-gradient(top, #ffffff 0%, #f4f4f4 100%);
+  background-image: -moz-linear-gradient(top, #ffffff 0%, #f4f4f4 100%);
+  background-image: -o-linear-gradient(top, #ffffff 0%, #f4f4f4 100%);
+  background-image: -ms-linear-gradient(top, #ffffff 0%, #f4f4f4 100%);
+  background-image: linear-gradient(top, #ffffff 0%, #f4f4f4 100%);
+  margin: 40px auto;
+  border-radius: 5px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.8);
+}
+
+#inputthing {
+  display: inline-block;
+  width: 300px;
+  padding: 30px;
+  vertical-align: top;
+  font-size: 14px;
+}
+
+#inputthing p {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #444;
+  text-shadow: 0 1px #fff;
+}
+
+#inputthing input[type=text] {
+  width: 30px;
+  margin-right: 20px;
+}
+#inputthing input[type=image] {
+  margin-top: 10px;
+}
+
+#slider {
+  display: inline-block;
+  width: 200px;
+}
+
+#face { width: 100px; height: 100px; position: relative; display: inline-block;
+      border: 2px solid black; border-radius: 50px; margin: 20px auto; }
+    
+    #face:before, #face:after {
+      position: absolute;
+      content: "";
+      width: 10px;
+      height: 10px;
+      top: 30px;
+      border-radius: 10px;
+      background: black; 
+    }
+    #face:before {
+      left: 30px; 
+    }
+    #face:after {
+      left: 60px; 
+    }
+    
+    #mouth-box {
+      width: 60px; height: 20px; left: 20px; top: 60px; overflow: hidden; 
+      position: relative; 
+    }
+    
+    #mouth { bottom: 0px; top: auto; width: 160px; height: 160px; border-radius: 80px; left: -50px;  
+      border: 2px solid black; position: absolute; }
 
 
 
