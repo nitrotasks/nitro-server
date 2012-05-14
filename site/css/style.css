@@ -313,6 +313,13 @@ background-image: radial-gradient(50% 50%, ellipse closest-side, rgba(255,255,25
   color: #fff;
   text-shadow: 0 1px 1px rgba(0,0,0,0.7);
 }
+.explanation a, .explanation a:visited {
+  color: #fff;
+  text-decoration: none;
+}
+.explanation a:hover, .explanation a:active {
+  text-decoration: underline;
+}
 .explanation .right {
   vertical-align: top;
   width: 510px;
@@ -335,7 +342,7 @@ background-image: radial-gradient(50% 50%, ellipse closest-side, rgba(255,255,25
 .span2 {
   width: 100px;
   height: 100px;
-  border-radius: 5px 0 0 5px;
+  border-radius: 4px 0 0 4px;
   display: inline-block;
   border-right: 1px solid #ddd;
   margin-right: 24px;
