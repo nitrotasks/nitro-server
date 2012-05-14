@@ -293,12 +293,12 @@ background-image: radial-gradient(50% 50%, ellipse closest-side, rgba(255,255,25
 }
 
 .explanation {
-  margin: 0 15px;
+  margin: 0 15px 30px;
   position: relative;
 }
 .explanation .left {
   width: 350px;
-  margin: 30px 30px 15px 0;
+  margin: 30px 37px 15px 0;
   border-radius: 5px;
   display: inline-block;
   color: #fff;
