@@ -13,7 +13,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-console.info('Nitro Sync 1.2\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
+console.info('Nitro Sync 1.3\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 
 // Node Packages
 var color = require('./lib/ansi-color').set,
@@ -243,12 +243,12 @@ port = process.env.PORT || 3000;
 app.listen(port);
 
 function getServer(service, user, callback) {
-	console.log(color("Getting server.json from server", 'blue'));
+	console.log(color("Getting nitrodata.json from server", 'blue'));
 
 	switch (service) {
 	case "dropbox":
 		console.log("Dropbox")
-		user.get("server.json", function (status, reply) {
+		user.get("nitrodata.json", function (status, reply) {
 			reply = decompress(JSON.parse(reply.toString()));
 
 			if(status != 200) {
@@ -257,7 +257,7 @@ function getServer(service, user, callback) {
 
 			// Check if file exists
 			if (!reply.hasOwnProperty('tasks')) {
-				console.log(color("Server.json doesn't exist on the clients dropbox :(", 'red'));
+				console.log(color("nitrodata.json doesn't exist on the clients dropbox :(", 'red'));
 				console.log(color("So let's make one :D", 'blue'));
 				server = clone(emptyServer);
 				saveServer(service, user, server);
@@ -270,10 +270,10 @@ function getServer(service, user, callback) {
 		break;
 	case "ubuntu":
 		console.log("Ubuntu")
-		ubuntu.get("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/server.json", user.oauth_token, user.oauth_secret, function (e, d, r) {
+		ubuntu.get("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/nitrodata.json", user.oauth_token, user.oauth_secret, function (e, d, r) {
 			if(e) {
 				console.log(e);
-				console.log(color("Server.json doesn't exist on the client's ubuntu one account :(", 'red'));
+				console.log(color("nitrodata.json doesn't exist on the client's ubuntu one account :(", 'red'));
 				console.log(color("So let's make one :D", 'blue'));
 				server = clone(emptyServer);
 				saveServer(service, user, server);
@@ -296,14 +296,14 @@ function saveServer(service, user, server) {
 	switch (service) {
 	case "dropbox":
 		console.log("Dropbox");
-		user.put("server.json", output, function () {
+		user.put("nitrodata.json", output, function () {
 			console.log(color("Saving to server (complete!)", 'yellow'));
 		});
 		break;
 	case "ubuntu":
-		ubuntu.put("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/server.json", user.oauth_token, user.oauth_secret, output, "application/json", function (e, d, r) {
+		ubuntu.put("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/nitrodata.json", user.oauth_token, user.oauth_secret, output, "application/json", function (e, d, r) {
 			if(e) {
-				callback("Error saving server.json");
+				callback("Error saving nitrodata.json");
 			} else {
 				console.log(color("Saving to server (complete!)", 'yellow'));
 			}
