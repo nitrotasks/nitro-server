@@ -15,6 +15,10 @@
 
 console.info('Nitro Sync 1.3\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 
+var settings = {
+	filename: 'nitro_data.json'
+}
+
 // Node Packages
 var color = require('./lib/ansi-color').set,
 	express = require('express'),
@@ -79,7 +83,7 @@ app.post('/auth/', function (req, res) {
 		
 			var count = 0, max = 20;
 
-			function checkServer () {
+			var checkServer = function () {
 				console.log(color('Connecting to dropbox', "blue"));
 
 				// Check token
@@ -109,27 +113,27 @@ app.post('/auth/', function (req, res) {
 
 		 case "ubuntu":
 
-		 	var user_token = req.param('token');
+			var user_token = req.param('token');
 
-		 	// Add user
-		 	users[user_token.oauth_token] = {request_secret: user_token.oauth_secret};
+			// Add user
+			users[user_token.oauth_token] = {request_secret: user_token.oauth_secret};
 
-		 	console.log(users)
+			console.log(users)
 
-		 	// Keep checking database
-		 	function check() {
-		 		if(users[user_token.oauth_token].hasOwnProperty('oauth_token')) {
-		 			res.json({oauth_token: users[user_token.oauth_token].oauth_token, oauth_secret: users[user_token.oauth_token].oauth_secret});
-		 			delete users[user_token.oauth_token];
-		 		} else {
-		 			console.log("failed, trying again")
-		 			setTimeout(check, 1000);
-		 		}
-		 	}
-
-		 	check();
-
-		 	break;
+			// Keep checking database
+			var check = function() {
+				if(users[user_token.oauth_token].hasOwnProperty('oauth_token')) {
+					res.json({oauth_token: users[user_token.oauth_token].oauth_token, oauth_secret: users[user_token.oauth_token].oauth_secret});
+					delete users[user_token.oauth_token];
+				} else {
+					console.log("failed, trying again")
+					setTimeout(check, 1000);
+				}
+			}
+			
+			check();
+			
+			break;
 		 }
 
 	// Server has been authorised before
@@ -168,8 +172,6 @@ app.post('/auth/', function (req, res) {
 			});		
 			break;
 		}
-
-		
 	}
 });
 
@@ -191,15 +193,6 @@ app.get('/ubuntu-one/', function (req, res) {
 	} else {
 		console.log("ERROR: Token not found!?")
 	}
-/*	ubuntu.getOAuthAccessToken(request.token, request.secret, req.query.oauth_verifier, function(error, oauth_access_token, oauth_access_token_secret, results) {
-		console.log('oauth_access_token :' + oauth_access_token)
-		console.log('oauth_token_secret :' + oauth_access_token_secret)
-		console.log("Requesting account details")
-		var data= "";
-		oa.getProtectedResource("https://one.ubuntu.com/api/file_storage/v1", "GET", oauth_access_token, oauth_access_token_secret, function (error, data, response) {
-			console.log(data);
-		});
-	});*/
 });
 
 // Actual Sync
@@ -230,6 +223,8 @@ app.post('/sync/', function (req, res){
 			});
 
 		} else {
+			
+			console.log("We got an error!")
 
 			res.json("error");
 
@@ -243,25 +238,23 @@ port = process.env.PORT || 3000;
 app.listen(port);
 
 function getServer(service, user, callback) {
-	console.log(color("Getting nitrodata.json from server", 'blue'));
+	console.log(color("Getting File from server", 'blue'));
 
 	switch (service) {
 	case "dropbox":
 		console.log("Dropbox")
-		user.get("nitrodata.json", function (status, reply) {
+		user.get(settings.filename, function (status, reply) {
 			reply = decompress(JSON.parse(reply.toString()));
-
-			if(status != 200) {
-				callback('error');
-			}
 
 			// Check if file exists
 			if (!reply.hasOwnProperty('tasks')) {
-				console.log(color("nitrodata.json doesn't exist on the clients dropbox :(", 'red'));
+				console.log(color("File doesn't exist on the clients dropbox :(", 'red'));
 				console.log(color("So let's make one :D", 'blue'));
 				server = clone(emptyServer);
 				saveServer(service, user, server);
 				callback(server);
+			} else if (status != 200) {
+				callback('error');
 			} else {
 				console.log(color("Got the server!", 'yellow'));
 				callback(reply);
@@ -270,10 +263,10 @@ function getServer(service, user, callback) {
 		break;
 	case "ubuntu":
 		console.log("Ubuntu")
-		ubuntu.get("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/nitrodata.json", user.oauth_token, user.oauth_secret, function (e, d, r) {
+		ubuntu.get("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/" + settings.filename, user.oauth_token, user.oauth_secret, function (e, d, r) {
 			if(e) {
 				console.log(e);
-				console.log(color("nitrodata.json doesn't exist on the client's ubuntu one account :(", 'red'));
+				console.log(color("File doesn't exist on the client's ubuntu one account :(", 'red'));
 				console.log(color("So let's make one :D", 'blue'));
 				server = clone(emptyServer);
 				saveServer(service, user, server);
@@ -296,14 +289,14 @@ function saveServer(service, user, server) {
 	switch (service) {
 	case "dropbox":
 		console.log("Dropbox");
-		user.put("nitrodata.json", output, function () {
+		user.put(settings.filename, output, function () {
 			console.log(color("Saving to server (complete!)", 'yellow'));
 		});
 		break;
 	case "ubuntu":
-		ubuntu.put("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/nitrodata.json", user.oauth_token, user.oauth_secret, output, "application/json", function (e, d, r) {
+		ubuntu.put("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/" + settings.filename, user.oauth_token, user.oauth_secret, output, "application/json", function (e, d, r) {
 			if(e) {
-				callback("Error saving nitrodata.json");
+				callback("Error saving file!");
 			} else {
 				console.log(color("Saving to server (complete!)", 'yellow'));
 			}
@@ -338,17 +331,13 @@ var emptyServer = {
 					order: 0
 				}
 			},
-			someday: {
-				name: "Someday",
-				order: [],
-				time: {
-					name: 0,
-					order: 0
-				}
-			},
 			length: 1
 		},
-		time: 0
+		time: 0,
+		scheduled: {
+			length: 0
+		},
+		deleted: {}
 	},
 	queue: {}
 };
@@ -504,7 +493,7 @@ function merge(server, client, callback) {
 	
 						//Reloads jStorage
 						$.jStorage.reInit()
-					};
+					}
 				}
 			}
 		},
@@ -1568,25 +1557,25 @@ function merge(server, client, callback) {
 			// Check if it is a new list
 			if (client.lists.items[list].synced === false || client.lists.items[list].synced === 'false') {
 
-				console.log(color("170", "blue"), ": List '" + list + "' has never been synced before");
+				console.log("List '" + list + "' has never been synced before");
 
 				client.lists.items[list].synced = true;
 
 				// If a list with that id already exists on the server
 				if (server.lists.items.hasOwnProperty(list)) {
 
-					console.log(color("177", "blue"), ": List '" + list + "' already exists on the server");
+					console.log("List '" + list + "' already exists on the server");
 
 					// Change the list ID
 					client.lists.items[server.lists.items.length] = clone(client.lists.items[list]);
 					delete client.lists.items[list];
 
-					console.log(color("177", "blue"), ": List '" + list + "' has been moved to '" + server.lists.items.length + "'");
+					console.log("List '" + list + "' has been moved to '" + server.lists.items.length + "'");
 
 					list = server.lists.items.length;
 
 				} else {
-					console.log(color("188", "blue"), ": List '" + list + "' does not exist on server. Adding to server.");
+					console.log("List '" + list + "' does not exist on server. Adding to server.");
 				}
 
 				// If the list doesn't exist on the server, create it
@@ -1603,13 +1592,13 @@ function merge(server, client, callback) {
 
 			} else if (server.lists.items.hasOwnProperty(list)) {
 
-				console.log(color("204", "blue"), ": List '" + list + "' exists on server.");
+				console.log("List '" + list + "' exists on server.");
 
 				for(var key in client.lists.items[list].time) {
 
 					if (client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
 
-						console.log(color("256", "blue"), ": The key '" + key + "' in list '" + list + "' has been modified.");
+						console.log("The key '" + key + "' in list '" + list + "' has been modified.");
 
 						console.log(color(JSON.stringify(client.lists.items[list][key]), 'red'))
 
@@ -1639,7 +1628,7 @@ function merge(server, client, callback) {
 			// If task has never been synced before
 			if (client.tasks[task].synced === false || client.tasks[task].synced === 'false') {
 
-				console.log(color("209", "blue"), ": Task '" + task + "' has never been synced before");
+				console.log("Task '" + task + "' has never been synced before");
 
 				// Task is going to be added to the server so we delete the synced property
 				client.tasks[task].synced = true;
@@ -1647,7 +1636,7 @@ function merge(server, client, callback) {
 				// If task already exists on the server (Don't be fooled, it's a different task...)
 				if (server.tasks.hasOwnProperty(task)) {
 
-					console.log(color("217", "blue"), ": A task with the ID '" + task + "' already exists on the server");
+					console.log("A task with the ID '" + task + "' already exists on the server");
 
 					// Does not mess with ID's if it isn't going to change
 					if (server.tasks.length !== Number(task)) {
@@ -1656,7 +1645,7 @@ function merge(server, client, callback) {
 						client.tasks[server.tasks.length] = clone(client.tasks[task]);
 						delete client.tasks[task];
 
-						console.log(color("226", "blue"), ": Task '" + task + "' has been moved to task '" + server.tasks.length  + "'");
+						console.log("Task '" + task + "' has been moved to task '" + server.tasks.length  + "'");
 
 						task = server.tasks.length;
 
@@ -1666,7 +1655,7 @@ function merge(server, client, callback) {
 				// If task hasn't been deleted
 				if (!client.tasks[task].hasOwnProperty('deleted')) {
 
-					console.log(color("237", "blue"), ": Task '" + task + "' is being added to the server.");
+					console.log("Task '" + task + "' is being added to the server.");
 
 					// Add the task to the server
 					cli.addTask("New Task", client.tasks[task].list);
@@ -1684,7 +1673,7 @@ function merge(server, client, callback) {
 				// The task is new, but the client deleted it
 				} else {
 
-					console.log(color("252", "blue"), ": Task '" + task + "' is new, but the client deleted it");
+					console.log("Task '" + task + "' is new, but the client deleted it");
 
 					// Add the task to the server, but don't touch lists and stuff
 					server.tasks[task] = clone(client.tasks[task]);
@@ -1696,7 +1685,7 @@ function merge(server, client, callback) {
 			// Task was deleted on computer but not on the server
 			} else if (client.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
 
-				console.log(color("266", "blue"), ": Task '" + task + "' was deleted on computer but not on the server");
+				console.log("Task '" + task + "' was deleted on computer but not on the server");
 
 				// We use this to check whether the task was modified AFTER it was deleted
 				var deleteTask = true;
@@ -1707,7 +1696,7 @@ function merge(server, client, callback) {
 					// Check if server task was modified after task was deleted
 					if (server.tasks[task].time[key] > client.tasks[task].deleted) {
 
-						console.log(color("277", "blue"), ": Task '" + task + "' was modified after task was deleted");
+						console.log("Task '" + task + "' was modified after task was deleted");
 
 						// Since it has been modified after it was deleted, we don't delete the task
 						deleteTask = false;
@@ -1735,12 +1724,12 @@ function merge(server, client, callback) {
 			// Task is deleted on the server and the computer
 			} else if (client.tasks[task].hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')){
 
-				console.log(color("305", "blue"), ": Task '" + task + "' is deleted on the server and the computer");
+				console.log("Task '" + task + "' is deleted on the server and the computer");
 
 				// Use the latest time stamp
 				if (client.tasks[task].deleted > server.tasks[task].deleted) {
 
-					console.log(color("310", "blue"), ": Task '" + task + "' is deleted, but has a newer timestamp");
+					console.log("Task '" + task + "' is deleted, but has a newer timestamp");
 
 					// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
 					server.tasks[task].deleted = client.tasks[task].deleted;
@@ -1751,7 +1740,7 @@ function merge(server, client, callback) {
 
 			} else {
 
-				console.log(color("321", "blue"), ": Task '" + task + "' exists on the server and hasn't been deleted");
+				console.log("Task '" + task + "' exists on the server and hasn't been deleted");
 
 				//Stores the Attrs we'll be needing later
 				var changedAttrs = [];
@@ -1765,12 +1754,12 @@ function merge(server, client, callback) {
 						// Check if task was deleted on server or
 						if (server.tasks[task].hasOwnProperty('deleted')) {
 
-							console.log(color("335", "blue"), ": Task '" + task + "' was deleted on the server");
+							console.log("Task '" + task + "' was deleted on the server");
 
 							// Check if task was modified after it was deleted
 							if (client.tasks[task].time[key] > server.tasks[task].deleted) {
 
-								console.log(color("340", "blue"), ": Task " + task + " was modified on the client after it was deleted on the server");
+								console.log("Task " + task + " was modified on the client after it was deleted on the server");
 
 								// Update the server with the entire task (including attributes and timestamps)
 								server.tasks[task] = client.tasks[task];
@@ -1785,7 +1774,7 @@ function merge(server, client, callback) {
 							// If the attribute was updated after the server
 							if (client.tasks[task].time[key] > server.tasks[task].time[key]) {
 
-								console.log(color("355", "blue"), ": Key '" + key + "'  in task " + task + " has been updated by the client");
+								console.log("Key '" + key + "'  in task " + task + " has been updated by the client");
 
 								if (key !== 'list') {
 									// Update the servers version
@@ -1805,23 +1794,23 @@ function merge(server, client, callback) {
 				if (changedAttrs.length > 0) {
 					if (changedAttrs.indexOf('logged') != -1) {
 						// Logged
-						console.log(color("375", "blue"), ": Task " + task + " has been updated --> LOGGED");
+						console.log("Task " + task + " has been updated --> LOGGED");
 						cli.logbook(task);
 						cli.logbook(task);
 					} else if (changedAttrs.indexOf('date') != -1 || changedAttrs.indexOf('showInToday') != -1) {
 						// Date is changed
-						console.log(color("380", "blue"), ": Task " + task + " has been updated --> DATE");
+						console.log("Task " + task + " has been updated --> DATE");
 						cli.calc.date(task);
 						cli.today(task).calculate();
 					} else if (changedAttrs.indexOf('today') != -1) {
 						// Today
-						console.log(color("385", "blue"), ": Task " + task + " has been updated --> TODAY");
+						console.log("Task " + task + " has been updated --> TODAY");
 						cli.today(task).calculate();
 					}
 
 					if (changedAttrs.indexOf('list') != -1) {
 						// List
-						console.log(color("391", "blue"), ": Task " + task + " has been updated --> LIST");
+						console.log("Task " + task + " has been updated --> LIST");
 						cli.moveTask(task, client.tasks[task].list);
 					}
 				}
