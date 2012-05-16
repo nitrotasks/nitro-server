@@ -90,7 +90,7 @@
         <div id="inputthing">
           <form name="_xclick" action="https://www.paypal.com/cgi-bin/webscr" method="post">
             <p>Use the slider to set your donation amount.</p>
-            <input type="text" id="amount"  name="amount" value="15"><input type="range" value="15">
+            <input type="number" min="1" max="100" id="amount"  name="amount" value="15"><input id="rangeslide" type="range" value="15" min="1" max="100" >
             <input type="hidden" name="cmd" value="_xclick">
             <input type="hidden" name="business" value="jono@caffeinatedco.de">
             <input type="hidden" name="currency_code" value="USD">
@@ -146,5 +146,53 @@
   })();
 </script>
 <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+<script>
+function watchProperty(obj, name, handler) {
+    if ('watch' in obj) {
+        obj.watch(name, handler);
+    } else if ('onpropertychange' in obj) {
+        name= name.toLowerCase();
+        obj.onpropertychange= function() {
+            if (window.event.propertyName.toLowerCase()===name)
+                handler.call(obj);
+        };
+    } else {
+        var o= obj[name];
+        setInterval(function() {
+            var n= obj[name];
+            if (o!==n) {
+                o= n;
+                handler.call(obj);
+            }
+        }, 400);
+    }
+}
+
+var amount = document.getElementById('amount');
+var rangeslide = document.getElementById('rangeslide')
+
+var mouth = document.getElementById('mouth').style;
+
+watchProperty(amount, 'value', function() {
+    rangeslide.value = amount.value;
+       
+    newWidth = 110 - rangeslide.value;
+    value = rangeslide.value;
+
+    if (rangeslide.value > 100) {
+      newWidth = 10;
+      value = 100;
+    }
+   
+    mouth.width = newWidth + 'px';
+    mouth.height = newWidth + 'px';
+    mouth.left = (-25 + (value / 2)) + 'px';
+    mouth.borderRadius = newWidth / 2;
+});
+
+watchProperty(rangeslide, 'value', function() {
+    amount.value = rangeslide.value;
+});
+</script>
 </body>
 </html>
