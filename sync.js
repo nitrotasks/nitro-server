@@ -81,7 +81,7 @@ app.post('/auth/', function (req, res) {
 		switch (req.param('service')) {
 		case "dropbox":
 		
-			var count = 0, max = 20;
+			var count = 0, max = 60;
 
 			var checkServer = function () {
 				console.log(color('Connecting to dropbox', "blue"));
@@ -91,10 +91,20 @@ app.post('/auth/', function (req, res) {
 
 					// Token is good :D
 					if (status === 200) {
-						console.log(color('Attempt ' + count + ' - Connected!', "yellow"));
-
-						// Send access token to client so they can use it again
-						res.json(access_token);
+						console.log(color('Attempt ' + count + ' - Connected!', "yellow")); 
+						
+						dbox.createClient(access_token).account(function (status, reply) {							
+							
+							// Send access token to client so they can use it again
+							res.json({
+								
+								access: access_token,
+								email: reply.email
+								
+							});
+						});
+						
+						
 
 					// Nitro hasn't been allowed yet :(
 					} else {
@@ -118,16 +128,36 @@ app.post('/auth/', function (req, res) {
 			// Add user
 			users[user_token.oauth_token] = {request_secret: user_token.oauth_secret};
 
-			console.log(users)
+			console.log(users);
+			
+			var count = 0, max = 60;
 
 			// Keep checking database
 			var check = function() {
 				if(users[user_token.oauth_token].hasOwnProperty('oauth_token')) {
-					res.json({oauth_token: users[user_token.oauth_token].oauth_token, oauth_secret: users[user_token.oauth_token].oauth_secret});
-					delete users[user_token.oauth_token];
+					
+					ubuntu.get("https://one.ubuntu.com/api/account/", users[user_token.oauth_token].oauth_token, users[user_token.oauth_token].oauth_secret, function (e, d, r) {
+						
+						d = JSON.parse(d);
+						
+						res.json({
+							access: {
+								oauth_token: users[user_token.oauth_token].oauth_token, 
+								oauth_secret: users[user_token.oauth_token].oauth_secret
+							},
+							email: d.email
+						});
+						
+						delete users[user_token.oauth_token];
+						
+					});
+					
 				} else {
 					console.log("failed, trying again")
-					setTimeout(check, 1000);
+					count++;
+					
+					// Try again in a second
+					if(count <= max) setTimeout(check, 1000);
 				}
 			}
 			
@@ -492,7 +522,7 @@ function merge(server, client, callback) {
 						localStorage.jStorage = localStorage.jStorage.replace(/\\\\/g, "&#92;").replace(/\|/g, "&#124").replace(/\\"/g, "&#34;").replace(/\'/g, "&#39;");
 	
 						//Reloads jStorage
-						$.jStorage.reInit()
+						// $.jStorage.reInit()
 					}
 				}
 			}
@@ -981,9 +1011,6 @@ function merge(server, client, callback) {
 						if (typeof obj[value] === 'string') {
 							obj[value] = cli.escape(obj[value]);
 						}
-						if (obj[value] !== $.jStorage.get('tasks')[id][value] && value !== 'time') {
-							// cli.timestamp.update(id, value).task();
-						}
 					}
 	
 					server.tasks[id] = obj;
@@ -1299,9 +1326,6 @@ function merge(server, client, callback) {
 					for(var value in obj) {
 						if (typeof obj[value] === 'string') {
 							obj[value] = cli.escape(obj[value]);
-						}
-						if (obj[value] !== $.jStorage.get('lists')[id][value] && value !== 'time') {
-							// cli.timestamp.update(id, value).scheduled();
 						}
 					}
 	
