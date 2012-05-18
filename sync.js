@@ -43,12 +43,14 @@ app.use(express.bodyParser());
 
 
 // Handles Static HTTP Requests
-app.use(express.static(__dirname + '/site'));
+app.use(express.static(__dirname + '/app'));
 
 // Initial Auth
 app.post('/auth/', function (req, res) {
 
 	console.log(color("** Starting Auth **", "blue"));
+
+	console.log(req.param('reqURL'));
 
 	// If the client has never been connected before
 	if (req.param('reqURL')) {
