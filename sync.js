@@ -71,7 +71,7 @@ app.post('/auth/', function (req, res) {
 				var reply = {};
 				reply.oauth_token = t;
 				reply.oauth_secret = s;
-				reply.authorize_url = 'https://one.ubuntu.com/oauth/authorize/?oauth_token=' + t;
+				reply.authorize_url = 'https://one.ubuntu.com/oauth/authorize/?description=Nitro&oauth_token=' + t;
 				res.json(reply);
 			});
 			break;
