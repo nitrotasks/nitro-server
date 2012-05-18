@@ -1,1 +1,1 @@
-web: node test.js
+web: node sync.js
