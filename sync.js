@@ -16,7 +16,8 @@
 console.info('Nitro Sync 1.3\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 
 var settings = {
-	filename: 'nitro_data.json'
+	filename: 'nitro_data.json',
+	url: 'http://localhost:3000'
 }
 
 // Node Packages
@@ -27,7 +28,7 @@ var color = require('./lib/ansi-color').set,
 	OAuth = require("oauth").OAuth;
  
 // Ubuntu one settings
-var ubuntu = new OAuth("https://one.ubuntu.com/oauth/request/", "https://one.ubuntu.com/oauth/access/", "ubuntuone", "hammertime", "1.0", "http://app.nitrotasks.com/ubuntu-one/", "PLAINTEXT"),
+var ubuntu = new OAuth("https://one.ubuntu.com/oauth/request/", "https://one.ubuntu.com/oauth/access/", "ubuntuone", "hammertime", "1.0", settings.url + "/ubuntu-one/", "PLAINTEXT"),
 	users = {dropbox: {}, ubuntu: {}};
 
 //Funky Headers =)
@@ -58,7 +59,7 @@ app.post('/auth/', function (req, res) {
 			dbox.request_token(function (status, request_token) {
 				console.log(color("Sending authorize_url", "blue"));
 				
-				request_token.authorize_url += "&oauth_callback=http://app.nitrotasks.com/dropbox";
+				request_token.authorize_url += "&oauth_callback=" + settings.url + "/dropbox";
 
 				// Send it to the client
 				res.json(request_token);
@@ -1109,7 +1110,7 @@ function merge(server, client, callback) {
 					//Deletes actual list
 					delete server.lists.items[id]
 					server.lists.deleted[id] = Date.now();
-					server.lists.order.splice(jQuery.inArray(id, server.lists.order), 1);
+					server.lists.order.splice(server.lists.order.indexOf(id), 1);
 	
 					// Update timestamp for list order
 					server.lists.time = Date.now();
@@ -1653,30 +1654,104 @@ function merge(server, client, callback) {
 				server.lists.order.push(Number(list));
 				server.lists.items.length++;
 
-			} else if (server.lists.items.hasOwnProperty(list)) {
-
-				console.log("List '" + list + "' exists on server.");
-
+			
+			/***** LIST IS DELETED ON THE SERVER AND BUT NOT ON THE COMPUTER *****/
+			
+			} else if (server.lists.deleted.hasOwnProperty(list) && client.lists.items.hasOwnProperty(list)) {
+				
+				var keepList = true;
+				
+				// Check timestamps on client and server
 				for(var key in client.lists.items[list].time) {
-
+					
+					// If the task on the client has been modified after task on the server was deleted, keep the list.
+					if(client.lists.items[list].time[key] > server.lists.deleted[list]) {
+						
+						keepList = false;
+						
+					}
+				}
+				
+				// Keep the list
+				if(keepList) {
+					
+					server.lists.items[list] = clone(client.lists.items[list]);
+					delete server.lists.deleted[list];
+					
+				}
+				
+			} else if (server.lists.items.hasOwnProperty(list)) {
+			
+				console.log("List '" + list + "' exists on server.");
+			
+				for(var key in client.lists.items[list].time) {
+			
 					if (client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
-
+			
 						console.log("The key '" + key + "' in list '" + list + "' has been modified.");
-
+			
 						console.log(color(JSON.stringify(client.lists.items[list][key]), 'red'))
-
+			
 						// If so, update list key and time
 						server.lists.items[list][key] = client.lists.items[list][key];
 						server.lists.items[list].time[key] = client.lists.items[list].time[key];
-
+			
 						console.log(color(JSON.stringify(server.lists.items[list][key]), 'red'))
 					}
 				}
 
-			} else {
-				console.log(color("ERROR: Client has a list that has been synced before but it doesn't exist on the server...", "red"));
 			}
 		}
+	}
+	
+	// Loop through deleted lists
+	for(var list in client.lists.deleted) {
+		
+		if (list != '0' && list !== 'length') {
+			
+			/***** LIST IS DELETED ON THE CLIENT AND BUT NOT ON THE SERVER *****/
+			
+			 if (client.lists.deleted.hasOwnProperty(list) && server.lists.items.hasOwnProperty(list)) {
+				
+				var deleteList = true;
+			
+				// Check timestamps on client and server
+				for(var key in server.lists.items[list].time) {
+					
+					// If server has been modified after client was deleted, don't delete the list.
+					if(server.lists.items[list].time[key] > client.lists.deleted[list]) {
+						
+						deleteList = false;
+						
+					}
+				}
+				
+				// Delete the list
+				if(deleteList) {
+					
+					cli.list(list).remove();
+					
+				}
+				
+			/***** LIST IS DELETED ON THE SERVER AND ON THE COMPUTER *****/
+			
+			} else if (server.lists.deleted.hasOwnProperty(list) && client.lists.deleted.hasOwnProperty(list)) {
+				
+				console.log("List '" + list + "' is deleted on the server and the computer");
+				
+				// Use the latest time stamp
+				if (client.lists.deleted[list] > server.lists.deleted[list]) {
+				
+					console.log("List '" + list + "' is deleted, but has a newer timestamp");
+				
+					// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
+					server.lists.deleted[list] = client.lists.deleted[list];
+				
+				}
+			}
+						
+		}
+
 	}
 
 	// Loop through each task
