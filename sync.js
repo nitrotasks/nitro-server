@@ -898,7 +898,7 @@ function merge(server, client, callback) {
 	
 					// DeDupe today and next lists
 					server.lists.items.today.order = deDupe(server.lists.items.today.order);
-					server.lists.items.next.order = deDupe(server.lists.items.next.order)
+					server.lists.items.next.order = deDupe(server.lists.items.next.order);
 	
 					//Saves data
 					// server.save();
