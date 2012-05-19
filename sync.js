@@ -1707,6 +1707,15 @@ function merge(server, client, callback) {
 					server.tasks[task] = clone(client.tasks[task]);
 
 				}
+				
+				
+			/***** TASK DOESN'T EXIST ON SERVER FOR SOME REASON -- BUG *****/
+			} else if (!server.tasks.hasOwnProperty(task)) {
+				
+				console.log(color("Task doesn't exist on server. It should, but it doesn't.", "red"));
+			
+				// Better just copy the task onto the server...
+				server.tasks[task] = clone(client.tasks[task]);
 
 			/***** CLIENT DELETED TASK *****/
 
@@ -1903,6 +1912,14 @@ function merge(server, client, callback) {
 					server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
 	
 				}
+				
+			/***** TASK DOESN'T EXIST ON SERVER FOR SOME REASON -- BUG *****/
+			} else if (!server.tasks.hasOwnProperty(task)) {
+				
+				console.log(color("Task doesn't exist on server. It should, but it doesn't.", "red"));
+			
+				// Better just copy the task onto the server...
+				server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
 	
 			/***** CLIENT DELETED TASK *****/
 	
