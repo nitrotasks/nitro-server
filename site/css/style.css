@@ -161,6 +161,9 @@ header nav ul li:last-child a {
   padding:  15px 22px;
   margin: 0;
 }
+#login a {
+  text-decoration: none;
+}
 #login li {
   border-radius: 3px;
   font-weight: bold;
