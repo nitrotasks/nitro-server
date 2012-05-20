@@ -281,13 +281,26 @@ app.post('/sync/', function (req, res){
 
 		if(server != 'error') {
 
+			var recievedData = decompress(JSON.parse(req.param('data')));
+
 			// Merge data
-			merge(server, decompress(JSON.parse(req.param('data'))), function (server) {
+			merge(server, recievedData, function (server) {
 				// Send data back to client
 				console.log(JSON.stringify(server, null, 4));
 				console.log("Merge complete. Updating client.");
 				res.json(compress(server));
 				saveServer(service, user, server);
+
+				//Analytics
+				var options = {
+					host: 'nitrotasks.com',
+					port: 80,
+					path: '/analytics/server.php?fingerprint=' + recievedData.stats.uid + '&backend=' + service + '&version=' + recievedData.stats.version + '&os=' + recievedData.stats.os + '&language=' + recievedData.stats.language
+				};
+
+				require('http').get(options, function(res) {
+					console.log("Sent to Analytics Server.");
+				});
 			});
 
 		} else {
