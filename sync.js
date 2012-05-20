@@ -248,7 +248,7 @@ app.get('/ubuntu-one/', function (req, res) {
 
 	var token = req.query.oauth_token;
 
-	if(users.hasOwnProperty(token)) {
+	if(users.ubuntu.hasOwnProperty(token)) {
 		console.log("Token found :D Going to try and get access token");
 		ubuntu.getOAuthAccessToken(token, users.ubuntu[token].request_secret, req.query.oauth_verifier, function(e, t, s, r) {
 			users.ubuntu[token].oauth_token = t;
