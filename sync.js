@@ -21,8 +21,7 @@ var settings = {
 }
 
 // Node Packages
-var email = require('mailer'),
-	express = require('express'),
+var	express = require('express'),
 	app = express.createServer(),
 	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" }),
 	OAuth = require("oauth").OAuth;
@@ -1115,9 +1114,9 @@ function merge(server, client, callback) {
 						if (typeof value === "string") {
 							obj[i] = cli.escape(value);
 						}
-						if (obj[i] !== $.jStorage.get('tasks')[id][i] && i !== 'time') {
+						//if (obj[i] !== $.jStorage.get('tasks')[id][i] && i !== 'time') {
 							// cli.timestamp.update(id, i).task();
-						}
+						//}
 					}
 
 					server.tasks[id] = obj;
@@ -1441,9 +1440,9 @@ function merge(server, client, callback) {
 						if (typeof value === "string") {
 							obj[i] = cli.escape(value);
 						}
-						if (obj[i] !== $.jStorage.get('lists').scheduled[id][i] && i !== 'time') {
+						//if (obj[i] !== $.jStorage.get('lists').scheduled[id][i] && i !== 'time') {
 							// cli.timestamp.update(id, i).scheduled();
-						}
+						//}
 					}
 
 					server.lists.scheduled[id] = obj;
