@@ -1071,26 +1071,6 @@ function merge(server, client, callback) {
 		
 		// Fix server.lists.order
 		server.lists.order = [];
-		
-		// Fix logged tasks :(
-		// for(var task in server.tasks) {
-		// 	if(task != 'length') {
-	
-		// 		var list = server.tasks[task].list;
-	
-		// 		if(server.lists.items[list].order.indexOf(task) != -1) {
-	
-		// 			if(server.tasks[task].logged) {
-		// 				server.lists.items[list].order.splice(server.lists.items[list].order.indexOf(task), 1);
-		// 			}
-	
-		// 		} else {
-		// 			if(!server.tasks[task].logged) {
-		// 				server.lists.items[list].order.push(task);
-		// 			}
-		// 		}
-		// 	}
-		// }
 
 		// Get rid of duplicates
 		for(var list in server.lists.items) {
