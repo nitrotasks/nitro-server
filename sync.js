@@ -416,7 +416,19 @@ function merge(server, client, callback) {
 
 				To delete something, move to 'trash' */
 
-				move: function(list) {
+				move: function(list, time) {
+
+					Array.prototype.remove= function(){
+						var what, a= arguments, L= a.length, ax;
+						while(L && this.length){
+							what= a[--L];
+							while((ax= this.indexOf(what))!= -1){
+								this.splice(ax, 1);
+							}
+						}
+						return this;
+					}
+
 					//Remove from list
 					var old = server.tasks[id].list;
 					server.lists.items[old].order.remove(id);
@@ -428,7 +440,7 @@ function merge(server, client, callback) {
 					
 					if (list === 'trash') {
 						// delete server.tasks[id];
-						server.tasks[id] = {deleted: core.timestamp()};
+						server.tasks[id] = {deleted: time};
 						console.log('Deleted: ' + id);
 						// Saves - but doesn't mess with timestamps
 						// server.save();
@@ -451,6 +463,7 @@ function merge(server, client, callback) {
 		list: function(id) {
 			return {
 				delete: function(time) {
+
 					//Deletes tasks in a list
 					for (var i = server.lists.items[id].order.length - 1; i >= 0; i--) {
 						core.task(server.lists.items[id].order[i]).move('trash');
@@ -653,6 +666,8 @@ function merge(server, client, callback) {
 		// Loop through each task
 		for(var task in client.tasks) {
 
+			task = task.toNum();
+
 			// Do not sync the tasks.length propery
 			// This should only be modified by the server side core.js
 			if (task !== 'length') {
@@ -750,7 +765,7 @@ function merge(server, client, callback) {
 					if (deleteTask) {
 
 						// Delete the task
-						core.task(task).move('trash');
+						core.task(task).move('trash', client.tasks[task].deleted);
 
 						// Get the timestamp
 						server.tasks[task] = clone(client.tasks[task]);
@@ -1069,6 +1084,8 @@ function merge(server, client, callback) {
 			}
 		};
 
+		// Merge List Order
+
 		var c = {
 			order: client.lists.order,
 			time: client.lists.time
@@ -1078,14 +1095,38 @@ function merge(server, client, callback) {
 			time: server.lists.time
 		}
 
-		console.log(JSON.stringify(c));
-		console.log("---------------");
-		console.log(JSON.stringify(s));
-
 		var mergedListOrder = mergeOrder(c, s);
-
 		server.lists.order = mergedListOrder[0];
 		server.lists.time = mergedListOrder[1];
+
+		// Merge Task Order
+
+		// Loop through each list (again)
+		for (var list in client.lists.items) {
+			list = list.toNum();
+			if (list !== 'length' && !server.lists.items[list].hasOwnProperty('deleted')) {
+
+				var c = {
+					order: client.lists.items[list].order,
+					time: client.lists.items[list].time.order
+				},
+				s = {
+					order: server.lists.items[list].order,
+					time: server.lists.items[list].time.order
+				}
+
+				var mergedListOrder = mergeOrder(c, s);
+
+				console.log(list)
+				console.log(JSON.stringify(c));
+				console.log(JSON.stringify(s));
+
+				server.lists.items[list].order = mergedListOrder[0];
+				server.lists.items[list].time.order = mergedListOrder[1];
+
+			}
+		}
+
 
 		callback(server);
 
