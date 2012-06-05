@@ -17,16 +17,16 @@ console.info('Nitro Sync 1.3\nCopyright (C) 2012 Caffeinated Code\nBy George Cza
 
 var settings = {
 	filename: 'nitro_data.json',
-	url: 'http://localhost:3000'
+	url: 'http://localhost:3000',
+	timeout: 120 // How long the server will wait for the user to authenticate Nitro.
 }
 
 // Node Packages
-var email = require('mailer'),
-	express = require('express'),
+var express = require('express'),
 	app = express.createServer(),
 	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" }),
 	OAuth = require("oauth").OAuth;
- 
+
 // Ubuntu one settings
 var ubuntu = new OAuth("https://one.ubuntu.com/oauth/request/", "https://one.ubuntu.com/oauth/access/", "ubuntuone", "hammertime", "1.0", settings.url + "/ubuntu-one/", "PLAINTEXT"),
 	users = {dropbox: {}, ubuntu: {}};
@@ -37,44 +37,59 @@ app.use(function (req, res, next) {
 	next();
 });
 
-// Main logs for server
-// var serverLog = [],
-// console.log = function (text) {
-// 	if(arguments.length > 1) {
-// 		var temp = [];
-// 		for(var i = 0; i < arguments.length; i++) {
-// 			temp.push(arguments[i]);
-// 		}
-// 		serverLog.push(temp);
-// 	} else {
-// 		serverLog.push(text);
-// 	}
-// }
-
 // Enable cross browser ajax
-// app.enable("jsonp callback");
+app.enable("jsonp callback");
 app.use(express.bodyParser());
-
 
 // Handles Static HTTP Requests
 app.use(express.static(__dirname + '/app'));
 
 // Initial Auth
 app.post('/auth/', function (req, res) {
+	authenticate(req, res);
+});
 
-	console.log("** Starting Auth **");
+// Actual Sync
+app.post('/sync/', function (req, res){
+	sync(req, res);
+});
 
+// Dropbox callback
+app.get('/dropbox', function (req, res) {
+	res.send("Authentication Complete!");
+	var uid = req.query.uid,
+		token = req.query.oauth_token;
+		if(users.dropbox.hasOwnProperty(token)) {
+			users.dropbox[token].uid = uid;
+		}
+});
+
+// Ubuntu callback for oauth verifier
+app.get('/ubuntu-one/', function (req, res) {
+	res.send("Authentication Complete!");
+	var token = req.query.oauth_token;
+	if(users.ubuntu.hasOwnProperty(token)) {
+		ubuntu.getOAuthAccessToken(token, users.ubuntu[token].request_secret, req.query.oauth_verifier, function(e, t, s, r) {
+			users.ubuntu[token].oauth_token = t;
+			users.ubuntu[token].oauth_secret = s;
+		});
+	}
+});
+
+port = process.env.PORT || 3000;
+app.listen(port);
+
+function authenticate(req, res) {
 	// If the client has never been connected before
 	if (req.param('reqURL')) {
-
+	
 		switch (req.param('service')) {
 		case "dropbox":
 			// Request a token from dropbox
 			dbox.request_token(function (status, request_token) {
-				console.log("Sending authorize_url");
-				
+	
 				request_token.authorize_url += "&oauth_callback=" + settings.url + "/dropbox";
-
+	
 				// Send it to the client
 				res.json(request_token);
 			});
@@ -90,87 +105,77 @@ app.post('/auth/', function (req, res) {
 			});
 			break;
 		}
-
+	
 	// Client has a token but not oauth
 	} else if (req.param('token')) {
-		
+	
 		// Get token and make sure it is an object
 		var user_token = req.param('token');
 		if(typeof user_token === 'string') user_token = JSON.parse(user_token);
-
+	
 		switch (req.param('service')) {
 		case "dropbox":
-			
+	
 			// Add user
 			users.dropbox[user_token.oauth_token] = {};
-						
-			var count = 0, max = 60;
-
+	
+			var count = 0;
+	
 			var check = function () {
-				
+	
 				if(users.dropbox[user_token.oauth_token].hasOwnProperty('uid')) {
-					
-					console.log('Connecting to dropbox');
 	
 					// Check token
 					dbox.access_token(user_token, function (status, access_token) {
 	
 						// Token is good :D
 						if (status === 200) {
-							console.log('Attempt ' + count + ' - Connected!'); 
-							
-							dbox.createClient(access_token).account(function (status, reply) {
 	
-								console.log("ACCOUNT", status, reply);							
-								
+							dbox.createClient(access_token).account(function (status, reply) {						
+	
 								// Send access token to client so they can use it again
 								res.json({
-									
+	
 									access: access_token,
 									email: reply.email
-									
+	
 								});
-								
+	
 								delete users.dropbox[user_token.oauth_token];
 							});
 						}
-						
-						console.log(status, access_token);
-						
+	
 					});
-								
-
+	
+	
 				// Nitro hasn't been allowed yet :(
 				} else {
-					console.log('Attempt ' + count + ' - Failed!');
 					count++;
-
+	
 					// Try again in a second
-					if(count <= max) setTimeout(check, 1000);
+					if(count <= settings.timeout) setTimeout(check, 1000);
 				}
 			}
-
+	
 			check();
 			break;
-
-
+	
+	
 		 case "ubuntu":
-
+	
 			// Add user
 			users.ubuntu[user_token.oauth_token] = {request_secret: user_token.oauth_secret};
-
-			console.log(users);
-			
-			var count = 0, max = 60;
-
+	
+			var count = 0;
+	
 			// Keep checking database
 			var check = function() {
 				if(users.ubuntu[user_token.oauth_token].hasOwnProperty('oauth_token')) {
-					
+	
 					ubuntu.get("https://one.ubuntu.com/api/account/", users.ubuntu[user_token.oauth_token].oauth_token, users.ubuntu[user_token.oauth_token].oauth_secret, function (e, d, r) {
-						
+	
 						d = JSON.parse(d);
-						
+	
 						res.json({
 							access: {
 								oauth_token: users.ubuntu[user_token.oauth_token].oauth_token, 
@@ -178,54 +183,49 @@ app.post('/auth/', function (req, res) {
 							},
 							email: d.email
 						});
-						
+	
 						delete users.ubuntu[user_token.oauth_token];
-						
+	
 					});
-					
+	
 				} else {
-					console.log("failed, trying again")
 					count++;
-					
+	
 					// Try again in a second
-					if(count <= max) setTimeout(check, 1000);
+					if(count <= settings.timeout) setTimeout(check, 1000);
 				}
 			}
-			
+	
 			check();
-			
+	
 			break;
 		 }
-
+	
 	// Server has been authorised before
 	} else if (req.param('access')) {
-		
+	
 		var access_token = req.param('access');
 		if(typeof access_token === 'string') access_token = JSON.parse(access_token);
-
-		console.log("Using client stored key");
-
+	
 		switch (req.param('service')) {
-
+	
 		case "dropbox":
-
+	
 			// Create client
 			user = dbox.createClient(access_token);
-
+	
 			// Check to see if it worked
 			user.account(function (status, reply) {
 				if (status === 200) {
-					console.log("Connected!");
 					res.json("success");
 				} else {
-					console.log("Could not connect :( - " + status);
 					res.json("failed");
 				}
 			});
 			break;
-
+	
 		case "ubuntu":
-
+	
 			// Check to see if it worked
 			ubuntu.get("https://one.ubuntu.com/api/account/", access_token.oauth_token, access_token.oauth_secret, function (e, d, r) {
 				if(e) {
@@ -237,51 +237,14 @@ app.post('/auth/', function (req, res) {
 			break;
 		}
 	}
-});
+}
 
-// Dropbox callback
-app.get('/dropbox', function (req, res) {
-	res.send("Authentication Complete! You can close this window now.");
-
-	var uid = req.query.uid,
-		token = req.query.oauth_token;
-		
-		if(users.dropbox.hasOwnProperty(token)) {
-			users.dropbox[token].uid = uid;
-		} else {
-			console.log("ERROR: UID not found.");
-		}
-	
-});
-
-// Ubuntu callback for oauth verifier
-app.get('/ubuntu-one/', function (req, res) {
-	res.send("Authentication Complete!");
-
-	console.log("Requesting access token");
-
-	var token = req.query.oauth_token;
-
-	if(users.ubuntu.hasOwnProperty(token)) {
-		console.log("Token found :D Going to try and get access token");
-		ubuntu.getOAuthAccessToken(token, users.ubuntu[token].request_secret, req.query.oauth_verifier, function(e, t, s, r) {
-			users.ubuntu[token].oauth_token = t;
-			users.ubuntu[token].oauth_secret = s;
-			console.log(users);
-		});
-	} else {
-		console.log("ERROR: Token not found!?")
-	}
-});
-
-// Actual Sync
-app.post('/sync/', function (req, res){
-
+function sync(req, res) {
 	var service = req.param('service');
 	
 	var access_token = req.param('access');
 	if(typeof access_token === 'string') access_token = JSON.parse(access_token);
-
+	
 	// Get client
 	switch (service) {
 	case "dropbox":
@@ -292,109 +255,81 @@ app.post('/sync/', function (req, res){
 	}
 	
 	getServer(service, user, function(server) {
-
+	
 		if(server != 'error') {
-
+	
 			var recievedData = decompress(JSON.parse(req.param('data')));
-
+	
 			// Merge data
 			merge(server, recievedData, function (server) {
 				// Send data back to client
-				console.log(JSON.stringify(server, null, 4));
-				console.log("Merge complete. Updating client.");
 				res.json(compress(server));
 				saveServer(service, user, server);
-
+	
 				//Analytics
 				var options = {
 					host: 'nitrotasks.com',
 					port: 80,
 					path: '/analytics/server.php?fingerprint=' + recievedData.stats.uid + '&backend=' + service + '&version=' + recievedData.stats.version + '&os=' + recievedData.stats.os + '&language=' + recievedData.stats.language
 				};
-
-				require('http').get(options, function(res) {
-					console.log("Sent to Analytics Server.");
-				});
+	
+				require('http').get(options, function() {});
 			});
-
+	
 		} else {
-			
-			console.log("We got an error!");
-
+	
 			res.json("error");
-
+	
 		}
 	});
-
-	
-});
-
-port = process.env.PORT || 3000;
-app.listen(port);
+}
 
 function getServer(service, user, callback) {
-	
-	console.log("Getting File from server");
 
 	switch (service) {
 	case "dropbox":
-		console.log("Dropbox")
 		user.get(settings.filename, function (status, reply) {
 			reply = decompress(JSON.parse(reply.toString()));
 
 			// Check if file exists
 			if (!reply.hasOwnProperty('tasks')) {
-				console.log("File doesn't exist on the clients dropbox :(");
-				console.log("So let's make one :D");
 				server = clone(emptyServer);
 				saveServer(service, user, server);
 				callback(server);
 			} else if (status != 200) {
 				callback('error');
 			} else {
-				console.log("Got the server!");
 				callback(reply);
 			}
 		});
 		break;
 	case "ubuntu":
-		console.log("Ubuntu")
 		ubuntu.get("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/" + settings.filename, user.oauth_token, user.oauth_secret, function (e, d, r) {
 			if(e) {
-				console.log(e);
-				console.log("File doesn't exist on the client's ubuntu one account :(");
-				console.log("So let's make one :D");
 				server = clone(emptyServer);
 				saveServer(service, user, server);
 				callback(server);
 			} else {
 				reply = decompress(JSON.parse(d.toString()));
-				console.log("Got the server!");
 				callback(reply);
 			}
 		});
 		break;
 	}
-	
+
 }
 
 function saveServer(service, user, server) {
-	console.log("Saving to server (starting)");
 	var output = JSON.stringify(compress(server));
 
 	switch (service) {
 	case "dropbox":
-		console.log("Dropbox");
-		user.put(settings.filename, output, function () {
-			console.log("Saving to server (complete!)");
-		});
+		user.put(settings.filename, output, function () {});
 		break;
 	case "ubuntu":
 		ubuntu.put("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/" + settings.filename, user.oauth_token, user.oauth_secret, output, "application/json", function (e, d, r) {
 			if(e) {
 				callback("Error saving file!");
-			} else {
-				console.log("Saving to server (complete!)");
 			}
 		});
 	}
@@ -408,11 +343,7 @@ var emptyServer = {
 	lists: {
 		order: [],
 		items: {
-			0: {
-				order: []
-			},
 			today: {
-				name: "Today",
 				order: [],
 				time: {
 					name: 0,
@@ -420,28 +351,30 @@ var emptyServer = {
 				}
 			},
 			next: {
-				name: "Next",
 				order: [],
 				time: {
 					name: 0,
 					order: 0
 				}
 			},
-			length: 1
-		},
-		time: 0,
-		scheduled: {
+			scheduled:{
+				order:[],
+				time:{
+					name:0,
+					order:0
+				}
+			},
 			length: 0
 		},
-		deleted: {}
-	},
-	queue: {}
+		time: 0
+	}
 };
 
 function merge(server, client, callback) {
 
-	// console.log(JSON.stringify(client, null, 2));
-	// console.log(JSON.stringify(server, null, 2));
+	console.log(JSON.stringify(client, null, 2));
+	console.log("=============================");
+	console.log(JSON.stringify(server, null, 2));
 
 	var core = {
 		task: function(id) {
@@ -490,7 +423,7 @@ function merge(server, client, callback) {
 
 					if(server.tasks[id].logged && list != 'logbook') {
 						server.tasks[id].logged = false;
-						// server.save('tasks', id, 'logged');
+						// server.save(['tasks', id, 'logged']);
 					}
 					
 					if (list === 'trash') {
@@ -503,7 +436,7 @@ function merge(server, client, callback) {
 						// Don't actually move the task
 						server.tasks[id].logged = core.timestamp();
 						console.log('Logged ' + id);
-						// server.save('tasks', id, 'logged');
+						// server.save(['tasks', id, 'logged']);
 					} else {
 						//Move to other list
 						server.lists.items[list].order.unshift(id);
@@ -514,66 +447,95 @@ function merge(server, client, callback) {
 					}
 				}			
 			}
+		},
+		list: function(id) {
+			return {
+				delete: function(time) {
+					//Deletes tasks in a list
+					for (var i = server.lists.items[id].order.length - 1; i >= 0; i--) {
+						core.task(server.lists.items[id].order[i]).move('trash');
+					}
+
+					//Remove from List order
+					var index = server.lists.order.indexOf(id);
+					if(index > -1) {
+						server.lists.order.splice(index, 1);
+					}
+
+					console.log(JSON.stringify(server.lists.order))
+
+					//Deletes List
+					//server.lists.items[id] = {deleted: core.timestamp()};
+					server.lists.items[id] = {deleted: time};
+					// server.save();
+				}
+			}
 		}
 	}
 
 	// MASSIVE TRY/CATCH FOR ERRORS (TEMPORARY UNTIL WE GET SOMETING ELSE SORTED OUT)
 	// try {	
-	
+
 		// Loop through each list
 		for (var list in client.lists.items) {
-	
-			if (list != '0' && list !== 'length') {
-	
+
+			list = list.toNum();
+
+			if (list !== 'length') {
+
+				console.log(list);
+
 				// Check if it is a new list
 				if (client.lists.items[list].synced === false || client.lists.items[list].synced === 'false') {
-	
+
 					console.log("List '" + list + "' has never been synced before");
-	
+
 					// List is now synced so set it to true
 					client.lists.items[list].synced = true;
-	
+
 					// If a list with that ID already exists on the server
 					if (server.lists.items.hasOwnProperty(list)) {
-	
+
 						console.log("List '" + list + "' already exists on the server");
-	
+
 						// Change the list ID
 						var newID = server.lists.items.length;
 						client.lists.items[newID] = clone(client.lists.items[list]);
-						
-						for(var task in client.lists.items[list].order) {
-							
+
+						for(var task = 0; task < client.lists.items[list].order.length; task++) {
+
+							console.log("Task in list: " + task);
+
 							task = client.lists.items[list].order[task];
-							
+
 							client.tasks[task].list = newID;
-							
+
 							// Temporary fix - not the best way to do it.
 							client.tasks[task].time.list = Date.now();
 						}
-						
+
 						delete client.lists.items[list];
-						
+
 						console.log("List '" + list + "' has been moved to '" + server.lists.items.length + "'");
-	
+
 						list = server.lists.items.length;
-	
+
 					} else {
 						console.log("List '" + list + "' does not exist on server. Adding to server as: " + server.lists.items.length);
-						
+
 						if(list != server.lists.items.length) {
 							for(var task in client.lists.items[list].order) {
-								
+
 								task = client.lists.items[list].order[task];
-								
+
 								client.tasks[task].list = server.lists.items.length;
-								
+
 								// Temporary fix - not the best way to do it.
 								client.tasks[task].time.list = Date.now();
 							}
 						}
 					}
-	
+
 					// If the list doesn't exist on the server, create it
 					server.lists.items[server.lists.items.length] = {
 						name: client.lists.items[list].name,
@@ -581,483 +543,477 @@ function merge(server, client, callback) {
 						time: client.lists.items[list].time,
 						synced: true
 					};
-	
+
 					// Update order
 					server.lists.order.push(Number(list));
 					server.lists.items.length++;
-					
+
 				/***** LIST IS DELETED ON THE CLIENT BUT DOESN'T EXIST ON THE SERVER *****/
 				} else if (client.lists.items[list].hasOwnProperty('deleted') && !server.lists.items.hasOwnProperty(list)) {
-					
+
 					console.log("LIST " + list + " IS DELETED ON THE CLIENT BUT DOESN'T EXIST ON THE SERVER")
-					
+
 					// Copy the deleted timestamp over
 					server.lists.items[list] = {deleted: client.lists.items[list].deleted}; 
-						
+
 				/***** LIST IS DELETED ON THE CLIENT AND BUT NOT ON THE SERVER *****/
-				
+
 				 } else if (client.lists.items[list].hasOwnProperty('deleted') && !server.lists.items[list].hasOwnProperty('deleted')) {
-					 
+
 					 console.log("LIST " + list + " IS DELETED ON THE CLIENT AND BUT NOT ON THE SERVER")
-					
+
 					var deleteList = true;
-				
+
 					// Check timestamps on client and server
 					for(var key in server.lists.items[list].time) {
-						
+
 						// If server has been modified after client was deleted, don't delete the list.
-						if(server.lists.items[list].time[key] > client.lists.deleted[list]) {
-							
+						if(server.lists.items[list].time[key] > client.lists.items[list].deleted) {
+
 							deleteList = false;
-							
+
 						}
 					}
-					
+
 					// Delete the list
 					if(deleteList) {
-						
-						cli.list(list).remove();
-						
+
+						core.list(list).delete(client.lists.items[list].deleted);
+
 					}
-					
-					
+
+
 				/***** LIST IS DELETED ON THE SERVER AND ON THE COMPUTER *****/
-				
+
 				} else if (server.lists.items[list].hasOwnProperty('deleted') && client.lists.items[list].hasOwnProperty('deleted')) {
-					
+
 					console.log("List '" + list + "' is deleted on the server and the computer");
-					
+
 					// Use the latest time stamp
 					if (client.lists.items[list].deleted > server.lists.items[list].deleted) {
-					
+
 						console.log("List '" + list + "' is deleted, but has a newer timestamp");
-					
+
 						// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
 						server.lists.items[list].deleted = client.lists.items[list].deleted;
-					
+
 					}
-				
-	
-				
+
+
+
 				/***** LIST IS DELETED ON THE SERVER AND BUT NOT ON THE COMPUTER *****/
-				
+
 				} else if (server.lists.items[list].hasOwnProperty('deleted') && client.lists.items.hasOwnProperty(list)) {
-					
+
 					console.log("LIST " + list + " IS DELETED ON THE SERVER AND BUT NOT ON THE COMPUTER")
-					
+
 					var keepList = true;
-					
+
 					// Check timestamps on client and server
 					for(var key in client.lists.items[list].time) {
-						
+
 						// If the task on the client has been modified after task on the server was deleted, keep the list.
 						if(client.lists.items[list].time[key] > server.lists.deleted[list]) {
-							
+
 							keepList = false;
-							
+
 						}
 					}
-					
+
 					// Keep the list
 					if(keepList) {
-						
+
 						server.lists.items[list] = clone(client.lists.items[list]);
-						
+
 					}
-					
+
 				} else if (server.lists.items.hasOwnProperty(list)) {
-				
+
 					console.log("List '" + list + "' exists on server.");
-				
+
 					for(var key in client.lists.items[list].time) {
-				
+
 						if (client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
-				
+
 							console.log("The key '" + key + "' in list '" + list + "' has been modified.");
-				
+
 							console.log(JSON.stringify(client.lists.items[list][key]))
-				
+
 							// If so, update list key and time
 							server.lists.items[list][key] = client.lists.items[list][key];
 							server.lists.items[list].time[key] = client.lists.items[list].time[key];
-				
+
 						}
 					}
-	
+
 				}
 			}
 		}
-		
+
 		// Loop through each task
 		for(var task in client.tasks) {
-	
+
 			// Do not sync the tasks.length propery
-			// This should only be modified by the server side cli.js
+			// This should only be modified by the server side core.js
 			if (task !== 'length') {
-	
+
 				/***** ADDING NEW TASKS TO THE SERVER *****/
-	
+
 				// If task has never been synced before
 				if (client.tasks[task].synced === false || client.tasks[task].synced === 'false') {
-	
+
 					console.log("Task '" + task + "' has never been synced before");
-	
+
 					// Task is going to be added to the server so we delete the synced property
 					client.tasks[task].synced = true;
-	
+
 					// If task already exists on the server (Don't be fooled, it's a different task...)
 					if (server.tasks.hasOwnProperty(task)) {
-	
+
 						console.log("A task with the ID '" + task + "' already exists on the server");
-	
+
 						// Does not mess with ID's if it isn't going to change
 						if (server.tasks.length !== Number(task)) {
-	
+
 							// Add task to task (ID + server.tasks.length)
 							client.tasks[server.tasks.length] = clone(client.tasks[task]);
 							delete client.tasks[task];
-	
+
 							console.log("Task '" + task + "' has been moved to task '" + server.tasks.length  + "'");
-	
+
 							task = server.tasks.length;
-	
+
 						}
 					}
-	
+
 					// If task hasn't been deleted
 					if (!client.tasks[task].hasOwnProperty('deleted')) {
-	
+
 						console.log("Task '" + task + "' is being added to the server.");
-	
+
 						// Add the task to the server
-						cli.addTask("New Task", client.tasks[task].list);
+						core.task().add("New Task", client.tasks[task].list);
 						server.tasks[task] = clone(client.tasks[task]);
-	
-						// Calculate date
-						cli.calc.date(task);
-	
-						// Calculate Today etc? - Do later
-						cli.today(task).calculate();
-	
+
 						// Fix task length
 						fixLength(server.tasks);
-	
+
 					// The task is new, but the client deleted it
 					} else {
-	
+
 						console.log("Task '" + task + "' is new, but the client deleted it");
-	
+
 						// Add the task to the server, but don't touch lists and stuff
 						server.tasks[task] = clone(client.tasks[task]);
-	
+
 					}
-					
-					
+
+
 				/***** TASK DOESN'T EXIST ON SERVER FOR SOME REASON -- BUG *****/
 				} else if (!server.tasks.hasOwnProperty(task)) {
-					
+
 					console.log("Task " + task + " doesn't exist on server. It should, but it doesn't.");
-					
+
 					if(client.tasks[task].hasOwnProperty('deleted')) {
-						
+
 						console.log("Task " + task + " was deleted before it was sunk");
-						
+
 						server.tasks[task] = {deleted: client.tasks[task].deleted};
 					}
-				
-					// Better just copy the task onto the server...
-					// server.tasks[task] = clone(client.tasks[task]);
-	
+
+
 				/***** CLIENT DELETED TASK *****/
-	
+
 				// Task was deleted on computer but not on the server
 				} else if (client.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
-	
+
 					console.log("Task '" + task + "' was deleted on computer but not on the server");
-	
+
 					// We use this to check whether the task was modified AFTER it was deleted
 					var deleteTask = true;
-	
+
 					// Loop through each attribute on server
 					for(var key in server.tasks[task]) {
-	
+
 						// Check if server task was modified after task was deleted
 						if (server.tasks[task].time[key] > client.tasks[task].deleted) {
-	
+
 							console.log("Task '" + task + "' was modified after task was deleted");
-	
+
 							// Since it has been modified after it was deleted, we don't delete the task
 							deleteTask = false;
-	
+
 						}
 					}
-	
+
 					// If there have been no modifications to the task after it has been deleted
 					if (deleteTask) {
-	
+
 						// Delete the task
-						cli.deleteTask(task);
-	
+						core.task(task).move('trash');
+
 						// Get the timestamp
 						server.tasks[task] = clone(client.tasks[task]);
-	
-						// Update stuff
-						// cli.calc.date(task);
-						// cli.today(task).calculate();
-	
+
 					}
-	
+
 				/***** SERVER DELETED TASK *****/
-	
+
 				// Task is deleted on the server and the computer
 				} else if (client.tasks[task].hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')){
-	
+
 					console.log("Task '" + task + "' is deleted on the server and the computer");
-	
+
 					// Use the latest time stamp
 					if (client.tasks[task].deleted > server.tasks[task].deleted) {
-	
+
 						console.log("Task '" + task + "' is deleted, but has a newer timestamp");
-	
+
 						// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
 						server.tasks[task].deleted = client.tasks[task].deleted;
-	
+
 					}
-	
+
 				/***** OLD TASK THAT HASN'T BEEN DELETED BUT POSSIBLY MODIFIED *****/
-	
+
 				} else {
-	
+
 					console.log("Task '" + task + "' exists on the server and hasn't been deleted");
-	
+
 					//Stores the Attrs we'll be needing later
 					var changedAttrs = [];
-	
+
 					// Loop through each attribute on computer
 					for(var key in client.tasks[task]) {
-	
+
 						//Don't loop through timestamps
 						if (key !== 'time') {
-	
+
 							// Check if task was deleted on server or
 							if (server.tasks[task].hasOwnProperty('deleted')) {
-	
+
 								console.log("Task '" + task + "' was deleted on the server");
-	
+
 								// Check if task was modified after it was deleted
 								if (client.tasks[task].time[key] > server.tasks[task].deleted) {
-	
+
 									console.log("Task " + task + " was modified on the client after it was deleted on the server");
-	
+
 									// Update the server with the entire task (including attributes and timestamps)
 									server.tasks[task] = client.tasks[task];
-	
+
 									//Breaks, we only need to do the thing once.
 									break;
 								}
-	
+
 							// Task has not been deleted
 							} else {
-	
+
 								// If the attribute was updated after the server
 								if (client.tasks[task].time[key] > server.tasks[task].time[key]) {
-	
+
 									console.log("Key '" + key + "'  in task " + task + " has been updated by the client");
-	
+
 									if (key !== 'list') {
 										// Update the servers version
 										server.tasks[task][key] = client.tasks[task][key];
 									}
-									
+
 									// Update the timestamp
 									server.tasks[task].time[key] = client.tasks[task].time[key];
-	
+
 									//Adds the changed Attr to the array
 									changedAttrs.push(key);
 								}
 							}
 						}
 					}
-	
+
 					if (changedAttrs.length > 0) {
+						if (changedAttrs.indexOf('date') != -1 || changedAttrs.indexOf('showInToday') != -1) {
+							// Date is changed
+							console.log("Task " + task + " has been updated --> DATE");
+							//core.calc.date(task);
+							//core.today(task).calculate();
+						} else if (changedAttrs.indexOf('today') != -1) {
+							// Today
+							console.log("Task " + task + " has been updated --> TODAY");
+							//core.today(task).calculate();
+						}
+
 						if (changedAttrs.indexOf('list') != -1) {
 							// List
 							console.log("Task " + task + " has been updated --> LIST");
-							cli.moveTask(task, client.tasks[task].list);
-						}
-						if (changedAttrs.indexOf('logged') != -1) {
-							// List
-							console.log("Task " + task + " has been updated --> LOGGED");
-							// core.task(task).move(client.tasks[task].list);
+							core.task(task).move(client.tasks[task].list);
 						}
 					}
 				}
 			}
 		}
-		
+
 		// Loop through each task
 		for(var task in client.lists.scheduled) {
-		
+
 			// Do not sync the tasks.length propery
-			// This should only be modified by the server side cli.js
+			// This should only be modified by the server side core.js
 			if (task !== 'length') {
-		
+
 				/***** ADDING NEW TASKS TO THE SERVER *****/
-		
+
 				// If task has never been synced before
 				if (client.lists.scheduled[task].synced === false || client.lists.scheduled[task].synced === 'false') {
-		
+
 					console.log("Task '" + task + "' has never been synced before");
-		
+
 					// Task is going to be added to the server so we delete the synced property
 					client.lists.scheduled[task].synced = true;
-		
+
 					// If task already exists on the server (Don't be fooled, it's a different task...)
 					if (server.lists.scheduled.hasOwnProperty(task)) {
-		
+
 						console.log("A task with the ID '" + task + "' already exists on the server");
-		
+
 						// Does not mess with ID's if it isn't going to change
 						if (server.lists.scheduled.length !== Number(task)) {
-		
+
 							// Add task to task (ID + server.lists.scheduled.length)
 							client.lists.scheduled[server.lists.scheduled.length] = clone(client.lists.scheduled[task]);
 							delete client.lists.scheduled[task];
-		
+
 							console.log("Task '" + task + "' has been moved to task '" + server.lists.scheduled.length  + "'");
-		
+
 							task = server.lists.scheduled.length;
-		
+
 						}
 					}
-		
+
 					// If task hasn't been deleted
 					if (!client.lists.scheduled[task].hasOwnProperty('deleted')) {
-		
+
 						console.log("Task '" + task + "' is being added to the server.");
-		
+
 						// Add the task to the server
-						cli.scheduled.add("New Task", client.lists.scheduled[task].type);
+						core.scheduled.add("New Task", client.lists.scheduled[task].type);
 						server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
-		
+
 						// Fix task length
 						fixLength(server.lists.scheduled);
-		
+
 					// The task is new, but the client deleted it
 					} else {
-		
+
 						console.log("Task '" + task + "' is new, but the client deleted it");
-		
+
 						// Add the task to the server, but don't touch lists and stuff
 						server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
-		
+
 					}
-					
+
 				/***** TASK DOESN'T EXIST ON SERVER FOR SOME REASON -- BUG *****/
 				} else if (!server.tasks.hasOwnProperty(task)) {
-					
+
 					console.log("Task doesn't exist on server. It should, but it doesn't.");
-				
+
 					// Better just copy the task onto the server...
 					server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
-		
+
 				/***** CLIENT DELETED TASK *****/
-		
+
 				// Task was deleted on computer but not on the server
 				} else if (client.lists.scheduled[task].hasOwnProperty('deleted') && !server.lists.scheduled[task].hasOwnProperty('deleted')) {
-		
+
 					console.log("Task '" + task + "' was deleted on computer but not on the server");
-		
+
 					// We use this to check whether the task was modified AFTER it was deleted
 					var deleteTask = true;
-		
+
 					// Loop through each attribute on server
 					for(var key in server.lists.scheduled[task]) {
-		
+
 						// Check if server task was modified after task was deleted
 						if (server.lists.scheduled[task].time[key] > client.lists.scheduled[task].deleted) {
-		
+
 							console.log("Task '" + task + "' was modified after task was deleted");
-		
+
 							// Since it has been modified after it was deleted, we don't delete the task
 							deleteTask = false;
-		
+
 						}
 					}
-		
+
 					// If there have been no modifications to the task after it has been deleted
 					if (deleteTask) {
-		
+
 						// Delete the task
-						cli.deleteTask('s' + task);
-		
+						core.deleteTask('s' + task);
+
 						// Get the timestamp
 						server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
-		
+
 					}
-		
+
 				/***** SERVER DELETED TASK *****/
-		
+
 				// Task is deleted on the server and the computer
 				} else if (client.lists.scheduled[task].hasOwnProperty('deleted') && server.lists.scheduled[task].hasOwnProperty('deleted')){
-		
+
 					console.log("Task '" + task + "' is deleted on the server and the computer");
-		
+
 					// Use the latest time stamp
 					if (client.lists.scheduled[task].deleted > server.lists.scheduled[task].deleted) {
-		
+
 						console.log("Task '" + task + "' is deleted, but has a newer timestamp");
-		
+
 						// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
 						server.lists.scheduled[task].deleted = client.lists.scheduled[task].deleted;
-		
+
 					}
-		
+
 				/***** OLD TASK THAT HASN'T BEEN DELETED BUT POSSIBLY MODIFIED *****/
-		
+
 				} else {
-		
+
 					console.log("Task '" + task + "' exists on the server and hasn't been deleted");
-		
+
 					// Loop through each attribute on computer
 					for(var key in client.lists.scheduled[task]) {
-		
+
 						//Don't loop through timestamps
 						if (key !== 'time') {
-		
+
 							// Check if task was deleted on server or
 							if (server.lists.scheduled[task].hasOwnProperty('deleted')) {
-		
+
 								console.log("Task '" + task + "' was deleted on the server");
-		
+
 								// Check if task was modified after it was deleted
 								if (client.lists.scheduled[task].time[key] > server.lists.scheduled[task].deleted) {
-		
+
 									console.log("Task " + task + " was modified on the client after it was deleted on the server");
-		
+
 									// Update the server with the entire task (including attributes and timestamps)
 									server.lists.scheduled[task] = client.lists.scheduled[task];
-		
+
 									//Breaks, we only need to do the thing once.
 									break;
 								}
-		
+
 							// Task has not been deleted
 							} else {
-		
+
 								// If the attribute was updated after the server
 								if (client.lists.scheduled[task].time[key] > server.lists.scheduled[task].time[key]) {
-		
+
 									console.log("Key '" + key + "'  in task " + task + " has been updated by the client");
-		
+
 									if (key !== 'list') {
 										// Update the servers version
 										server.lists.scheduled[task][key] = client.lists.scheduled[task][key];
 									}
-									
+
 									// Update the timestamp
 									server.lists.scheduled[task].time[key] = client.lists.scheduled[task].time[key];
-	
+
 								}
 							}
 						}
@@ -1065,33 +1021,78 @@ function merge(server, client, callback) {
 				}
 			}
 		}
-	
+
 		// Fix task length
 		fixLength(server.tasks)
-		
-		// Fix server.lists.order
-		server.lists.order = [];
 
-		// Get rid of duplicates
-		for(var list in server.lists.items) {
-			if(list != 'length') {
-				if (server.lists.items[list].hasOwnProperty('order')) {
-					server.lists.items[list].order = deDupe(server.lists.items[list].order);
-				}
-				if(server.lists.items[list].hasOwnProperty('name')) {
-					if(server.lists.items[list].name !== 'Today' && server.lists.items[list].name !== 'Next') {
-						server.lists.order.push(Number(list));
-					}
-				}
-			}			
+		var ArrayDiff = function(a,b) {
+			return a.filter(function(i) {return !(b.indexOf(i) > -1);});
 		}
-	
+
+		// Merge list order...
+		var mergeOrder = function(c, s) {
+			// Find diff
+			var sD = ArrayDiff(s.order, c.order);
+			var cD = ArrayDiff(c.order, s.order);
+
+			// Check if only order has been changed
+			var sameKeys = !sD.length && !cD.length;
+
+			// Only order has been changed
+			if(sameKeys) {
+
+				// Use newer timestamp
+				if(c.time > s.time) {
+					console.log("List order: Same keys so going with latest version - Client")
+					return [c.order, c.time];
+				} else {
+					console.log("List order: Same keys so going with latest version - Server")
+					return [s.order, s.time];
+				}
+
+			} else {
+
+				// Crazy merging code
+				console.log("List order: Using crazy merging code")
+
+				// Remove all keys that aren't in the server
+				c.order = ArrayDiff(c.order, cD);
+
+				for(var i = 0; i < sD.length; i++) {
+					// Get the index of each key in the ServerDiff
+					var index = s.order.indexOf(sD[i]);
+					// Inject the key into the client
+					c.order.splice(index, 0, sD[i]);
+				}
+
+				return [c.order, c.time];
+			}
+		};
+
+		var c = {
+			order: client.lists.order,
+			time: client.lists.time
+		},
+		s = {
+			order: server.lists.order,
+			time: server.lists.time
+		}
+
+		console.log(JSON.stringify(c));
+		console.log("---------------");
+		console.log(JSON.stringify(s));
+
+		var mergedListOrder = mergeOrder(c, s);
+
+		server.lists.order = mergedListOrder[0];
+		server.lists.time = mergedListOrder[1];
+
 		callback(server);
-		
+
 	// } catch (e) {
-	// 	
+
 	// 	console.log(e);
-	// 	
+
 	// }
 }
 
@@ -1223,5 +1224,5 @@ function decompress(obj) {
 
 // Because typeof is useless here
 function isArray(obj) {
-    return obj.constructor == Array;
+	return obj.constructor == Array;
 }
