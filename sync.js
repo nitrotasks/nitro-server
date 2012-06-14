@@ -346,21 +346,24 @@ var emptyServer = {
 			today: {
 				order: [],
 				time: {
-					name: 0,
 					order: 0
 				}
 			},
 			next: {
 				order: [],
 				time: {
-					name: 0,
 					order: 0
+				}
+			},
+			logbook:{
+				order:[],
+				time:{
+					order:0
 				}
 			},
 			scheduled:{
 				order:[],
 				time:{
-					name:0,
 					order:0
 				}
 			},
@@ -429,27 +432,36 @@ function merge(server, client, callback) {
 						return this;
 					}
 
-					//Remove from list
-					var old = server.tasks[id].list;
-					server.lists.items[old].order.remove(id);
+					//Fix for scheduled list
+					if (server.tasks[id].type) {
+						var old = 'scheduled';
+					} else {
+						var old = server.tasks[id].list;
+					}
 
-					if(server.tasks[id].logged && list != 'logbook') {
-						server.tasks[id].logged = false;
+					// Dropping a task onto the Logbook completes it
+					if(list == 'logbook' && !server.tasks[id].logged) {
+						server.tasks[id].logged = 1;
+						console.log('Logged ' + id);
 						// server.save(['tasks', id, 'logged']);
 					}
-					
-					if (list === 'trash') {
+
+					// Taking a task out of the logbook
+					if(server.tasks[id].list == list && server.tasks[id].logged && list != 'logbook') {
+						console.log("Unlogging task")
+						server.tasks[id].logged = false;
+						// server.save(['tasks', id, 'logged']);
+					} else if (list === 'trash') {
+						//Remove from list
+						server.lists.items[old].order.remove(id);
 						// delete server.tasks[id];
-						server.tasks[id] = {deleted: time};
+						server.tasks[id] = {deleted: 1};
 						console.log('Deleted: ' + id);
 						// Saves - but doesn't mess with timestamps
 						// server.save();
-					} else if (list === 'logbook') {
-						// Don't actually move the task
-						server.tasks[id].logged = core.timestamp();
-						console.log('Logged ' + id);
-						// server.save(['tasks', id, 'logged']);
 					} else {
+						//Remove from list
+						server.lists.items[old].order.remove(id);
 						//Move to other list
 						server.lists.items[list].order.unshift(id);
 						server.tasks[id].list = list;
@@ -646,19 +658,21 @@ function merge(server, client, callback) {
 
 					for(var key in client.lists.items[list].time) {
 
-						if (client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
+						if(key != 'order') {
 
-							console.log("The key '" + key + "' in list '" + list + "' has been modified.");
+							if (client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
 
-							console.log(JSON.stringify(client.lists.items[list][key]))
+								console.log("The key '" + key + "' in list '" + list + "' has been modified.");
 
-							// If so, update list key and time
-							server.lists.items[list][key] = client.lists.items[list][key];
-							server.lists.items[list].time[key] = client.lists.items[list].time[key];
+								console.log(JSON.stringify(client.lists.items[list][key]))
 
+								// If so, update list key and time
+								server.lists.items[list][key] = client.lists.items[list][key];
+								server.lists.items[list].time[key] = client.lists.items[list].time[key];
+
+							}
 						}
 					}
-
 				}
 			}
 		}
@@ -860,6 +874,7 @@ function merge(server, client, callback) {
 							// List
 							console.log("Task " + task + " has been updated --> LIST");
 							core.task(task).move(client.tasks[task].list);
+							console.log(server.lists.items[client.tasks[task].list].order)
 						}
 					}
 				}
