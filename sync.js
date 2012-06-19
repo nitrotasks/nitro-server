@@ -266,6 +266,7 @@ function sync(req, res) {
 	
 			// Merge data
 			merge(server, recievedData, function (server) {
+
 				// Send data back to client
 				res.json(compress(server));
 				saveServer(service, user, server);
@@ -294,7 +295,6 @@ function getServer(service, user, callback) {
 	case "dropbox":
 		user.get(settings.filename, function (status, reply) {
 			reply = decompress(JSON.parse(reply.toString()));
-
 			// Check if file exists
 			if (!reply.hasOwnProperty('tasks')) {
 				server = clone(emptyServer);
@@ -324,7 +324,6 @@ function getServer(service, user, callback) {
 }
 
 function saveServer(service, user, server) {
-	server.version = settings.version
 	var output = JSON.stringify(compress(server));
 
 	switch (service) {
@@ -380,6 +379,8 @@ var emptyServer = {
 
 function merge(server, client, callback) {
 
+	console.log(server.version)
+
 	// Check for version number
 	if(client.stats.version != "1.4") {
 		// Add a task telling them to update...
@@ -407,11 +408,11 @@ function merge(server, client, callback) {
 		}
 		client.tasks.length++
 		client.lists.items.today.order.unshift(id)
-		callback(client, 'oldClient')
+		callback(client)
 		return
 	}
 	if(server.version !== "1.4") {
-		upgrade()
+		upgradeDB(server)
 	}
 
 	console.log(JSON.stringify(client, null, 2));
@@ -1178,7 +1179,10 @@ function merge(server, client, callback) {
 		}
 	}
 
-	callback(server, 'complete');
+	// Well it got this far without crashing
+	server.version = settings.version
+
+	callback(server);
 
 }
 

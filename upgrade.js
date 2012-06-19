@@ -1,16 +1,100 @@
 // Upgrade localStorage from 1.3.1 to 1.4
 
-upgrade = function(server) {
+upgradeDB = function(server) {
 
 	console.log("Running database upgrade")
 
 	var tasks = server.tasks,
-		lists = server.lists,
-		prefs = server.prefs
+		lists = server.lists
 
 	var convertDate = function(date) {
 		var date = new Date(date)
 		return date.getTime()
+	}
+
+	// --------------------------
+	// 		BECAUSE 1.3.1
+	// --------------------------
+
+	// Check tasks for timestamps
+	for(var id in tasks) {
+		if (id !== 'length' && !tasks[id].hasOwnProperty('deleted')) {
+			var _this = tasks[id]
+			// Check task has time object
+			if (!_this.hasOwnProperty('time')) {
+				_this.time = {
+					content: 0,
+					priority: 0,
+					date: 0,
+					notes: 0,
+					today: 0,
+					showInToday: 0,
+					list: 0,
+					logged: 0
+				}
+			}
+			// Check task has sync status
+			if (!_this.hasOwnProperty('synced')) {
+				_this.synced = false
+			}
+			// Make sure list is a number
+			if(typeof _this.list === 'string') _this.list = _this.list.toNum()
+		}
+	}
+	// Check lists for timestamps
+	for(var id in lists.items) {
+		if (id !== 'length' && id !== '0') {
+			var _this = lists.items[id]
+			// Check if list has been deleted
+			if (!_this.hasOwnProperty('deleted')) {
+				// Check list has time object
+				if (!_this.hasOwnProperty('time') || typeof(_this.time) === 'number') {					
+					// Add or reset time object
+					_this.time = {
+						name: 0,
+						order: 0
+					}				
+				}
+				if (id !== 'today' && id !== 'next' && id !== 'someday') {
+					// Check list has synced status
+					if (!_this.hasOwnProperty('synced')) {				
+						_this.synced = 'false';
+					}
+				}
+				// Convert everything to numbers
+				for  (var x = 0; x < _this.order.length; x++) {
+					if(typeof _this.order[x] === 'string') {
+						_this.order[x] = _this.order[x].toNum();
+					}
+				}
+			}					
+		}
+	}
+	// Make sure all lists exist
+	for(var id = 1; id < lists.items.length; id++) {
+		if(!lists.items.hasOwnProperty(id)) {
+			lists.items[id] = {
+				deleted: 0
+			}
+		}
+	}
+	//Check someday list
+	if (lists.items.someday) {
+		//Create Someday List
+		var id = lists.items.length
+		lists.items[id] = $.extend(true, {}, lists.items.someday)
+		lists.items.length++
+		lists.order.push(id)
+		delete lists.items.someday
+		// Update task.list
+		for (var i = lists.items[id].order.length - 1; i >= 0; i--) {
+			var _this  = lists.items[id].order[i]
+			_this.list = id
+		}
+	}
+	//Check for scheduled
+	if (!lists.scheduled) {
+		lists.scheduled = {length: 0}
 	}
 
 	// --------------------------
@@ -107,6 +191,5 @@ upgrade = function(server) {
 
 	server.tasks = tasks
 	server.lists = lists
-	server.prefs = prefs
 
 }
