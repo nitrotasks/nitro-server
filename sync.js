@@ -13,12 +13,13 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-console.info('Nitro Sync 1.3\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
+console.info('Nitro Sync 1.4\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 
 var settings = {
+	version: "1.4",
 	filename: 'nitro_data.json',
 	url: 'http://localhost:3000',
-	timeout: 120 // How long the server will wait for the user to authenticate Nitro.
+	timeout: 180 // How long the server will wait for the user to authenticate Nitro.
 }
 
 // Node Packages
@@ -33,7 +34,7 @@ var ubuntu = new OAuth("https://one.ubuntu.com/oauth/request/", "https://one.ubu
 
 //Funky Headers =)
 app.use(function (req, res, next) {
-	res.header("X-powered-by", "NitrOS 2000");
+	res.header("X-powered-by", "Windows 95");
 	next();
 });
 
@@ -56,7 +57,7 @@ app.post('/sync/', function (req, res){
 
 // Dropbox callback
 app.get('/dropbox', function (req, res) {
-	res.send("Authentication Complete!");
+	res.send('<meta HTTP-EQUIV="REFRESH" content="0; url=http://localhost:3000/success/">');
 	var uid = req.query.uid,
 		token = req.query.oauth_token;
 		if(users.dropbox.hasOwnProperty(token)) {
@@ -66,7 +67,7 @@ app.get('/dropbox', function (req, res) {
 
 // Ubuntu callback for oauth verifier
 app.get('/ubuntu-one/', function (req, res) {
-	res.send("Authentication Complete!");
+	res.send('<meta HTTP-EQUIV="REFRESH" content="0; url=http://localhost:3000/success/">');
 	var token = req.query.oauth_token;
 	if(users.ubuntu.hasOwnProperty(token)) {
 		ubuntu.getOAuthAccessToken(token, users.ubuntu[token].request_secret, req.query.oauth_verifier, function(e, t, s, r) {
@@ -154,6 +155,7 @@ function authenticate(req, res) {
 	
 					// Try again in a second
 					if(count <= settings.timeout) setTimeout(check, 1000);
+					else res.json('failed')
 				}
 			}
 	
@@ -192,7 +194,8 @@ function authenticate(req, res) {
 					count++;
 	
 					// Try again in a second
-					if(count <= settings.timeout) setTimeout(check, 1000);
+					if(count <= settings.timeout) setTimeout(check, 1000)
+					else res.json('failed')
 				}
 			}
 	
@@ -320,6 +323,7 @@ function getServer(service, user, callback) {
 }
 
 function saveServer(service, user, server) {
+	server.version = settings.version
 	var output = JSON.stringify(compress(server));
 
 	switch (service) {
@@ -1216,7 +1220,10 @@ function compress(obj) {
 		items:       'r',
 		next:        's',
 		someday:     't',
-		deleted:     'u'
+		deleted:     'u',
+		logbook: 	 'v',
+		scheduled: 	 'w',
+		version: 	 'x'
 	},
 	out = {};
 
@@ -1258,7 +1265,10 @@ function decompress(obj) {
 		r: 'items',
 		s: 'next',
 		t: 'someday',
-		u: 'deleted'
+		u: 'deleted',
+		v: 'logbook',
+		w: 'scheduled',
+		x: 'version'
 	},
 	out = {};
 
