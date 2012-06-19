@@ -26,7 +26,8 @@ var settings = {
 var express = require('express'),
 	app = express.createServer(),
 	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" }),
-	OAuth = require("oauth").OAuth;
+	OAuth = require("oauth").OAuth,
+	upgrade = require('./upgrade')
 
 // Ubuntu one settings
 var ubuntu = new OAuth("https://one.ubuntu.com/oauth/request/", "https://one.ubuntu.com/oauth/access/", "ubuntuone", "hammertime", "1.0", settings.url + "/ubuntu-one/", "PLAINTEXT"),
@@ -379,6 +380,40 @@ var emptyServer = {
 
 function merge(server, client, callback) {
 
+	// Check for version number
+	if(client.stats.version != "1.4") {
+		// Add a task telling them to update...
+		var id = client.tasks.length
+		client.tasks[id] = {
+			content: "IMPORTANT: Please upgrade to Nitro 1.4 to continue using sync.",
+			priority: "important",
+			date: "",
+			notes: "",
+			today: "manual",
+			showInToday: "1",
+			list: "today",
+			logged: false,
+				time: {
+				content: 1340088252145,
+				priority: 1340088209109,
+				date: 1340088214848,
+				notes: 0,
+				today: 1340088214857,
+				showInToday: 1340088214857,
+				list: 1340088214857,
+				logged: 0
+			},
+			synced: false
+		}
+		client.tasks.length++
+		client.lists.items.today.order.unshift(id)
+		callback(client, 'oldClient')
+		return
+	}
+	if(server.version !== "1.4") {
+		upgrade()
+	}
+
 	console.log(JSON.stringify(client, null, 2));
 	console.log("=============================");
 	console.log(JSON.stringify(server, null, 2));
@@ -500,660 +535,651 @@ function merge(server, client, callback) {
 				}
 			}
 		}
-	}
+	}	
 
-	// MASSIVE TRY/CATCH FOR ERRORS (TEMPORARY UNTIL WE GET SOMETING ELSE SORTED OUT)
-	// try {	
+	// Loop through each list
+	for (var list in client.lists.items) {
 
-		// Loop through each list
-		for (var list in client.lists.items) {
+		list = list.toNum();
 
-			list = list.toNum();
+		if (list !== 'length') {
 
-			if (list !== 'length') {
+			console.log(list);
 
-				console.log(list);
+			// Check if it is a new list
+			if (client.lists.items[list].synced === false || client.lists.items[list].synced === 'false') {
 
-				// Check if it is a new list
-				if (client.lists.items[list].synced === false || client.lists.items[list].synced === 'false') {
+				console.log("List '" + list + "' has never been synced before");
 
-					console.log("List '" + list + "' has never been synced before");
+				// List is now synced so set it to true
+				client.lists.items[list].synced = true;
 
-					// List is now synced so set it to true
-					client.lists.items[list].synced = true;
+				// If a list with that ID already exists on the server
+				if (server.lists.items.hasOwnProperty(list)) {
 
-					// If a list with that ID already exists on the server
-					if (server.lists.items.hasOwnProperty(list)) {
+					console.log("List '" + list + "' already exists on the server");
 
-						console.log("List '" + list + "' already exists on the server");
+					// Change the list ID
+					var newID = server.lists.items.length;
+					client.lists.items[newID] = clone(client.lists.items[list]);
 
-						// Change the list ID
-						var newID = server.lists.items.length;
-						client.lists.items[newID] = clone(client.lists.items[list]);
+					for(var task = 0; task < client.lists.items[list].order.length; task++) {
 
-						for(var task = 0; task < client.lists.items[list].order.length; task++) {
+						console.log("Task in list: " + task);
 
-							console.log("Task in list: " + task);
+						task = client.lists.items[list].order[task];
+
+						client.tasks[task].list = newID;
+
+						// Temporary fix - not the best way to do it.
+						client.tasks[task].time.list = Date.now();
+					}
+
+					delete client.lists.items[list];
+
+					console.log("List '" + list + "' has been moved to '" + server.lists.items.length + "'");
+
+					list = server.lists.items.length;
+
+				} else {
+					console.log("List '" + list + "' does not exist on server. Adding to server as: " + server.lists.items.length);
+
+					if(list != server.lists.items.length) {
+						for(var task in client.lists.items[list].order) {
 
 							task = client.lists.items[list].order[task];
 
-							client.tasks[task].list = newID;
+							client.tasks[task].list = server.lists.items.length;
 
 							// Temporary fix - not the best way to do it.
 							client.tasks[task].time.list = Date.now();
 						}
-
-						delete client.lists.items[list];
-
-						console.log("List '" + list + "' has been moved to '" + server.lists.items.length + "'");
-
-						list = server.lists.items.length;
-
-					} else {
-						console.log("List '" + list + "' does not exist on server. Adding to server as: " + server.lists.items.length);
-
-						if(list != server.lists.items.length) {
-							for(var task in client.lists.items[list].order) {
-
-								task = client.lists.items[list].order[task];
-
-								client.tasks[task].list = server.lists.items.length;
-
-								// Temporary fix - not the best way to do it.
-								client.tasks[task].time.list = Date.now();
-							}
-						}
 					}
+				}
 
-					// If the list doesn't exist on the server, create it
-					server.lists.items[server.lists.items.length] = {
-						name: client.lists.items[list].name,
-						order: [],
-						time: client.lists.items[list].time,
-						synced: true
-					};
+				// If the list doesn't exist on the server, create it
+				server.lists.items[server.lists.items.length] = {
+					name: client.lists.items[list].name,
+					order: [],
+					time: client.lists.items[list].time,
+					synced: true
+				};
 
-					// Update order
-					server.lists.order.push(Number(list));
-					server.lists.items.length++;
+				// Update order
+				server.lists.order.push(Number(list));
+				server.lists.items.length++;
 
-				/***** LIST IS DELETED ON THE CLIENT BUT DOESN'T EXIST ON THE SERVER *****/
-				} else if (client.lists.items[list].hasOwnProperty('deleted') && !server.lists.items.hasOwnProperty(list)) {
+			/***** LIST IS DELETED ON THE CLIENT BUT DOESN'T EXIST ON THE SERVER *****/
+			} else if (client.lists.items[list].hasOwnProperty('deleted') && !server.lists.items.hasOwnProperty(list)) {
 
-					console.log("LIST " + list + " IS DELETED ON THE CLIENT BUT DOESN'T EXIST ON THE SERVER")
+				console.log("LIST " + list + " IS DELETED ON THE CLIENT BUT DOESN'T EXIST ON THE SERVER")
 
-					// Copy the deleted timestamp over
-					server.lists.items[list] = {deleted: client.lists.items[list].deleted}; 
+				// Copy the deleted timestamp over
+				server.lists.items[list] = {deleted: client.lists.items[list].deleted}; 
 
-				/***** LIST IS DELETED ON THE CLIENT AND BUT NOT ON THE SERVER *****/
+			/***** LIST IS DELETED ON THE CLIENT AND BUT NOT ON THE SERVER *****/
 
-				 } else if (client.lists.items[list].hasOwnProperty('deleted') && !server.lists.items[list].hasOwnProperty('deleted')) {
+			 } else if (client.lists.items[list].hasOwnProperty('deleted') && !server.lists.items[list].hasOwnProperty('deleted')) {
 
-					 console.log("LIST " + list + " IS DELETED ON THE CLIENT AND BUT NOT ON THE SERVER")
+				 console.log("LIST " + list + " IS DELETED ON THE CLIENT AND BUT NOT ON THE SERVER")
 
-					var deleteList = true;
+				var deleteList = true;
 
-					// Check timestamps on client and server
-					for(var key in server.lists.items[list].time) {
+				// Check timestamps on client and server
+				for(var key in server.lists.items[list].time) {
 
-						// If server has been modified after client was deleted, don't delete the list.
-						if(server.lists.items[list].time[key] > client.lists.items[list].deleted) {
+					// If server has been modified after client was deleted, don't delete the list.
+					if(server.lists.items[list].time[key] > client.lists.items[list].deleted) {
 
-							deleteList = false;
-
-						}
-					}
-
-					// Delete the list
-					if(deleteList) {
-
-						core.list(list).delete(client.lists.items[list].deleted);
+						deleteList = false;
 
 					}
+				}
+
+				// Delete the list
+				if(deleteList) {
+
+					core.list(list).delete(client.lists.items[list].deleted);
+
+				}
 
 
-				/***** LIST IS DELETED ON THE SERVER AND ON THE COMPUTER *****/
+			/***** LIST IS DELETED ON THE SERVER AND ON THE COMPUTER *****/
 
-				} else if (server.lists.items[list].hasOwnProperty('deleted') && client.lists.items[list].hasOwnProperty('deleted')) {
+			} else if (server.lists.items[list].hasOwnProperty('deleted') && client.lists.items[list].hasOwnProperty('deleted')) {
 
-					console.log("List '" + list + "' is deleted on the server and the computer");
+				console.log("List '" + list + "' is deleted on the server and the computer");
 
-					// Use the latest time stamp
-					if (client.lists.items[list].deleted > server.lists.items[list].deleted) {
+				// Use the latest time stamp
+				if (client.lists.items[list].deleted > server.lists.items[list].deleted) {
 
-						console.log("List '" + list + "' is deleted, but has a newer timestamp");
+					console.log("List '" + list + "' is deleted, but has a newer timestamp");
 
-						// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
-						server.lists.items[list].deleted = client.lists.items[list].deleted;
+					// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
+					server.lists.items[list].deleted = client.lists.items[list].deleted;
+
+				}
+
+
+
+			/***** LIST IS DELETED ON THE SERVER AND BUT NOT ON THE COMPUTER *****/
+
+			} else if (server.lists.items[list].hasOwnProperty('deleted') && client.lists.items.hasOwnProperty(list)) {
+
+				console.log("LIST " + list + " IS DELETED ON THE SERVER AND BUT NOT ON THE COMPUTER")
+
+				var keepList = true;
+
+				// Check timestamps on client and server
+				for(var key in client.lists.items[list].time) {
+
+					// If the task on the client has been modified after task on the server was deleted, keep the list.
+					if(client.lists.items[list].time[key] > server.lists.deleted[list]) {
+
+						keepList = false;
 
 					}
+				}
 
+				// Keep the list
+				if(keepList) {
 
+					server.lists.items[list] = clone(client.lists.items[list]);
 
-				/***** LIST IS DELETED ON THE SERVER AND BUT NOT ON THE COMPUTER *****/
+				}
 
-				} else if (server.lists.items[list].hasOwnProperty('deleted') && client.lists.items.hasOwnProperty(list)) {
+			} else if (server.lists.items.hasOwnProperty(list)) {
 
-					console.log("LIST " + list + " IS DELETED ON THE SERVER AND BUT NOT ON THE COMPUTER")
+				console.log("List '" + list + "' exists on server.");
 
-					var keepList = true;
+				for(var key in client.lists.items[list].time) {
 
-					// Check timestamps on client and server
-					for(var key in client.lists.items[list].time) {
+					if(key != 'order') {
 
-						// If the task on the client has been modified after task on the server was deleted, keep the list.
-						if(client.lists.items[list].time[key] > server.lists.deleted[list]) {
+						if (client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
 
-							keepList = false;
+							console.log("The key '" + key + "' in list '" + list + "' has been modified.");
 
-						}
-					}
+							console.log(JSON.stringify(client.lists.items[list][key]))
 
-					// Keep the list
-					if(keepList) {
+							// If so, update list key and time
+							server.lists.items[list][key] = client.lists.items[list][key];
+							server.lists.items[list].time[key] = client.lists.items[list].time[key];
 
-						server.lists.items[list] = clone(client.lists.items[list]);
-
-					}
-
-				} else if (server.lists.items.hasOwnProperty(list)) {
-
-					console.log("List '" + list + "' exists on server.");
-
-					for(var key in client.lists.items[list].time) {
-
-						if(key != 'order') {
-
-							if (client.lists.items[list].time[key] > server.lists.items[list].time[key]) {
-
-								console.log("The key '" + key + "' in list '" + list + "' has been modified.");
-
-								console.log(JSON.stringify(client.lists.items[list][key]))
-
-								// If so, update list key and time
-								server.lists.items[list][key] = client.lists.items[list][key];
-								server.lists.items[list].time[key] = client.lists.items[list].time[key];
-
-							}
 						}
 					}
 				}
 			}
 		}
+	}
 
-		// Loop through each task
-		for(var task in client.tasks) {
+	// Loop through each task
+	for(var task in client.tasks) {
 
-			task = task.toNum();
+		task = task.toNum();
 
-			// Do not sync the tasks.length propery
-			// This should only be modified by the server side core.js
-			if (task !== 'length') {
+		// Do not sync the tasks.length propery
+		// This should only be modified by the server side core.js
+		if (task !== 'length') {
 
-				/***** ADDING NEW TASKS TO THE SERVER *****/
+			/***** ADDING NEW TASKS TO THE SERVER *****/
 
-				// If task has never been synced before
-				if (client.tasks[task].synced === false || client.tasks[task].synced === 'false') {
+			// If task has never been synced before
+			if (client.tasks[task].synced === false || client.tasks[task].synced === 'false') {
 
-					console.log("Task '" + task + "' has never been synced before");
+				console.log("Task '" + task + "' has never been synced before");
 
-					// Task is going to be added to the server so we delete the synced property
-					client.tasks[task].synced = true;
+				// Task is going to be added to the server so we delete the synced property
+				client.tasks[task].synced = true;
 
-					// If task already exists on the server (Don't be fooled, it's a different task...)
-					if (server.tasks.hasOwnProperty(task)) {
+				// If task already exists on the server (Don't be fooled, it's a different task...)
+				if (server.tasks.hasOwnProperty(task)) {
 
-						console.log("A task with the ID '" + task + "' already exists on the server");
+					console.log("A task with the ID '" + task + "' already exists on the server");
 
-						// Does not mess with ID's if it isn't going to change
-						if (server.tasks.length !== Number(task)) {
+					// Does not mess with ID's if it isn't going to change
+					if (server.tasks.length !== Number(task)) {
 
-							// Add task to task (ID + server.tasks.length)
-							client.tasks[server.tasks.length] = clone(client.tasks[task]);
-							delete client.tasks[task];
+						// Add task to task (ID + server.tasks.length)
+						client.tasks[server.tasks.length] = clone(client.tasks[task]);
+						delete client.tasks[task];
 
-							console.log("Task '" + task + "' has been moved to task '" + server.tasks.length  + "'");
+						console.log("Task '" + task + "' has been moved to task '" + server.tasks.length  + "'");
 
-							task = server.tasks.length;
+						task = server.tasks.length;
 
-						}
-					}
-
-					// If task hasn't been deleted
-					if (!client.tasks[task].hasOwnProperty('deleted')) {
-
-						console.log("Task '" + task + "' is being added to the server.");
-
-						// Add the task to the server
-						core.task().add("New Task", client.tasks[task].list);
-						server.tasks[task] = clone(client.tasks[task]);
-
-						// Fix task length
-						fixLength(server.tasks);
-
-					// The task is new, but the client deleted it
-					} else {
-
-						console.log("Task '" + task + "' is new, but the client deleted it");
-
-						// Add the task to the server, but don't touch lists and stuff
-						server.tasks[task] = clone(client.tasks[task]);
-
-					}
-
-
-				/***** TASK DOESN'T EXIST ON SERVER FOR SOME REASON -- BUG *****/
-				} else if (!server.tasks.hasOwnProperty(task)) {
-
-					console.log("Task " + task + " doesn't exist on server. It should, but it doesn't.");
-
-					if(client.tasks[task].hasOwnProperty('deleted')) {
-
-						console.log("Task " + task + " was deleted before it was sunk");
-
-						server.tasks[task] = {deleted: client.tasks[task].deleted};
-					}
-
-
-				/***** CLIENT DELETED TASK *****/
-
-				// Task was deleted on computer but not on the server
-				} else if (client.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
-
-					console.log("Task '" + task + "' was deleted on computer but not on the server");
-
-					// We use this to check whether the task was modified AFTER it was deleted
-					var deleteTask = true;
-
-					// Loop through each attribute on server
-					for(var key in server.tasks[task]) {
-
-						// Check if server task was modified after task was deleted
-						if (server.tasks[task].time[key] > client.tasks[task].deleted) {
-
-							console.log("Task '" + task + "' was modified after task was deleted");
-
-							// Since it has been modified after it was deleted, we don't delete the task
-							deleteTask = false;
-
-						}
-					}
-
-					// If there have been no modifications to the task after it has been deleted
-					if (deleteTask) {
-
-						// Delete the task
-						core.task(task).move('trash', client.tasks[task].deleted);
-
-						// Get the timestamp
-						server.tasks[task] = clone(client.tasks[task]);
-
-					}
-
-				/***** SERVER DELETED TASK *****/
-
-				// Task is deleted on the server and the computer
-				} else if (client.tasks[task].hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')){
-
-					console.log("Task '" + task + "' is deleted on the server and the computer");
-
-					// Use the latest time stamp
-					if (client.tasks[task].deleted > server.tasks[task].deleted) {
-
-						console.log("Task '" + task + "' is deleted, but has a newer timestamp");
-
-						// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
-						server.tasks[task].deleted = client.tasks[task].deleted;
-
-					}
-
-				/***** OLD TASK THAT HASN'T BEEN DELETED BUT POSSIBLY MODIFIED *****/
-
-				} else {
-
-					console.log("Task '" + task + "' exists on the server and hasn't been deleted");
-
-					//Stores the Attrs we'll be needing later
-					var changedAttrs = [];
-
-					// Loop through each attribute on computer
-					for(var key in client.tasks[task]) {
-
-						//Don't loop through timestamps
-						if (key !== 'time') {
-
-							// Check if task was deleted on server or
-							if (server.tasks[task].hasOwnProperty('deleted')) {
-
-								console.log("Task '" + task + "' was deleted on the server");
-
-								// Check if task was modified after it was deleted
-								if (client.tasks[task].time[key] > server.tasks[task].deleted) {
-
-									console.log("Task " + task + " was modified on the client after it was deleted on the server");
-
-									// Update the server with the entire task (including attributes and timestamps)
-									server.tasks[task] = client.tasks[task];
-
-									//Breaks, we only need to do the thing once.
-									break;
-								}
-
-							// Task has not been deleted
-							} else {
-
-								// If the attribute was updated after the server
-								if (client.tasks[task].time[key] > server.tasks[task].time[key]) {
-
-									console.log("Key '" + key + "'  in task " + task + " has been updated by the client");
-
-									if (key !== 'list') {
-										// Update the servers version
-										server.tasks[task][key] = client.tasks[task][key];
-									}
-
-									// Update the timestamp
-									server.tasks[task].time[key] = client.tasks[task].time[key];
-
-									//Adds the changed Attr to the array
-									changedAttrs.push(key);
-								}
-							}
-						}
-					}
-
-					if (changedAttrs.length > 0) {
-						if (changedAttrs.indexOf('date') != -1 || changedAttrs.indexOf('showInToday') != -1) {
-							// Date is changed
-							console.log("Task " + task + " has been updated --> DATE");
-							//core.calc.date(task);
-							//core.today(task).calculate();
-						} else if (changedAttrs.indexOf('today') != -1) {
-							// Today
-							console.log("Task " + task + " has been updated --> TODAY");
-							//core.today(task).calculate();
-						}
-
-						if (changedAttrs.indexOf('list') != -1) {
-							// List
-							console.log("Task " + task + " has been updated --> LIST");
-							core.task(task).move(client.tasks[task].list);
-							console.log(server.lists.items[client.tasks[task].list].order)
-						}
 					}
 				}
-			}
-		}
 
-		// Loop through each task
-		for(var task in client.lists.scheduled) {
+				// If task hasn't been deleted
+				if (!client.tasks[task].hasOwnProperty('deleted')) {
 
-			// Do not sync the tasks.length propery
-			// This should only be modified by the server side core.js
-			if (task !== 'length') {
+					console.log("Task '" + task + "' is being added to the server.");
 
-				/***** ADDING NEW TASKS TO THE SERVER *****/
+					// Add the task to the server
+					core.task().add("New Task", client.tasks[task].list);
+					server.tasks[task] = clone(client.tasks[task]);
 
-				// If task has never been synced before
-				if (client.lists.scheduled[task].synced === false || client.lists.scheduled[task].synced === 'false') {
+					// Fix task length
+					fixLength(server.tasks);
 
-					console.log("Task '" + task + "' has never been synced before");
-
-					// Task is going to be added to the server so we delete the synced property
-					client.lists.scheduled[task].synced = true;
-
-					// If task already exists on the server (Don't be fooled, it's a different task...)
-					if (server.lists.scheduled.hasOwnProperty(task)) {
-
-						console.log("A task with the ID '" + task + "' already exists on the server");
-
-						// Does not mess with ID's if it isn't going to change
-						if (server.lists.scheduled.length !== Number(task)) {
-
-							// Add task to task (ID + server.lists.scheduled.length)
-							client.lists.scheduled[server.lists.scheduled.length] = clone(client.lists.scheduled[task]);
-							delete client.lists.scheduled[task];
-
-							console.log("Task '" + task + "' has been moved to task '" + server.lists.scheduled.length  + "'");
-
-							task = server.lists.scheduled.length;
-
-						}
-					}
-
-					// If task hasn't been deleted
-					if (!client.lists.scheduled[task].hasOwnProperty('deleted')) {
-
-						console.log("Task '" + task + "' is being added to the server.");
-
-						// Add the task to the server
-						core.scheduled.add("New Task", client.lists.scheduled[task].type);
-						server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
-
-						// Fix task length
-						fixLength(server.lists.scheduled);
-
-					// The task is new, but the client deleted it
-					} else {
-
-						console.log("Task '" + task + "' is new, but the client deleted it");
-
-						// Add the task to the server, but don't touch lists and stuff
-						server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
-
-					}
-
-				/***** TASK DOESN'T EXIST ON SERVER FOR SOME REASON -- BUG *****/
-				} else if (!server.tasks.hasOwnProperty(task)) {
-
-					console.log("Task doesn't exist on server. It should, but it doesn't.");
-
-					// Better just copy the task onto the server...
-					server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
-
-				/***** CLIENT DELETED TASK *****/
-
-				// Task was deleted on computer but not on the server
-				} else if (client.lists.scheduled[task].hasOwnProperty('deleted') && !server.lists.scheduled[task].hasOwnProperty('deleted')) {
-
-					console.log("Task '" + task + "' was deleted on computer but not on the server");
-
-					// We use this to check whether the task was modified AFTER it was deleted
-					var deleteTask = true;
-
-					// Loop through each attribute on server
-					for(var key in server.lists.scheduled[task]) {
-
-						// Check if server task was modified after task was deleted
-						if (server.lists.scheduled[task].time[key] > client.lists.scheduled[task].deleted) {
-
-							console.log("Task '" + task + "' was modified after task was deleted");
-
-							// Since it has been modified after it was deleted, we don't delete the task
-							deleteTask = false;
-
-						}
-					}
-
-					// If there have been no modifications to the task after it has been deleted
-					if (deleteTask) {
-
-						// Delete the task
-						core.deleteTask('s' + task);
-
-						// Get the timestamp
-						server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
-
-					}
-
-				/***** SERVER DELETED TASK *****/
-
-				// Task is deleted on the server and the computer
-				} else if (client.lists.scheduled[task].hasOwnProperty('deleted') && server.lists.scheduled[task].hasOwnProperty('deleted')){
-
-					console.log("Task '" + task + "' is deleted on the server and the computer");
-
-					// Use the latest time stamp
-					if (client.lists.scheduled[task].deleted > server.lists.scheduled[task].deleted) {
-
-						console.log("Task '" + task + "' is deleted, but has a newer timestamp");
-
-						// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
-						server.lists.scheduled[task].deleted = client.lists.scheduled[task].deleted;
-
-					}
-
-				/***** OLD TASK THAT HASN'T BEEN DELETED BUT POSSIBLY MODIFIED *****/
-
+				// The task is new, but the client deleted it
 				} else {
 
-					console.log("Task '" + task + "' exists on the server and hasn't been deleted");
+					console.log("Task '" + task + "' is new, but the client deleted it");
 
-					// Loop through each attribute on computer
-					for(var key in client.lists.scheduled[task]) {
+					// Add the task to the server, but don't touch lists and stuff
+					server.tasks[task] = clone(client.tasks[task]);
 
-						//Don't loop through timestamps
-						if (key !== 'time') {
+				}
 
-							// Check if task was deleted on server or
-							if (server.lists.scheduled[task].hasOwnProperty('deleted')) {
 
-								console.log("Task '" + task + "' was deleted on the server");
+			/***** TASK DOESN'T EXIST ON SERVER FOR SOME REASON -- BUG *****/
+			} else if (!server.tasks.hasOwnProperty(task)) {
 
-								// Check if task was modified after it was deleted
-								if (client.lists.scheduled[task].time[key] > server.lists.scheduled[task].deleted) {
+				console.log("Task " + task + " doesn't exist on server. It should, but it doesn't.");
 
-									console.log("Task " + task + " was modified on the client after it was deleted on the server");
+				if(client.tasks[task].hasOwnProperty('deleted')) {
 
-									// Update the server with the entire task (including attributes and timestamps)
-									server.lists.scheduled[task] = client.lists.scheduled[task];
+					console.log("Task " + task + " was deleted before it was sunk");
 
-									//Breaks, we only need to do the thing once.
-									break;
-								}
+					server.tasks[task] = {deleted: client.tasks[task].deleted};
+				}
 
-							// Task has not been deleted
-							} else {
 
-								// If the attribute was updated after the server
-								if (client.lists.scheduled[task].time[key] > server.lists.scheduled[task].time[key]) {
+			/***** CLIENT DELETED TASK *****/
 
-									console.log("Key '" + key + "'  in task " + task + " has been updated by the client");
+			// Task was deleted on computer but not on the server
+			} else if (client.tasks[task].hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
 
-									if (key !== 'list') {
-										// Update the servers version
-										server.lists.scheduled[task][key] = client.lists.scheduled[task][key];
-									}
+				console.log("Task '" + task + "' was deleted on computer but not on the server");
 
-									// Update the timestamp
-									server.lists.scheduled[task].time[key] = client.lists.scheduled[task].time[key];
+				// We use this to check whether the task was modified AFTER it was deleted
+				var deleteTask = true;
 
-								}
-							}
-						}
+				// Loop through each attribute on server
+				for(var key in server.tasks[task]) {
+
+					// Check if server task was modified after task was deleted
+					if (server.tasks[task].time[key] > client.tasks[task].deleted) {
+
+						console.log("Task '" + task + "' was modified after task was deleted");
+
+						// Since it has been modified after it was deleted, we don't delete the task
+						deleteTask = false;
+
 					}
 				}
-			}
-		}
 
-		// Fix task length
-		fixLength(server.tasks)
+				// If there have been no modifications to the task after it has been deleted
+				if (deleteTask) {
 
-		var ArrayDiff = function(a,b) {
-			return a.filter(function(i) {return !(b.indexOf(i) > -1);});
-		}
+					// Delete the task
+					core.task(task).move('trash', client.tasks[task].deleted);
 
-		// Merge list order...
-		var mergeOrder = function(c, s) {
-			// Find diff
-			var sD = ArrayDiff(s.order, c.order);
-			var cD = ArrayDiff(c.order, s.order);
+					// Get the timestamp
+					server.tasks[task] = clone(client.tasks[task]);
 
-			// Check if only order has been changed
-			var sameKeys = !sD.length && !cD.length;
-
-			// Only order has been changed
-			if(sameKeys) {
-
-				// Use newer timestamp
-				if(c.time > s.time) {
-					console.log("List order: Same keys so going with latest version - Client")
-					return [c.order, c.time];
-				} else {
-					console.log("List order: Same keys so going with latest version - Server")
-					return [s.order, s.time];
 				}
+
+			/***** SERVER DELETED TASK *****/
+
+			// Task is deleted on the server and the computer
+			} else if (client.tasks[task].hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')){
+
+				console.log("Task '" + task + "' is deleted on the server and the computer");
+
+				// Use the latest time stamp
+				if (client.tasks[task].deleted > server.tasks[task].deleted) {
+
+					console.log("Task '" + task + "' is deleted, but has a newer timestamp");
+
+					// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
+					server.tasks[task].deleted = client.tasks[task].deleted;
+
+				}
+
+			/***** OLD TASK THAT HASN'T BEEN DELETED BUT POSSIBLY MODIFIED *****/
 
 			} else {
 
-				// Crazy merging code
-				console.log("List order: Using crazy merging code")
+				console.log("Task '" + task + "' exists on the server and hasn't been deleted");
 
-				// Remove all keys that aren't in the server
-				c.order = ArrayDiff(c.order, cD);
+				//Stores the Attrs we'll be needing later
+				var changedAttrs = [];
 
-				for(var i = 0; i < sD.length; i++) {
-					// Get the index of each key in the ServerDiff
-					var index = s.order.indexOf(sD[i]);
-					// Inject the key into the client
-					c.order.splice(index, 0, sD[i]);
+				// Loop through each attribute on computer
+				for(var key in client.tasks[task]) {
+
+					//Don't loop through timestamps
+					if (key !== 'time') {
+
+						// Check if task was deleted on server or
+						if (server.tasks[task].hasOwnProperty('deleted')) {
+
+							console.log("Task '" + task + "' was deleted on the server");
+
+							// Check if task was modified after it was deleted
+							if (client.tasks[task].time[key] > server.tasks[task].deleted) {
+
+								console.log("Task " + task + " was modified on the client after it was deleted on the server");
+
+								// Update the server with the entire task (including attributes and timestamps)
+								server.tasks[task] = client.tasks[task];
+
+								//Breaks, we only need to do the thing once.
+								break;
+							}
+
+						// Task has not been deleted
+						} else {
+
+							// If the attribute was updated after the server
+							if (client.tasks[task].time[key] > server.tasks[task].time[key]) {
+
+								console.log("Key '" + key + "'  in task " + task + " has been updated by the client");
+
+								if (key !== 'list') {
+									// Update the servers version
+									server.tasks[task][key] = client.tasks[task][key];
+								}
+
+								// Update the timestamp
+								server.tasks[task].time[key] = client.tasks[task].time[key];
+
+								//Adds the changed Attr to the array
+								changedAttrs.push(key);
+							}
+						}
+					}
 				}
 
+				if (changedAttrs.length > 0) {
+					if (changedAttrs.indexOf('date') != -1 || changedAttrs.indexOf('showInToday') != -1) {
+						// Date is changed
+						console.log("Task " + task + " has been updated --> DATE");
+						//core.calc.date(task);
+						//core.today(task).calculate();
+					} else if (changedAttrs.indexOf('today') != -1) {
+						// Today
+						console.log("Task " + task + " has been updated --> TODAY");
+						//core.today(task).calculate();
+					}
+
+					if (changedAttrs.indexOf('list') != -1) {
+						// List
+						console.log("Task " + task + " has been updated --> LIST");
+						core.task(task).move(client.tasks[task].list);
+						console.log(server.lists.items[client.tasks[task].list].order)
+					}
+				}
+			}
+		}
+	}
+
+	// Loop through each task
+	for(var task in client.lists.scheduled) {
+
+		// Do not sync the tasks.length propery
+		// This should only be modified by the server side core.js
+		if (task !== 'length') {
+
+			/***** ADDING NEW TASKS TO THE SERVER *****/
+
+			// If task has never been synced before
+			if (client.lists.scheduled[task].synced === false || client.lists.scheduled[task].synced === 'false') {
+
+				console.log("Task '" + task + "' has never been synced before");
+
+				// Task is going to be added to the server so we delete the synced property
+				client.lists.scheduled[task].synced = true;
+
+				// If task already exists on the server (Don't be fooled, it's a different task...)
+				if (server.lists.scheduled.hasOwnProperty(task)) {
+
+					console.log("A task with the ID '" + task + "' already exists on the server");
+
+					// Does not mess with ID's if it isn't going to change
+					if (server.lists.scheduled.length !== Number(task)) {
+
+						// Add task to task (ID + server.lists.scheduled.length)
+						client.lists.scheduled[server.lists.scheduled.length] = clone(client.lists.scheduled[task]);
+						delete client.lists.scheduled[task];
+
+						console.log("Task '" + task + "' has been moved to task '" + server.lists.scheduled.length  + "'");
+
+						task = server.lists.scheduled.length;
+
+					}
+				}
+
+				// If task hasn't been deleted
+				if (!client.lists.scheduled[task].hasOwnProperty('deleted')) {
+
+					console.log("Task '" + task + "' is being added to the server.");
+
+					// Add the task to the server
+					core.scheduled.add("New Task", client.lists.scheduled[task].type);
+					server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
+
+					// Fix task length
+					fixLength(server.lists.scheduled);
+
+				// The task is new, but the client deleted it
+				} else {
+
+					console.log("Task '" + task + "' is new, but the client deleted it");
+
+					// Add the task to the server, but don't touch lists and stuff
+					server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
+
+				}
+
+			/***** TASK DOESN'T EXIST ON SERVER FOR SOME REASON -- BUG *****/
+			} else if (!server.tasks.hasOwnProperty(task)) {
+
+				console.log("Task doesn't exist on server. It should, but it doesn't.");
+
+				// Better just copy the task onto the server...
+				server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
+
+			/***** CLIENT DELETED TASK *****/
+
+			// Task was deleted on computer but not on the server
+			} else if (client.lists.scheduled[task].hasOwnProperty('deleted') && !server.lists.scheduled[task].hasOwnProperty('deleted')) {
+
+				console.log("Task '" + task + "' was deleted on computer but not on the server");
+
+				// We use this to check whether the task was modified AFTER it was deleted
+				var deleteTask = true;
+
+				// Loop through each attribute on server
+				for(var key in server.lists.scheduled[task]) {
+
+					// Check if server task was modified after task was deleted
+					if (server.lists.scheduled[task].time[key] > client.lists.scheduled[task].deleted) {
+
+						console.log("Task '" + task + "' was modified after task was deleted");
+
+						// Since it has been modified after it was deleted, we don't delete the task
+						deleteTask = false;
+
+					}
+				}
+
+				// If there have been no modifications to the task after it has been deleted
+				if (deleteTask) {
+
+					// Delete the task
+					core.deleteTask('s' + task);
+
+					// Get the timestamp
+					server.lists.scheduled[task] = clone(client.lists.scheduled[task]);
+
+				}
+
+			/***** SERVER DELETED TASK *****/
+
+			// Task is deleted on the server and the computer
+			} else if (client.lists.scheduled[task].hasOwnProperty('deleted') && server.lists.scheduled[task].hasOwnProperty('deleted')){
+
+				console.log("Task '" + task + "' is deleted on the server and the computer");
+
+				// Use the latest time stamp
+				if (client.lists.scheduled[task].deleted > server.lists.scheduled[task].deleted) {
+
+					console.log("Task '" + task + "' is deleted, but has a newer timestamp");
+
+					// If the task was deleted on a computer after it was deleted on the server, then update the time stamp
+					server.lists.scheduled[task].deleted = client.lists.scheduled[task].deleted;
+
+				}
+
+			/***** OLD TASK THAT HASN'T BEEN DELETED BUT POSSIBLY MODIFIED *****/
+
+			} else {
+
+				console.log("Task '" + task + "' exists on the server and hasn't been deleted");
+
+				// Loop through each attribute on computer
+				for(var key in client.lists.scheduled[task]) {
+
+					//Don't loop through timestamps
+					if (key !== 'time') {
+
+						// Check if task was deleted on server or
+						if (server.lists.scheduled[task].hasOwnProperty('deleted')) {
+
+							console.log("Task '" + task + "' was deleted on the server");
+
+							// Check if task was modified after it was deleted
+							if (client.lists.scheduled[task].time[key] > server.lists.scheduled[task].deleted) {
+
+								console.log("Task " + task + " was modified on the client after it was deleted on the server");
+
+								// Update the server with the entire task (including attributes and timestamps)
+								server.lists.scheduled[task] = client.lists.scheduled[task];
+
+								//Breaks, we only need to do the thing once.
+								break;
+							}
+
+						// Task has not been deleted
+						} else {
+
+							// If the attribute was updated after the server
+							if (client.lists.scheduled[task].time[key] > server.lists.scheduled[task].time[key]) {
+
+								console.log("Key '" + key + "'  in task " + task + " has been updated by the client");
+
+								if (key !== 'list') {
+									// Update the servers version
+									server.lists.scheduled[task][key] = client.lists.scheduled[task][key];
+								}
+
+								// Update the timestamp
+								server.lists.scheduled[task].time[key] = client.lists.scheduled[task].time[key];
+
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Fix task length
+	fixLength(server.tasks)
+
+	var ArrayDiff = function(a,b) {
+		return a.filter(function(i) {return !(b.indexOf(i) > -1);});
+	}
+
+	// Merge list order...
+	var mergeOrder = function(c, s) {
+		// Find diff
+		var sD = ArrayDiff(s.order, c.order);
+		var cD = ArrayDiff(c.order, s.order);
+
+		// Check if only order has been changed
+		var sameKeys = !sD.length && !cD.length;
+
+		// Only order has been changed
+		if(sameKeys) {
+
+			// Use newer timestamp
+			if(c.time > s.time) {
+				console.log("List order: Same keys so going with latest version - Client")
 				return [c.order, c.time];
+			} else {
+				console.log("List order: Same keys so going with latest version - Server")
+				return [s.order, s.time];
 			}
-		};
 
-		// Merge List Order
+		} else {
 
-		var c = {
-			order: client.lists.order,
-			time: client.lists.time
-		},
-		s = {
-			order: server.lists.order,
-			time: server.lists.time
-		}
+			// Crazy merging code
+			console.log("List order: Using crazy merging code")
 
-		var mergedListOrder = mergeOrder(c, s);
-		server.lists.order = mergedListOrder[0];
-		server.lists.time = mergedListOrder[1];
+			// Remove all keys that aren't in the server
+			c.order = ArrayDiff(c.order, cD);
 
-		// Merge Task Order
-
-		// Loop through each list (again)
-		for (var list in client.lists.items) {
-			list = list.toNum();
-			if (list !== 'length' && !server.lists.items[list].hasOwnProperty('deleted')) {
-
-				var c = {
-					order: client.lists.items[list].order,
-					time: client.lists.items[list].time.order
-				},
-				s = {
-					order: server.lists.items[list].order,
-					time: server.lists.items[list].time.order
-				}
-
-				var mergedListOrder = mergeOrder(c, s);
-
-				console.log(list)
-				console.log(JSON.stringify(c));
-				console.log(JSON.stringify(s));
-
-				server.lists.items[list].order = mergedListOrder[0];
-				server.lists.items[list].time.order = mergedListOrder[1];
-
+			for(var i = 0; i < sD.length; i++) {
+				// Get the index of each key in the ServerDiff
+				var index = s.order.indexOf(sD[i]);
+				// Inject the key into the client
+				c.order.splice(index, 0, sD[i]);
 			}
+
+			return [c.order, c.time];
 		}
+	};
 
+	// Merge List Order
 
-		callback(server);
+	var c = {
+		order: client.lists.order,
+		time: client.lists.time
+	},
+	s = {
+		order: server.lists.order,
+		time: server.lists.time
+	}
 
-	// } catch (e) {
+	var mergedListOrder = mergeOrder(c, s);
+	server.lists.order = mergedListOrder[0];
+	server.lists.time = mergedListOrder[1];
 
-	// 	console.log(e);
+	// Merge Task Order
 
-	// }
+	// Loop through each list (again)
+	for (var list in client.lists.items) {
+		list = list.toNum();
+		if (list !== 'length' && !server.lists.items[list].hasOwnProperty('deleted')) {
+
+			var c = {
+				order: client.lists.items[list].order,
+				time: client.lists.items[list].time.order
+			},
+			s = {
+				order: server.lists.items[list].order,
+				time: server.lists.items[list].time.order
+			}
+
+			var mergedListOrder = mergeOrder(c, s);
+
+			console.log(list)
+			console.log(JSON.stringify(c));
+			console.log(JSON.stringify(s));
+
+			server.lists.items[list].order = mergedListOrder[0];
+			server.lists.items[list].time.order = mergedListOrder[1];
+
+		}
+	}
+
+	callback(server, 'complete');
+
 }
 
 // Clone an object or array
