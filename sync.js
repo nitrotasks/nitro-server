@@ -340,7 +340,7 @@ function saveServer(service, user, server) {
 }
 
 // Create server
-var emptyServer = {
+emptyServer = {
 	tasks: {
 		length: 0
 	},
@@ -417,7 +417,12 @@ function merge(server, client, callback) {
 
 	console.log(JSON.stringify(client, null, 2));
 	console.log("=============================");
-	console.log(JSON.stringify(server, null, 2));
+	cleanDB(server)
+	console.log(JSON.stringify(client, null, 2));
+
+	// console.log(JSON.stringify(client, null, 2));
+	// console.log("=============================");
+	// console.log(JSON.stringify(server, null, 2));
 
 	var core = {
 		task: function(id) {
@@ -435,13 +440,15 @@ function merge(server, client, callback) {
 						notes: '',
 						list: list,
 						logged: false,
+						tags: [],
 						time: {
 							content: 0,
 							priority: 0,
 							date: 0,
 							notes: 0,
 							list: 0,
-							logged: 0
+							logged: 0,
+							tags: 0
 						},
 						synced: false
 					};
@@ -1321,4 +1328,12 @@ function decompress(obj) {
 // Because typeof is useless here
 function isArray(obj) {
 	return obj.constructor == Array;
+}
+
+function isObject(obj) {
+	return obj.constructor == Object;
+}
+
+function isNumber(obj) {
+	return !isNaN(parseFloat(obj)) && isFinite(obj);
 }
