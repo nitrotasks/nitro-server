@@ -60,10 +60,11 @@ app.post('/sync/', function (req, res){
 
 
 // FUNCTIONS
-isArray = function(obj) { return obj.constructor == Array; }
-isObject = function(obj) { return obj.constructor == Object; }
-isNumber = function(obj) { return !isNaN(parseFloat(obj)) && isFinite(obj); }
-clone = function(obj) { return JSON.parse(JSON.stringify(obj)); }
+isArray = function(obj) { return obj.constructor == Array }
+isObject = function(obj) { return obj.constructor == Object }
+isNumber = function(obj) { return !isNaN(parseFloat(obj)) && isFinite(obj) }
+clone = function(obj) { return JSON.parse(JSON.stringify(obj)) }
+ArrayDiff = function(a,b) { return a.filter(function(i) {return !(b.indexOf(i) > -1)})}
 
 // Remap console.log() to msg()
 msg = console.log
@@ -280,7 +281,6 @@ function getServer(service, user, callback) {
 	case "dropbox":
 		user.get(settings.filename, function (status, reply) {
 			reply = decompress(JSON.parse(reply.toString()));
-			console.log(reply)
 			// Check if file exists
 			if (!reply.hasOwnProperty('tasks')) {
 				server = clone(emptyServer);
