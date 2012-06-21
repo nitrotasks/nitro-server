@@ -48,15 +48,42 @@ app.use(express.bodyParser());
 app.use(express.static(__dirname + '/app'));
 
 // Initial Auth
-app.post('/auth/', function (req, res) {
+app.post('/request_url', function (req, res) {
+	requestURL(req, res);
+})
+app.post('/auth', function (req, res) {
 	authenticate(req, res);
-});
+})
 
 // Actual Sync
 app.post('/sync/', function (req, res){
 	sync(req, res);
-});
+})
 
+// Dropbox callback
+app.get('/dropbox', function (req, res) {
+	res.send('<meta HTTP-EQUIV="REFRESH" content="0; url='+settings.url+'/success/">');
+	var uid = req.query.uid,
+		token = req.query.oauth_token
+		if(users.dropbox.hasOwnProperty(token)) {
+			users.dropbox[token].uid = uid
+		}
+})
+
+// Ubuntu callback for oauth verifier
+app.get('/ubuntu-one/', function (req, res) {
+	res.send('<meta HTTP-EQUIV="REFRESH" content="0; url='+settings.url+'/success/">')
+	var token = req.query.oauth_token
+	if(users.ubuntu.hasOwnProperty(token)) {
+		ubuntu.getOAuthAccessToken(token, users.ubuntu[token].request_secret, req.query.oauth_verifier, function(e, t, s, r) {
+			users.ubuntu[token].oauth_token = t
+			users.ubuntu[token].oauth_secret = s
+		})
+	}
+})
+
+port = process.env.PORT || 3000
+app.listen(port)
 
 
 // FUNCTIONS
@@ -70,162 +97,109 @@ ArrayDiff = function(a,b) { return a.filter(function(i) {return !(b.indexOf(i) >
 msg = console.log
 
 
+function requestURL(req, res) {
 
-// Dropbox callback
-app.get('/dropbox', function (req, res) {
-	res.send('<meta HTTP-EQUIV="REFRESH" content="0; url='+settings.url+'/success/">');
-	var uid = req.query.uid,
-		token = req.query.oauth_token;
-		if(users.dropbox.hasOwnProperty(token)) {
-			users.dropbox[token].uid = uid;
-		}
-});
-
-// Ubuntu callback for oauth verifier
-app.get('/ubuntu-one/', function (req, res) {
-	res.send('<meta HTTP-EQUIV="REFRESH" content="0; url='+settings.url+'/success/">');
-	var token = req.query.oauth_token;
-	if(users.ubuntu.hasOwnProperty(token)) {
-		ubuntu.getOAuthAccessToken(token, users.ubuntu[token].request_secret, req.query.oauth_verifier, function(e, t, s, r) {
-			users.ubuntu[token].oauth_token = t;
-			users.ubuntu[token].oauth_secret = s;
-		});
-	}
-});
-
-port = process.env.PORT || 3000;
-app.listen(port);
-
-function authenticate(req, res) {
-	// If the client has never been connected before
-	if (req.param('reqURL')) {
-	
-		switch (req.param('service')) {
+	switch (req.param('service')) {
 		case "dropbox":
 			// Request a token from dropbox
 			dbox.request_token(function (status, request_token) {
-	
-				request_token.authorize_url += "&oauth_callback=" + settings.url + "/dropbox";
-	
-				// Send it to the client
-				res.json(request_token);
-			});
-			break;
+				users.dropbox[request_token.oauth_token] = {
+					token_secret: request_token.oauth_token_secret
+				}
+				request_token.authorize_url += "&oauth_callback=" + settings.url + "/dropbox"
+				res.json(request_token)
+			})
+			break
 		case "ubuntu":
 			// Request a token from ubuntu one
 			ubuntu.getOAuthRequestToken(function(e, t, s, r){
-				var reply = {};
-				reply.oauth_token = t;
-				reply.oauth_secret = s;
-				reply.authorize_url = 'https://one.ubuntu.com/oauth/authorize/?description=Nitro&oauth_token=' + t;
-				res.json(reply);
-			});
-			break;
-		}
-	
-	// Client has a token but not oauth
-	} else if (req.param('token')) {
-	
-		// Get token and make sure it is an object
-		var user_token = req.param('token');
-		if(typeof user_token === 'string') user_token = JSON.parse(user_token);
-	
-		switch (req.param('service')) {
-		case "dropbox":
-	
-			// Add user
-			users.dropbox[user_token.oauth_token] = {};
-			var count = 0;
-			var check = function () {
-	
-				if(users.dropbox[user_token.oauth_token].hasOwnProperty('uid')) {
-					// Check token
-					dbox.access_token(user_token, function (status, access_token) {
-						// Token is good :D
-						if (status === 200) {
-							dbox.createClient(access_token).account(function (status, reply) {						
-								// Send access token to client so they can use it again
-								res.json({
-									access: access_token,
-									email: reply.email
-								});
-								delete users.dropbox[user_token.oauth_token];
-							});
-						}
-					});
-				// Nitro hasn't been allowed yet :(
-				} else {
-					count++;
-					// Try again in a second
-					if(count <= settings.timeout) setTimeout(check, 1000);
-					else res.json('failed')
+				users.ubuntu[t] = {
+					request_secret: s
 				}
-			}
-			check();
-			break;
-		 case "ubuntu":
-			// Add user
-			users.ubuntu[user_token.oauth_token] = {request_secret: user_token.oauth_secret};
-			var count = 0;
-			// Keep checking database
-			var check = function() {
-				if(users.ubuntu[user_token.oauth_token].hasOwnProperty('oauth_token')) {
-					ubuntu.get("https://one.ubuntu.com/api/account/", users.ubuntu[user_token.oauth_token].oauth_token, users.ubuntu[user_token.oauth_token].oauth_secret, function (e, d, r) {
-						d = JSON.parse(d);
-						res.json({
-							access: {
-								oauth_token: users.ubuntu[user_token.oauth_token].oauth_token, 
-								oauth_secret: users.ubuntu[user_token.oauth_token].oauth_secret
-							},
-							email: d.email
-						});
-						delete users.ubuntu[user_token.oauth_token];
-					});
-				} else {
-					count++;
-					// Try again in a second
-					if(count <= settings.timeout) setTimeout(check, 1000)
-					else res.json('failed')
-				}
-			}
-			check();
-			break;
-		 }
-	// Server has been authorised before
-	} else if (req.param('access')) {
+				res.json({
+					oauth_token: t,
+					oauth_secret: s,
+					authorize_url: 'https://one.ubuntu.com/oauth/authorize/?description=Nitro&oauth_token=' + t
+				})
+			})
+			break
+	}
+}
 
-		var access_token = req.param('access');
-		if(typeof access_token === 'string') access_token = JSON.parse(access_token);
+function authenticate(req, res) {
 	
-		switch (req.param('service')) {
-	
+	// Get token and make sure it is an object
+	var user_token = req.param('token')
+	if(typeof user_token === 'string') user_token = JSON.parse(user_token)
+
+	console.log(JSON.stringify(user_token))
+
+	switch (req.param('service')) {
+
+		// 
+		// Dropbox authentication
+		// 
+
 		case "dropbox":
-	
-			// Create client
-			user = dbox.createClient(access_token);
-	
-			// Check to see if it worked
-			user.account(function (status, reply) {
-				if (status === 200) {
-					res.json("success");
-				} else {
-					res.json("failed");
-				}
-			});
-			break;
-	
-		case "ubuntu":
-	
-			// Check to see if it worked
-			ubuntu.get("https://one.ubuntu.com/api/account/", access_token.oauth_token, access_token.oauth_secret, function (e, d, r) {
-				if(e) {
-					res.json("failed");
-				} else {
-					res.json("success");
-				}
-			});		
-			break;
-		}
+			// Check user exists
+			if(users.dropbox.hasOwnProperty(user_token.oauth_token)) {
+				msg("Found user")
+				var user = users.dropbox[user_token.oauth_token]
+				if(user.token_secret === user_token.oauth_token_secret) {
+					msg("Token secret matches")
+					if(user.hasOwnProperty('uid')) {
+						msg("Verifed")
+						// Check token
+						dbox.access_token(user_token, function (status, access_token) {
+							// Token is good :D
+							if (status === 200) {
+								dbox.createClient(access_token).account(function (status, reply) {					
+									// Send access token to client so they can use it again
+									res.json({
+										access: access_token,
+										email: reply.email
+									})
+									delete users.dropbox[user_token.oauth_token]
+								})
+							} res.json('failed')
+						})
+					} else res.json('not_verified')
+				} else res.json('failed')
+			} else res.json('failed')
+			break
+
+
+		// 
+		// Ubuntu authentication
+		//
+
+		 case "ubuntu":
+
+		 		// Check user exists
+				if(users.ubuntu.hasOwnProperty(user_token.oauth_token)) {
+					var user = users.ubuntu[user_token.oauth_token]
+					// Check token secret matches
+					if(user.request_secret === user_token.oauth_secret) {
+						// Check token is verified
+						if(user.hasOwnProperty('oauth_secret')) {
+							// Check token and get email
+							ubuntu.get("https://one.ubuntu.com/api/account/", user.oauth_token, user.oauth_secret, function (e, d, r) {
+								if(!e) {
+									d = JSON.parse(d)
+									res.json({
+										access: {
+											oauth_token: user.oauth_token, 
+											oauth_secret: user.oauth_secret
+										},
+										email: d.email
+									});
+									delete users.ubuntu[user_token.oauth_token]
+								} else res.json('failed')
+							})
+						} else res.json('not_verified')
+					} else res.json('failed')
+				} else res.json('failed')
+			break
 	}
 }
 
