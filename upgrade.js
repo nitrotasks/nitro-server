@@ -30,6 +30,15 @@ cleanDB = function(d) {
 				tags: 0
 			},
 			synced: false
+		},
+		list: {
+			name: 'New List',
+			order: [],
+			time: {
+				name: 0,
+				order: 0
+			},
+			synced: false
 		}
 	}
 
@@ -43,18 +52,32 @@ cleanDB = function(d) {
 	// Find length
 	var length = 0
 	for(var k in tasks) {
-		if(typeof _this === 'object') {
+		if(typeof tasks[k] === 'object') {
 			if(Number(k) > length) length = Number(k)
 		}
 	}
+	length++
 	o.tasks.length = length
-	for(var i = 0; i <= length; i++) {
+	for(var i = 0; i < length; i++) {
 		o.tasks[i] = clone(defaults.task)
 		if(tasks.hasOwnProperty(i)) {
 			var _this = tasks[i]
 		} else {
 			o.tasks[i] = { deleted: 0 }
 			break
+		}
+
+		// Deleted
+		if(_this.hasOwnProperty('deleted')) {
+			if(isNumber(_this.deleted)) {
+				o.tasks[i] = {
+					deleted: _this.deleted
+				}
+			} else {
+				o.tasks[i] = {
+					deleted: 0
+				}
+			}
 		}
 
 		// Content
@@ -107,13 +130,13 @@ cleanDB = function(d) {
 			if(isNumber(_this.logged)) {
 				o.tasks[i].logged = _this.logged
 			} else if(_this.logged === 'true' || _this.logged === true) {
-				o.tasks[i].logged = new Date().getTime()
+				o.tasks[i].logged = Date.now()
 			}
 		}
 
 		// List
 		if(_this.hasOwnProperty('list')) {
-			if(isNumber(Number(list))) {
+			if(isNumber(Number(_this.list))) {
 				o.tasks[i].list = Number(_this.list)
 			} else if(	_this.list === 'today' || _this.list === 'next' || _this.list === 'logbook') {
 				o.tasks[i].list = _this.list
@@ -133,6 +156,7 @@ cleanDB = function(d) {
 
 		// Synced
 		if(_this.hasOwnProperty('synced')) {
+			if(_this.synced === 'true') _this.synced = true
 			if(typeof _this.synced === 'boolean') {
 				o.tasks[i].synced = _this.synced
 			}
@@ -172,7 +196,8 @@ cleanDB = function(d) {
 		}
 	}
 
-	server.tasks = o.tasks
+	d.tasks = o.tasks
+
 }
 
 
@@ -264,7 +289,7 @@ upgradeDB = function(server) {
 
 			// Updated logged propety
 			if(_this.logged === "true" || _this.logged === true) {
-				_this.logged === new Date().getTime()
+				_this.logged === Date.now()
 				_this.list = 'logbook'
 				lists.items.logbook.order.push(key)
 			}
