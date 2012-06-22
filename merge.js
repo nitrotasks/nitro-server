@@ -308,12 +308,11 @@ mergeDB = function(server, client, callback) {
 			 } else if (_this.hasOwnProperty('deleted') && !server.lists.items[list].hasOwnProperty('deleted')) {
 
 				msg("List " + list + " Is Deleted On The Client And But Not On The Server")
+				var deleteList = true
 				for(var key in server.lists.items[list].time) {
-					if(server.lists.items[list].time[key] > _this.deleted) {
-						core.list(list).delete(_this.deleted)
-						break
-					}
+					if(server.lists.items[list].time[key] > _this.deleted) deleteList = false
 				}
+				if(deleteList) core.list(list).delete(_this.deleted)
 
 
 
@@ -456,14 +455,15 @@ mergeDB = function(server, client, callback) {
 			} else if (_this.hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
 
 				msg("Task '" + task + "' was deleted on client but not on the server")
+				var deleteTask = true
 				for(var key in server.tasks[task].time) {
-					if (server.tasks[task].time[key] > _this.deleted) {
-						// Remove from lists
-						core.task(task).move('trash', _this.deleted)
-						// Update timestamp
-						server.tasks[task] = {deleted: _this.deleted}
-						break
-					}
+					if (server.tasks[task].time[key] > _this.deleted) deleteTask = false
+				}
+				if(deleteTask) {
+					// Remove from lists
+					core.task(task).move('trash', _this.deleted)
+					// Update timestamp
+					server.tasks[task] = {deleted: _this.deleted}
 				}
 
 

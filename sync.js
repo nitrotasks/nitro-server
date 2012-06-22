@@ -161,7 +161,7 @@ function authenticate(req, res) {
 									})
 									delete users.dropbox[user_token.oauth_token]
 								})
-							} res.json('failed')
+							} else res.json('failed')
 						})
 					} else res.json('not_verified')
 				} else res.json('failed')
