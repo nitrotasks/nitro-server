@@ -144,7 +144,7 @@ cleanDB = function(d) {
 		if(_this.hasOwnProperty('list')) {
 			if(isNumber(Number(_this.list))) {
 				o.tasks[i].list = Number(_this.list)
-			} else if(	_this.list === 'today' || _this.list === 'next' || _this.list === 'logbook' || _this.list === 'scheduled') {
+			} else if(	_this.list === 'today' || _this.list === 'next' || _this.list === 'logbook') {
 				o.tasks[i].list = _this.list
 			}
 		}
@@ -174,36 +174,36 @@ cleanDB = function(d) {
 		}
 
 		// Scheduled
-		if(_this.hasOwnProperty('type')) {
-			if(_this.type === 'scheduled') {
-				if(_this.hasOwnProperty('next')) {
-					o.tasks[i].type = _this.type
-					o.tasks[i].next = Number(_this.next)
-					o.tasks[i].time.type = Number(_this.time.type) || 0
-					o.tasks[i].time.next = Number(_this.time.next) || 0
-				}
-			} else if(_this.type === 'recurring') {
-				var valid = true
-				if(!_this.hasOwnProperty('next')) valid = false
-				if(!_this.hasOwnProperty('ends')) valid = false
-				if(_this.hasOwnProperty('recurType')) {
-					if(_this.recurType !== 'daily' || _this.recurType !== 'weekly' || _this.recurType !== 'monthly') valid = false
-				} else valid = false
-				if(!_this.hasOwnProperty('recurInterval')) valid = false
-				if(valid) {
-					o.tasks[i].type = _this.type
-					o.tasks[i].next = Number(_this.next)
-					o.tasks[i].ends = Number(_this.ends)
-					o.tasks[i].recurType = _this.recurType
-					o.tasks[i].recurInterval = _this.recurInterval
-					o.tasks[i].time.type = Number(_this.time.type) || 0
-					o.tasks[i].time.next = Number(_this.time.next) || 0
-					o.tasks[i].time.ends = Number(_this.time.ends) || 0
-					o.tasks[i].time.recurType = Number(_this.time.recurType) || 0
-					o.tasks[i].time.recurInterval = Number(_this.time.recurInterval) || 0
-				}
-			}
-		}
+		// if(_this.hasOwnProperty('type')) {
+		// 	if(_this.type === 'scheduled') {
+		// 		if(_this.hasOwnProperty('next')) {
+		// 			o.tasks[i].type = _this.type
+		// 			o.tasks[i].next = Number(_this.next)
+		// 			o.tasks[i].time.type = Number(_this.time.type) || 0
+		// 			o.tasks[i].time.next = Number(_this.time.next) || 0
+		// 		}
+		// 	} else if(_this.type === 'recurring') {
+		// 		var valid = true
+		// 		if(!_this.hasOwnProperty('next')) valid = false
+		// 		if(!_this.hasOwnProperty('ends')) valid = false
+		// 		if(_this.hasOwnProperty('recurType')) {
+		// 			if(_this.recurType !== 'daily' || _this.recurType !== 'weekly' || _this.recurType !== 'monthly') valid = false
+		// 		} else valid = false
+		// 		if(!_this.hasOwnProperty('recurInterval')) valid = false
+		// 		if(valid) {
+		// 			o.tasks[i].type = _this.type
+		// 			o.tasks[i].next = Number(_this.next)
+		// 			o.tasks[i].ends = Number(_this.ends)
+		// 			o.tasks[i].recurType = _this.recurType
+		// 			o.tasks[i].recurInterval = _this.recurInterval
+		// 			o.tasks[i].time.type = Number(_this.time.type) || 0
+		// 			o.tasks[i].time.next = Number(_this.time.next) || 0
+		// 			o.tasks[i].time.ends = Number(_this.time.ends) || 0
+		// 			o.tasks[i].time.recurType = Number(_this.time.recurType) || 0
+		// 			o.tasks[i].time.recurInterval = Number(_this.time.recurInterval) || 0
+		// 		}
+		// 	}
+		// }
 	}
 	
 	// Lists
@@ -270,10 +270,18 @@ cleanDB = function(d) {
 		// Order
 		if(_this.hasOwnProperty('order')) {
 			if(isArray(_this.order)) {
+				
+				// All tasks in list
 				for(var j = 0; j < _this.order.length; j++) {
 					if(o.tasks.hasOwnProperty(_this.order[j])) {
 						if(!o.tasks[_this.order[j]].hasOwnProperty('deleted')) {
+							
+							// Push to order
 							o.lists.items[i].order.push(_this.order[j])
+							
+							// Update task.list
+							o.tasks[_this.order[j]].list = i
+							
 						}
 					}
 				}

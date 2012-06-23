@@ -156,7 +156,11 @@ mergeDB = function(server, client, callback) {
 						// server.save(['tasks', id, 'logged']);
 					} else if (list === 'trash') {
 						//Remove from list
-						server.lists.items[old].order.remove(id);
+						if(server.lists.items.hasOwnProperty(old)) {
+							if(!server.lists.items[old].hasOwnProperty('deleted')) {
+								server.lists.items[old].order.remove(id);		
+							}
+						}
 						// delete server.tasks[id];
 						server.tasks[id] = {deleted: 1};
 						msg('Deleted: ' + id);
@@ -164,7 +168,11 @@ mergeDB = function(server, client, callback) {
 						// server.save();
 					} else {
 						//Remove from list
-						server.lists.items[old].order.remove(id);
+						if(server.lists.items.hasOwnProperty(old)) {
+							if(!server.lists.items[old].hasOwnProperty('deleted')) {
+								server.lists.items[old].order.remove(id);		
+							}
+						}
 						//Move to other list
 						server.lists.items[list].order.unshift(id);
 						server.tasks[id].list = list;
