@@ -13,13 +13,12 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-console.info('Nitro Sync 1.4\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
+console.info('Nitro Sync 1.4.2\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 
 settings = {
-	version: "1.4",
+	version: "1.4.2",
 	filename: 'nitro_data.json',
-	url: 'http://localhost:3000',
-	timeout: 180 // How long the server will wait for the user to authenticate Nitro.
+	url: 'http://localhost:3000'
 }
 
 // Node Packages
@@ -132,8 +131,6 @@ function authenticate(req, res) {
 	var user_token = req.param('token')
 	if(typeof user_token === 'string') user_token = JSON.parse(user_token)
 
-	console.log(JSON.stringify(user_token))
-
 	switch (req.param('service')) {
 
 		// 
@@ -143,12 +140,9 @@ function authenticate(req, res) {
 		case "dropbox":
 			// Check user exists
 			if(users.dropbox.hasOwnProperty(user_token.oauth_token)) {
-				msg("Found user")
 				var user = users.dropbox[user_token.oauth_token]
 				if(user.token_secret === user_token.oauth_token_secret) {
-					msg("Token secret matches")
 					if(user.hasOwnProperty('uid')) {
-						msg("Verifed")
 						// Check token
 						dbox.access_token(user_token, function (status, access_token) {
 							// Token is good :D
@@ -221,9 +215,9 @@ function sync(req, res) {
 	getServer(service, user, function(server) {
 	
 		if(server != 'error') {
-	
+
 			var recievedData = decompress(JSON.parse(req.param('data')));
-	
+
 			// Merge data
 			mergeDB(server, recievedData, function (server) {
 
@@ -240,7 +234,7 @@ function sync(req, res) {
 	
 				require('http').get(options, function() {});
 			});
-	
+				
 		} else {
 	
 			res.json("error");

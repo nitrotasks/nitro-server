@@ -39,6 +39,12 @@ cleanDB = function(d) {
 				order: 0
 			},
 			synced: false
+		},
+		smartlist: {
+			order: [],
+			time: {
+				order: 0
+			}
 		}
 	}
 
@@ -50,7 +56,7 @@ cleanDB = function(d) {
 	else tasks = clone(emptyServer.tasks)
 
 	// Find length
-	var length = 0
+	var length = -1
 	for(var k in tasks) {
 		if(typeof tasks[k] === 'object') {
 			if(Number(k) > length) length = Number(k)
@@ -59,19 +65,19 @@ cleanDB = function(d) {
 	length++
 	o.tasks.length = length
 	for(var i = 0; i < length; i++) {
+		
 		o.tasks[i] = clone(defaults.task)
 		if(tasks.hasOwnProperty(i)) {
 			var _this = tasks[i]
 		} else {
 			o.tasks[i] = { deleted: 0 }
-			break
 		}
 
 		// Deleted
 		if(_this.hasOwnProperty('deleted')) {
-			if(isNumber(_this.deleted)) {
+			if(isNumber(_this.deleted) || isNumber(Number(_this.deleted))) {
 				o.tasks[i] = {
-					deleted: _this.deleted
+					deleted: Number(_this.deleted)
 				}
 			} else {
 				o.tasks[i] = {
@@ -199,8 +205,124 @@ cleanDB = function(d) {
 			}
 		}
 	}
+	
+	// Lists
+	var lists
+	if(d.hasOwnProperty('lists')) lists = d.lists
+	else lists = clone(emptyServer.lists)
+	
+	// Find length
+	length = -1
+	for(var k in lists.items) {
+		if(typeof lists.items[k] === 'object') {
+			if(Number(k) > length) length = Number(k)
+		}
+	}
+	length++
+	o.lists.items.length = length
+	
+	var tempArray = ['today','next','logbook']
+	for(var i = 0; i < length; i++) {
+		tempArray.push(i)
+	}
+	
+	for(var n = 0; n < tempArray.length; n++) {
+		i = tempArray[n]
+		
+		// Create blank list
+		if (i == 'today' || i == 'next' || i == 'logbook') {
+			o.lists.items[i] = clone(defaults.smartlist)
+			if(lists.items.hasOwnProperty(i)) {
+				var _this = lists.items[i]
+			}	
+		} else {
+			o.lists.items[i] = clone(defaults.list)
+			if(lists.items.hasOwnProperty(i)) {
+				var _this = lists.items[i]
+			} else  {
+				o.tasks[i] = { deleted: 0 }
+			}	
+		}
+		
+		// Deleted
+		if(_this.hasOwnProperty('deleted')) {
+			if(isNumber(_this.deleted) || isNumber(Number(_this.deleted))) {
+				o.lists.items[i] = {
+					deleted: Number(_this.deleted)
+				}
+			} else {
+				o.lists.items[i] = {
+					deleted: 0
+				}
+			}
+		}
+			
+		// Name
+		if(_this.hasOwnProperty('name')) {
+			if(typeof _this.name === 'string') {
+				o.lists.items[i].name = _this.name
+			} else if(isNumber(_this.name)) {
+				o.lists.items[i].name = _this.name.toString()
+			}
+		}
+		
+		
+		// Order
+		if(_this.hasOwnProperty('order')) {
+			if(isArray(_this.order)) {
+				for(var j = 0; j < _this.order.length; j++) {
+					if(o.tasks.hasOwnProperty(_this.order[j])) {
+						if(!o.tasks[_this.order[j]].hasOwnProperty('deleted')) {
+							o.lists.items[i].order.push(_this.order[j])
+						}
+					}
+				}
+			}
+		}
+		
+		// Timestamps
+		if(_this.hasOwnProperty('time')) {
+			if(isObject(_this.time)) {
+				for(var j in o.lists.items[i].time) {
+					if(isNumber(_this.time[j])) {
+						o.lists.items[i].time[j] = _this.time[j]
+					} else {
+						var Dt = new Date(_this.time[j]).getTime()
+						if(isNumber(Dt)) {
+							o.lists.items[i].time[j] = Dt
+						}
+					}
+				}
+			}
+		}
+		
+		// Synced
+		if(_this.hasOwnProperty('synced')) {
+			if(_this.synced === 'true') _this.synced = true
+			if(typeof _this.synced === 'boolean') {
+				o.lists.items[i].synced = _this.synced
+			}
+		}
+	}
+	
+	
+	// List order
+	for(var i = 0; i < lists.order.length; i++) {
+		var _this = lists.order[i]
+		if(o.lists.items.hasOwnProperty(_this)) {
+			if(!o.lists.items[_this].hasOwnProperty('deleted')) {
+				o.lists.order.push(_this)
+			}
+		}
+	}
+	
+	// List Time
+	if(lists.hasOwnProperty('time')) {
+		o.lists.time = Number(lists.time)
+	}
 
 	d.tasks = o.tasks
+	d.lists = o.lists
 
 }
 
@@ -260,7 +382,6 @@ upgradeDB = function(server) {
 		if(key !== 'length') {
 			var _this = lists.scheduled[key],
 				id = tasks.length
-			console.log(_this, id)
 			tasks[id] = $.extend(true, {}, _this)
 			_this = tasks[id]
 			_this.list = scheduledID

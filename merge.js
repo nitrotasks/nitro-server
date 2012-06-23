@@ -24,12 +24,6 @@ emptyServer = {
 					order:0
 				}
 			},
-			scheduled:{
-				order:[],
-				time:{
-					order:0
-				}
-			},
 			length: 0
 		},
 		time: 0
@@ -39,10 +33,12 @@ emptyServer = {
 
 mergeDB = function(server, client, callback) {
 
+	try {
+
 	msg(server.version)
 
 	// Check for version number
-	if(client.stats.version != "1.4") {
+	if(client.stats.version != '1.4' && client.stats.version != '1.4.2') {
 		// Add a task telling them to update...
 		var id = client.tasks.length
 		client.tasks[id] = {
@@ -71,15 +67,14 @@ mergeDB = function(server, client, callback) {
 		callback(client)
 		return
 	}
-	if(server.version !== "1.4") {
+	if(server.version !== "1.4" && server.version !== "1.4.2") {
 		upgradeDB(server)
 	}
-
-	msg(JSON.stringify(client, null, 2))
+	
+	msg("CLIENT")
 	cleanDB(client)
+	msg("SERVER")
 	cleanDB(server)
-	msg("=============================")
-	msg(JSON.stringify(client, null, 2))
 
 	// ----------------------------
 	// CORE FUNCTIONS
@@ -190,12 +185,10 @@ mergeDB = function(server, client, callback) {
 					}
 
 					//Remove from List order
-					var index = server.lists.order.indexOf(id);
+					var index = server.lists.order.indexOf(Number(id));
 					if(index > -1) {
 						server.lists.order.splice(index, 1);
 					}
-
-					msg(JSON.stringify(server.lists.order))
 
 					//Deletes List
 					//server.lists.items[id] = {deleted: core.timestamp()};
@@ -424,7 +417,6 @@ mergeDB = function(server, client, callback) {
 				}
 
 				msg("Task '" + task + "' is being added to the server.");
-
 				core.task().add("New Task", _this.list)
 				server.tasks[task] = clone(_this)
 
@@ -618,10 +610,6 @@ mergeDB = function(server, client, callback) {
 
 			var mergedListOrder = mergeOrder(c, s);
 
-			msg(list)
-			msg(JSON.stringify(c));
-			msg(JSON.stringify(s));
-
 			server.lists.items[list].order = mergedListOrder[0];
 			server.lists.items[list].time.order = mergedListOrder[1];
 
@@ -632,6 +620,8 @@ mergeDB = function(server, client, callback) {
 	server.version = settings.version
 
 	callback(server);
+
+	} catch(e) {}
 
 }
 
