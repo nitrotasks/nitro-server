@@ -38,7 +38,7 @@ mergeDB = function(server, client, callback) {
 	msg(server.version)
 
 	// Check for version number
-	if(client.stats.version != '1.4' && client.stats.version != '1.4.2') {
+	if(client.stats.version != '1.4' && client.stats.version != '1.4.2' && client.stats.version != '1.4.3') {
 		// Add a task telling them to update...
 		var id = client.tasks.length
 		client.tasks[id] = {
@@ -67,7 +67,7 @@ mergeDB = function(server, client, callback) {
 		callback(client)
 		return
 	}
-	if(server.version !== "1.4" && server.version !== "1.4.2") {
+	if(server.version !== "1.4" && server.version !== "1.4.2" && server.version !== "1.4.3") {
 		upgradeDB(server)
 	}
 	
@@ -544,17 +544,29 @@ mergeDB = function(server, client, callback) {
 
 	// Fix task length
 	fixLength(server.tasks)
-
+	
+	// MLO --> Merge List Order
+	
+	var mlo = { 
+		client: {
+			order: client.lists.order,
+			time: client.lists.time
+		},
+		server: {
+			order: server.lists.order,
+			time: server.lists.time
+		}
+	}
 
 	// Merge list order...
-	var mergeOrder = function(c, s) {
+	mlo.run = function(c, s) {
 
 		// Find diff
-		var sD = ArrayDiff(s.order, c.order);
-		var cD = ArrayDiff(c.order, s.order);
+		var sD = ArrayDiff(s.order, c.order)
+		var cD = ArrayDiff(c.order, s.order)
 
 		// Check if only order has been changed
-		var sameKeys = !sD.length && !cD.length;
+		var sameKeys = !sD.length && !cD.length
 
 		// Only order has been changed
 		if(sameKeys) {
@@ -562,64 +574,53 @@ mergeDB = function(server, client, callback) {
 			// Use newer timestamp
 			if(c.time > s.time) {
 				msg("List order: Same keys so going with latest version - Client")
-				return [c.order, c.time];
+				return [c.order, c.time]
 			} else {
 				msg("List order: Same keys so going with latest version - Server")
-				return [s.order, s.time];
+				return [s.order, s.time]
 			}
 
 		} else {
 
 			// Crazy merging code
-			msg("List order: Using crazy merging code")
+			msg("List order: Merging with algorithm")
 
 			// Remove all keys that aren't in the server
-			c.order = ArrayDiff(c.order, cD);
+			c.order = ArrayDiff(c.order, cD)
 
 			for(var i = 0; i < sD.length; i++) {
 				// Get the index of each key in the ServerDiff
-				var index = s.order.indexOf(sD[i]);
+				var index = s.order.indexOf(sD[i])
 				// Inject the key into the client
-				c.order.splice(index, 0, sD[i]);
+				c.order.splice(index, 0, sD[i])
 			}
 
-			return [c.order, c.time];
+			return [c.order, c.time]
 		}
 	}
 
 	// Merge List Order
+	mlo.result = mlo.run(mlo.client, mlo.server)
+	server.lists.order = mlo.result[0]
+	server.lists.time = mlo.result[1]
 
-	var c = {
-		order: client.lists.order,
-		time: client.lists.time
-	},
-	s = {
-		order: server.lists.order,
-		time: server.lists.time
-	}
-
-	var mergedListOrder = mergeOrder(c, s);
-	server.lists.order = mergedListOrder[0];
-	server.lists.time = mergedListOrder[1];
-
-	// Loop through each list (again)
+	// Merge Task Order (Uses same algorithm)
 	for (var list in client.lists.items) {
-		list = list.toNum();
+		list = list.toNum()
 		if (list !== 'length' && !server.lists.items[list].hasOwnProperty('deleted') && !client.lists.items[list].hasOwnProperty('deleted')) {
 
-			var c = {
+			mlo.client = {
 				order: client.lists.items[list].order,
 				time: client.lists.items[list].time.order
-			},
-			s = {
+			}
+			mlo.server = {
 				order: server.lists.items[list].order,
 				time: server.lists.items[list].time.order
 			}
+			mlo.result = mlo.run(mlo.client, mlo.server)
 
-			var mergedListOrder = mergeOrder(c, s);
-
-			server.lists.items[list].order = mergedListOrder[0];
-			server.lists.items[list].time.order = mergedListOrder[1];
+			server.lists.items[list].order = mlo.result[0]
+			server.lists.items[list].time.order = mlo.result[1]
 
 		}
 	}
@@ -627,7 +628,7 @@ mergeDB = function(server, client, callback) {
 	// Well it got this far without crashing
 	server.version = settings.version
 
-	callback(server);
+	callback(server)
 
 	} catch(e) {}
 

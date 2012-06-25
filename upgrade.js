@@ -313,13 +313,23 @@ cleanDB = function(d) {
 		}
 	}
 	
-	
-	// List order
+	// List order. Part II: Removing.
 	for(var i = 0; i < lists.order.length; i++) {
 		var _this = lists.order[i]
 		if(o.lists.items.hasOwnProperty(_this)) {
 			if(!o.lists.items[_this].hasOwnProperty('deleted')) {
 				o.lists.order.push(_this)
+			}
+		}
+	}
+	
+	// List order. Part I: Adding.
+	for(var i = 0; i < o.lists.items.length; i++) {
+		var _this = o.lists.items[i]
+		if(!_this.hasOwnProperty('deleted')) {
+			var index = o.lists.order.indexOf(i)
+			if(index < 0) {
+				o.lists.order.push(i)
 			}
 		}
 	}
