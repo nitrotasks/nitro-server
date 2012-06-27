@@ -13,12 +13,13 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-console.info('Nitro Sync 1.4.3\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
+console.info('Nitro Sync 1.4.5\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 
 settings = {
-	version: "1.4.2",
+	version: "1.4.5",
 	filename: 'nitro_data.json',
-	url: 'http://localhost:3000'
+	url: 'http://localhost:3000',
+	debugMode: true
 }
 
 // Node Packages
@@ -26,8 +27,12 @@ var express = require('express'),
 	app = express.createServer(),
 	dbox = require("dbox").app({ "app_key": "da4u54t1irdahco", "app_secret": "3ydqe041ogqe1zq" }),
 	OAuth = require("oauth").OAuth,
-	merge = require('./merge'),
-	upgrade = require('./upgrade')
+	fs = require('fs')
+
+require('./merge')
+require('./upgrade')
+require('./merge_1.4.3')
+require('./upgrade_1.4.3')
 
 // Ubuntu one settings
 var ubuntu = new OAuth("https://one.ubuntu.com/oauth/request/", "https://one.ubuntu.com/oauth/access/", "ubuntuone", "hammertime", "1.0", settings.url + "/ubuntu-one/", "PLAINTEXT"),
@@ -122,6 +127,13 @@ function requestURL(req, res) {
 				})
 			})
 			break
+		case "debug":
+			// Use local file
+			res.json({
+				oauth_token: 'hello',
+				oauth_secret: 'world',
+				authorize_url: settings.url + '/success'
+			})
 	}
 }
 
@@ -194,6 +206,20 @@ function authenticate(req, res) {
 					} else res.json('failed')
 				} else res.json('failed')
 			break
+
+		// 
+		// Debug mode
+		// 
+
+		case "debug":
+
+			res.json({
+				access: {
+					oauth_token: 'foo',
+					oauth_secret: 'bar'
+				},
+				email: 'johnsmith@example.com'
+			})
 	}
 }
 
@@ -205,11 +231,15 @@ function sync(req, res) {
 	
 	// Get client
 	switch (service) {
-	case "dropbox":
-		user = dbox.createClient(access_token);
-		break;
-	case "ubuntu":
-		user = access_token;
+		case "dropbox":
+			user = dbox.createClient(access_token)
+			break
+		case "ubuntu":
+			user = access_token
+			break
+		case "debug":
+			user = "John Smith"
+			break
 	}
 	
 	getServer(service, user, function(server) {
@@ -219,20 +249,26 @@ function sync(req, res) {
 			var recievedData = decompress(JSON.parse(req.param('data')));
 
 			// Merge data
-			mergeDB(server, recievedData, function (server) {
+			mergeDB(server, recievedData, function (server, error) {
 
 				// Send data back to client
 				res.json(compress(server));
-				saveServer(service, user, server);
-	
-				//Analytics
-				var options = {
-					host: 'nitrotasks.com',
-					port: 80,
-					path: '/analytics/server.php?fingerprint=' + recievedData.stats.uid + '&backend=' + service + '&version=' + recievedData.stats.version + '&os=' + recievedData.stats.os + '&language=' + recievedData.stats.language
-				};
-	
-				require('http').get(options, function() {});
+
+				// Don't save if we get an error
+				if(!error) {
+					saveServer(service, user, server);
+				}	
+				
+				if(!settings.debugMode) {
+					//Analytics
+					var options = {
+						host: 'nitrotasks.com',
+						port: 80,
+						path: '/analytics/server.php?fingerprint=' + recievedData.stats.uid + '&backend=' + service + '&version=' + recievedData.stats.version + '&os=' + recievedData.stats.os + '&language=' + recievedData.stats.language
+					};
+		
+					require('http').get(options, function() {});
+				}
 			});
 				
 		} else {
@@ -273,8 +309,19 @@ function getServer(service, user, callback) {
 			}
 		});
 		break;
+	case "debug":
+		if(settings.debugMode) {
+			fs.readFile('debug/server.txt', function(err, data) {
+				if(err) {
+					server = clone(emptyServer)
+					saveServer(service, user, server)
+					callback(server)
+				} else {
+					callback(JSON.parse(data))
+				}
+			})
+		}
 	}
-
 }
 
 function saveServer(service, user, server) {
@@ -285,11 +332,13 @@ function saveServer(service, user, server) {
 		user.put(settings.filename, output, function () {});
 		break;
 	case "ubuntu":
-		ubuntu.put("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/" + settings.filename, user.oauth_token, user.oauth_secret, output, "application/json", function (e, d, r) {
-			if(e) {
-				callback("Error saving file!");
-			}
-		});
+		ubuntu.put("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/" + settings.filename, user.oauth_token, user.oauth_secret, output, "application/json");
+		break
+	case "debug":
+		if(settings.debugMode) {
+			fs.writeFile('debug/server.txt', JSON.stringify(server, null, 4))
+		}
+		break
 	}
 }
 

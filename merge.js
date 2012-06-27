@@ -28,17 +28,41 @@ emptyServer = {
 		},
 		time: 0
 	},
-	version: settings.version
-};
+	version: "1.4.3"
+}
+
+getVersion = function(v) {
+	v = v || ""
+	var s = v.split('.'), o = 0
+	for (var i = 0; i < s.length; i++) {
+		switch(i) {
+			case 0:
+				o += s[i] * 100
+				break
+			case 1:
+				o += s[i] * 10
+				break
+			case 2:
+				o += s[i] * 1
+				break
+		}
+	}
+	return o
+}
 
 mergeDB = function(server, client, callback) {
 
-	try {
+	// try {
 
-	msg(server.version)
+	var version = {
+		client: getVersion(client.stats.version),
+		server: getVersion(server.version)
+	}
 
-	// Check for version number
-	if(client.stats.version != '1.4' && client.stats.version != '1.4.2' && client.stats.version != '1.4.3') {
+	msg(version)
+
+	// Earlier than 1.4
+	if(version.client < 140) {
 		// Add a task telling them to update...
 		var id = client.tasks.length
 		client.tasks[id] = {
@@ -64,16 +88,53 @@ mergeDB = function(server, client, callback) {
 		}
 		client.tasks.length++
 		client.lists.items.today.order.unshift(id)
-		callback(client)
+		callback(client, "error")
 		return
+
+	// Old client, new server
+	} else if(version.client < 145 && version.server >= 145) {
+
+		msg("Incompatible client and server")
+
+		var id = client.tasks.length
+		client.tasks[id] = {
+			content: "IMPORTANT: Please upgrade to Nitro 1.4.5 to continue using sync.",
+			priority: "high",
+			date: "",
+			notes: "",
+			list: "today",
+			logged: false,
+				time: {
+				content: 0,
+				priority: 0,
+				date: 0,
+				notes: 0,
+				list: 0,
+				logged: 0
+			},
+			synced: false
+		}
+		client.tasks.length++
+		client.lists.items.today.order.unshift(id)
+		callback(client, "error")
+		return
+
+	// Use legacy sync
+	} else if(version.client < 145) {
+
+		legacy_mergeDB(server, client, callback, version)
+		return
+
 	}
-	if(server.version !== "1.4" && server.version !== "1.4.2" && server.version !== "1.4.3") {
-		upgradeDB(server)
+
+	// If the server is from before 1.4, upgrade it
+	if(version.server < 140) {
+		upgradeDB(server, version.server)
 	}
 	
-	msg("CLIENT")
+	msg("Cleaning client")
 	cleanDB(client)
-	msg("SERVER")
+	msg("Cleaning server")
 	cleanDB(server)
 
 	// ----------------------------
@@ -81,42 +142,17 @@ mergeDB = function(server, client, callback) {
     // ----------------------------
 
 	var core = {
+		getID: function() {
+			var bit = function() {
+				return (Math.floor(Math.random() *36)).toString(36)
+			},
+			part = function() {
+				return bit() + bit() + bit() + bit()
+			}
+			return part() + "-" + part() + "-" + part()
+		},
 		task: function(id) {
 			return {
-				add: function(name, list) {
-					//ID of task
-					var taskId = server.tasks.length;
-					server.tasks.length++;
-
-					//Saves
-					server.tasks[taskId] = {
-						content: name,
-						priority: 'none',
-						date: '',
-						notes: '',
-						list: list,
-						logged: false,
-						tags: [],
-						time: {
-							content: 0,
-							priority: 0,
-							date: 0,
-							notes: 0,
-							list: 0,
-							logged: 0,
-							tags: 0
-						},
-						synced: true
-					}
-
-					//Pushes to array
-					server.lists.items[list].order.unshift(taskId)
-					// server.save()
-					msg('Adding Task: ' + name + ' into list: ' + list)
-
-					return taskId
-				},
-
 				/* Move a task somewhere.
 				e.g: core.task(0).move('next');
 
@@ -135,37 +171,30 @@ mergeDB = function(server, client, callback) {
 						return this;
 					}
 
-					//Fix for scheduled list
-					if (server.tasks[id].type) {
-						var old = 'scheduled';
-					} else {
-						var old = server.tasks[id].list;
-					}
+					var old = server.tasks[id].list
 
 					// Dropping a task onto the Logbook completes it
 					if(list == 'logbook' && !server.tasks[id].logged) {
-						server.tasks[id].logged = 1;
-						msg('Logged ' + id);
-						// server.save(['tasks', id, 'logged']);
+						server.tasks[id].logged = 1
+						msg('Logged ' + id)
 					}
 
 					// Taking a task out of the logbook
 					if(server.tasks[id].list == list && server.tasks[id].logged && list != 'logbook') {
 						msg("Unlogging task")
 						server.tasks[id].logged = false;
-						// server.save(['tasks', id, 'logged']);
+
+					// Deleting a task
 					} else if (list === 'trash') {
-						//Remove from list
+						// Remove from list
 						if(server.lists.items.hasOwnProperty(old)) {
 							if(!server.lists.items[old].hasOwnProperty('deleted')) {
 								server.lists.items[old].order.remove(id);		
 							}
 						}
-						// delete server.tasks[id];
+						// Delete
 						server.tasks[id] = {deleted: 1};
 						msg('Deleted: ' + id);
-						// Saves - but doesn't mess with timestamps
-						// server.save();
 					} else {
 						//Remove from list
 						if(server.lists.items.hasOwnProperty(old)) {
@@ -177,8 +206,6 @@ mergeDB = function(server, client, callback) {
 						server.lists.items[list].order.unshift(id);
 						server.tasks[id].list = list;
 						msg('Moved: ' + id + ' to ' + list);
-						//Saves
-						// server.save([['tasks', id, 'list'],['lists', list, 'order'],['lists', old, 'order']]);
 					}
 				}			
 			}
@@ -193,7 +220,7 @@ mergeDB = function(server, client, callback) {
 					}
 
 					//Remove from List order
-					var index = server.lists.order.indexOf(Number(id));
+					var index = server.lists.order.indexOf(id);
 					if(index > -1) {
 						server.lists.order.splice(index, 1);
 					}
@@ -214,160 +241,114 @@ mergeDB = function(server, client, callback) {
 
 	for (var list in client.lists.items) {
 
-		if (list !== 'length') {
+		msg("Merging list: "+list)
 
-			msg("Merging list: "+list)
-
-			var _this = client.lists.items[list]
-
-
-			//
-			//	Synced on client
-			// 	Doesn't exist on Sever
-			//
-			if(_this.synced === true && !server.lists.items.hasOwnProperty(list)) _this.synced = false
+		var _this = client.lists.items[list]
 
 
 
-			// 
-			// 	New list
-			// 
 
-			if (_this.synced === false) {
+		// 
+		// 	Exists on client
+		// 	Doesn't exist on server
+		// 
 
-				msg("List '" + list + "' has never been synced before")
+		if (!_this.hasOwnProperty('deleted') && !server.lists.items.hasOwnProperty(list)) {
 
-				// List is now synced so set it to true
-				_this.synced = true
+			msg("Adding " + list + " to server")
 
-				// If a list with that ID already exists on the server
-				if (server.lists.items.hasOwnProperty(list)) {
+			// If the list doesn't exist on the server, create it
+			server.lists.items[list] = {
+				name: _this.name,
+				order: [],
+				time: _this.time
+			}
 
-					msg("List '" + list + "' already exists on the server")
+			// Update list order
+			server.lists.order.push(list)
 
-					// Change the list ID
-					var newID = server.lists.items.length
-					client.lists.items[newID] = clone(_this)
 
-					for(var task = 0; task < _this.order.length; task++) {
-						msg("Task in list: " + task)
-						task = _this.order[task]
-						client.tasks[task].list = newID
-						client.tasks[task].time.list = Date.now()
-					}
 
-					delete client.lists.items[list]
-					msg("List '" + list + "' has been moved to '" + server.lists.items.length + "'")
-					_this = client.lists.items[server.lists.items.length]
+		//
+		//	Deleted on Client
+		// 	Doesn't exist on Sever
+		//
 
-				} else {
-					msg("List '" + list + "' does not exist on server. Adding to server as: " + server.lists.items.length)
+		} else if (_this.hasOwnProperty('deleted') && !server.lists.items.hasOwnProperty(list)) {
 
-					if(list != server.lists.items.length) {
-						for(var i = 0; i < _this.order.length; i++) {
-							task = _this.order[i]
-							client.tasks[task].list = server.lists.items.length
-							client.tasks[task].time.list = Date.now()
-						}
-					}
+			msg("List "+list+" Is Deleted On The Client But Doesn't Exist On The Server")
+
+			// Copy the deleted timestamp over
+			server.lists.items[list] = {deleted: _this.deleted}
+
+
+
+		// 
+		// 	Deleted on Client
+		// 	Exists on Sever
+		// 
+
+		 } else if (_this.hasOwnProperty('deleted') && !server.lists.items[list].hasOwnProperty('deleted')) {
+
+			msg("List " + list + " Is Deleted On The Client And But Not On The Server")
+			var deleteList = true
+			for(var key in server.lists.items[list].time) {
+				if(server.lists.items[list].time[key] > _this.deleted) deleteList = false
+			}
+			if(deleteList) core.list(list).delete(_this.deleted)
+
+
+
+		// 
+		// 	Deleted on Client
+		// 	Deleted on Server
+		// 
+
+		} else if (server.lists.items[list].hasOwnProperty('deleted') && _this.hasOwnProperty('deleted')) {
+
+			msg("List '" + list + "' is deleted on the server and the computer")
+			if (_this.deleted > server.lists.items[list].deleted) server.lists.items[list].deleted = _this.deleted
+
+
+
+		// 
+		// 	Exists on Client
+		// 	Deleted on Sever
+		//
+
+		} else if (server.lists.items[list].hasOwnProperty('deleted') && client.lists.items.hasOwnProperty(list)) {
+
+			msg("List " + list + " is deleted on the server and exists on the client")
+			for(var key in _this.time) {
+				if(_this.time[key] > server.lists.items[list].deleted) {
+					server.lists.items[list] = clone(_this)
+					break
 				}
-
-				// If the list doesn't exist on the server, create it
-				server.lists.items[server.lists.items.length] = {
-					name: _this.name,
-					order: [],
-					time: _this.time,
-					synced: true
-				}
-
-				// Update order
-				server.lists.order.push(Number(list))
-				server.lists.items.length++
+			}
 
 
 
-			//
-			//	Deleted on Client
-			// 	Doesn't exist on Sever
-			//
+		// 
+		// 	Exists on Client
+		// 	Exists on Sever
+		//
 
-			} else if (_this.hasOwnProperty('deleted') && !server.lists.items.hasOwnProperty(list)) {
+		} else if (server.lists.items.hasOwnProperty(list)) {
 
-				msg("List "+list+" Is Deleted On The Client But Doesn't Exist On The Server")
+			msg("List '" + list + "' exists on server.")
 
-				// Copy the deleted timestamp over
-				server.lists.items[list] = {deleted: _this.deleted}
-				server.lists.items.length++
+			for(var key in _this.time) {
 
+				if(key != 'order') { // Don't try and overwrite list order
 
+					if (_this.time[key] > server.lists.items[list].time[key]) {
 
-			// 
-			// 	Deleted on Client
-			// 	Exists on Sever
-			// 
+						msg("The key '" + key + "' in list '" + list + "' has been modified.")
 
-			 } else if (_this.hasOwnProperty('deleted') && !server.lists.items[list].hasOwnProperty('deleted')) {
+						// If so, update list key and time
+						server.lists.items[list][key] = _this[key]
+						server.lists.items[list].time[key] = _this.time[key]
 
-				msg("List " + list + " Is Deleted On The Client And But Not On The Server")
-				var deleteList = true
-				for(var key in server.lists.items[list].time) {
-					if(server.lists.items[list].time[key] > _this.deleted) deleteList = false
-				}
-				if(deleteList) core.list(list).delete(_this.deleted)
-
-
-
-			// 
-			// 	Deleted on Client
-			// 	Deleted on Server
-			// 
-
-			} else if (server.lists.items[list].hasOwnProperty('deleted') && _this.hasOwnProperty('deleted')) {
-
-				msg("List '" + list + "' is deleted on the server and the computer")
-				if (_this.deleted > server.lists.items[list].deleted) server.lists.items[list].deleted = _this.deleted
-
-
-
-			// 
-			// 	Exists on Client
-			// 	Deleted on Sever
-			//
-
-			} else if (server.lists.items[list].hasOwnProperty('deleted') && client.lists.items.hasOwnProperty(list)) {
-
-				msg("List " + list + " is deleted on the server and exists on the client")
-				for(var key in _this.time) {
-					if(_this.time[key] > server.lists.items[list].deleted) {
-						server.lists.items[list] = clone(_this)
-						break
-					}
-				}
-
-
-
-			// 
-			// 	Exists on Client
-			// 	Exists on Sever
-			//
-
-			} else if (server.lists.items.hasOwnProperty(list)) {
-
-				msg("List '" + list + "' exists on server.")
-
-				for(var key in _this.time) {
-
-					if(key != 'order') { // Don't try and overwrite list order
-
-						if (_this.time[key] > server.lists.items[list].time[key]) {
-
-							msg("The key '" + key + "' in list '" + list + "' has been modified.")
-
-							// If so, update list key and time
-							server.lists.items[list][key] = _this[key]
-							server.lists.items[list].time[key] = _this.time[key]
-
-						}
 					}
 				}
 			}
@@ -381,153 +362,122 @@ mergeDB = function(server, client, callback) {
 
 	for(var task in client.tasks) {
 
-		task = task.toNum()
+		msg("Merging task: " + task)
 
-		// Do not sync the tasks.length propery
-		// This should only be modified by the server side core.js
-		if (task !== 'length') {
-
-			var _this = client.tasks[task]
-
-			// 
-			// Synced on Client
-			// Doesn't exist on Server
-			// 
-			if(_this.synced === true && !server.tasks.hasOwnProperty(task)) _this.synced = false
+		var _this = client.tasks[task]
 
 
 
-			// 
-			// Exists on Client
-			// Doesn't exist on Server
-			// 
+		// 
+		// Exists on Client
+		// Doesn't exist on Server
+		// 
 
-			if (_this.synced === false) {
+		if (!_this.hasOwnProperty('deleted') && !server.tasks.hasOwnProperty(task)) {
 
-				msg("Task '" + task + "' has never been synced before")
+			msg("Task '" + task + "' is being added to the server.")
 
-				_this.synced = true
+			// Add task
+			server.tasks[task] = clone(_this)
 
-				// If that ID is already taken
-				if (server.tasks.hasOwnProperty(task)) {
+			// Add to list
+			server.lists.items[_this.list].order.unshift(task)
 
-					msg("A task with the ID '" + task + "' already exists on the server")
 
-					// Does not mess with ID's if it isn't going to change
-					if (server.tasks.length !== Number(task)) {
 
-						// Add task to task (ID + server.tasks.length)
-						client.tasks[server.tasks.length] = clone(_this)
-						delete client.tasks[task]
-						msg("Task '" + task + "' has been moved to task '" + server.tasks.length  + "'")
-						_this = client.tasks[server.tasks.length]
-					}
+		// 
+		// 	Deleted on Client
+		// 	Not on Server
+		// 
+
+		} else if(_this.hasOwnProperty('deleted') && !server.tasks.hasOwnProperty(task)) {
+
+			msg("Task '" + task + "' is new, but the client deleted it")
+			server.tasks[task] = { deleted: _this.deleted }
+
+
+
+
+		// 
+		// 	Deleted on Client
+		// 	Exists on Server
+		// 
+
+		} else if (_this.hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
+
+			msg("Task '" + task + "' was deleted on client but not on the server")
+			var deleteTask = true
+			for(var key in server.tasks[task].time) {
+				if (server.tasks[task].time[key] > _this.deleted) deleteTask = false
+			}
+			if(deleteTask) {
+				// Remove from lists
+				core.task(task).move('trash', _this.deleted)
+				// Update timestamp
+				server.tasks[task] = {deleted: _this.deleted}
+			}
+
+
+
+		// 
+		// 	Deleted on Client
+		// 	Deleted on Server
+		// 
+
+		} else if (_this.hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')){
+
+			msg("Task '" + task + "' is deleted on the server and the client")
+			if (_this.deleted > server.tasks[task].deleted) server.tasks[task].deleted = _this.deleted
+
+
+
+
+		// 
+		// 	Exists on Client
+		// 	Deleted on Server
+		//
+
+		} else if (!_this.hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')) {
+
+			msg("Task '" + task + "' was deleted on the server")
+			for(var key in _this.time) {
+				if(_this.time[key] > server.tasks[task].deleted) {
+					server.tasks[task] = clone(_this)
+					break
 				}
-
-				msg("Task '" + task + "' is being added to the server.");
-				core.task().add("New Task", _this.list)
-				server.tasks[task] = clone(_this)
-
-				// Fix task length
-				fixLength(server.tasks)
-
-
-
-			// 
-			// 	Deleted on Client
-			// 	Not on Server
-			// 
-
-			} else if(_this.hasOwnProperty('deleted') && !server.tasks.hasOwnProperty(task)) {
-
-				msg("Task '" + task + "' is new, but the client deleted it")
-				server.tasks[task] = { deleted: _this.deleted }
-				server.tasks.length++
+			}
 
 
 
 
-			// 
-			// 	Deleted on Client
-			// 	Exists on Server
-			// 
+		// 
+		// 	Exists on Client
+		// 	Exists on Server
+		// 
 
-			} else if (_this.hasOwnProperty('deleted') && !server.tasks[task].hasOwnProperty('deleted')) {
+		} else {
 
-				msg("Task '" + task + "' was deleted on client but not on the server")
-				var deleteTask = true
-				for(var key in server.tasks[task].time) {
-					if (server.tasks[task].time[key] > _this.deleted) deleteTask = false
-				}
-				if(deleteTask) {
-					// Remove from lists
-					core.task(task).move('trash', _this.deleted)
-					// Update timestamp
-					server.tasks[task] = {deleted: _this.deleted}
-				}
+			msg("Task '" + task + "' exists on the server and hasn't been deleted")
 
+			for(var key in _this) {
 
+				// Don't loop through timestamps
+				if (key !== 'time') {
 
-			// 
-			// 	Deleted on Client
-			// 	Deleted on Server
-			// 
+					if (_this.time[key] > server.tasks[task].time[key]) {
 
-			} else if (_this.hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')){
+						msg("Key '" + key + "'  in task " + task + " has been updated by the client")							
 
-				msg("Task '" + task + "' is deleted on the server and the client")
-				if (_this.deleted > server.tasks[task].deleted) server.tasks[task].deleted = _this.deleted
-
-
-
-
-			// 
-			// 	Exists on Client
-			// 	Deleted on Server
-			//
-
-			} else if (!_this.hasOwnProperty('deleted') && server.tasks[task].hasOwnProperty('deleted')) {
-
-				msg("Task '" + task + "' was deleted on the server")
-				for(var key in _this.time) {
-					if(_this.time[key] > server.tasks[task].deleted) {
-						server.tasks[task] = clone(_this)
-						break
-					}
-				}
-
-
-
-
-			// 
-			// 	Exists on Client
-			// 	Exists on Server
-			// 
-
-			} else {
-
-				msg("Task '" + task + "' exists on the server and hasn't been deleted")
-
-				for(var key in _this) {
-
-					// Don't loop through timestamps
-					if (key !== 'time') {
-
-						if (_this.time[key] > server.tasks[task].time[key]) {
-
-							msg("Key '" + key + "'  in task " + task + " has been updated by the client")							
-
-							if (key === 'list') {
-								msg("Task " + task + " has been moved to a new list")
-								core.task(task).move(_this.list);
-							} else {
-								server.tasks[task][key] = _this[key]
-							}
-
-							// Update timestamp
-							server.tasks[task].time[key] = _this.time[key]
-
+						if (key === 'list') {
+							msg("Task " + task + " has been moved to a new list")
+							core.task(task).move(_this.list);
+						} else {
+							server.tasks[task][key] = _this[key]
 						}
+
+						// Update timestamp
+						server.tasks[task].time[key] = _this.time[key]
+
 					}
 				}
 			}
@@ -540,10 +490,25 @@ mergeDB = function(server, client, callback) {
 	// ----------------------------
 	// TASK AND LIST ORDER
 	// ----------------------------
-	
 
-	// Fix task length
-	fixLength(server.tasks)
+	// Ghost lists
+	for(var i = 0; i < server.lists.order.length; i++) {
+		var _this = server.lists.order[i]
+		if(!server.lists.items.hasOwnProperty(_this) || _this == 'today' || _this == 'next' || _this == 'logbook') {
+			server.lists.order.splice(i, 1)
+		}
+	}
+
+	// Hidden lists
+	for(var i in server.lists.items) {
+		var _this = server.lists.items[i]
+		if(!_this.hasOwnProperty('deleted') && i != 'today' && i != 'next' && i != 'logbook') {
+			var index = server.lists.order.indexOf(i)
+			if(index < 0) {
+				server.lists.order.push(i)
+			}
+		}
+	}
 	
 	// MLO --> Merge List Order
 	
@@ -606,8 +571,7 @@ mergeDB = function(server, client, callback) {
 
 	// Merge Task Order (Uses same algorithm)
 	for (var list in client.lists.items) {
-		list = list.toNum()
-		if (list !== 'length' && !server.lists.items[list].hasOwnProperty('deleted') && !client.lists.items[list].hasOwnProperty('deleted')) {
+		if (!server.lists.items[list].hasOwnProperty('deleted') && !client.lists.items[list].hasOwnProperty('deleted')) {
 
 			mlo.client = {
 				order: client.lists.items[list].order,
@@ -630,43 +594,6 @@ mergeDB = function(server, client, callback) {
 
 	callback(server)
 
-	} catch(e) {}
+	// } catch(e) {}
 
 }
-
-// Fix the length of an object
-fixLength  = function(obj) {
-	// Update length
-	[obj].length = 0;
-	for (i in [obj]) {
-		if ([obj].hasOwnProperty(i) && i !== 'length') {
-			[obj].length++;
-		}
-	}
-}
-
-// Remove duplicates from an array
-deDupe = function(arr) {
-	var r = [];
-	o:for(var i = 0, n = arr.length; i < n; i++) {
-		for(var x = 0, y = r.length; x < y; x++) {
-			if (r[x] == arr[i]) {
-				continue o;
-			}
-		}
-		r[r.length] = Number(arr[i]);
-	}
-	return r;
-}
-
-// My super awesome function that converts a string to a number
-// "421".toNum()  -> 421
-// "word".toNum() -> "word"
-String.prototype.toNum = function () {
-	var x = parseInt(this, 10);
-	if (x > -100) {
-		return x;
-	} else {
-		return this.toString();
-	}
-};
