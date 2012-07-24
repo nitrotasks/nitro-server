@@ -16,10 +16,11 @@
 console.info('Nitro Sync 1.4.5\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 
 settings = {
-	version: "1.4.5",
+	version: "1.4.7",
 	filename: 'nitro_data.json',
+	todo: 'todo.txt',
 	url: 'http://localhost:3000',
-	debugMode: true
+	debugMode: false
 }
 
 // Node Packages
@@ -40,7 +41,7 @@ var ubuntu = new OAuth("https://one.ubuntu.com/oauth/request/", "https://one.ubu
 
 //Funky Headers =)
 app.use(function (req, res, next) {
-	res.header("X-powered-by", "Windows 95");
+	res.header("X-powered-by", "Heroku");
 	next();
 });
 
@@ -325,11 +326,14 @@ function getServer(service, user, callback) {
 }
 
 function saveServer(service, user, server) {
-	var output = JSON.stringify(compress(server));
+
+	var output = JSON.stringify(compress(server)),
+		todo = todo_txt_gen(server);
 
 	switch (service) {
 	case "dropbox":
 		user.put(settings.filename, output, function () {});
+		user.put(settings.todo, todo, function () {});
 		break;
 	case "ubuntu":
 		ubuntu.put("https://files.one.ubuntu.com/content/~/Ubuntu%20One/Nitro/" + settings.filename, user.oauth_token, user.oauth_secret, output, "application/json");
@@ -433,3 +437,183 @@ function decompress(obj) {
 	}
 	return out;
 }
+
+function todo_txt_gen(db) {
+
+	console.log(typeof db)
+
+	var convert_date_for_jono = function(timestamp) {
+		if (timestamp != "") {
+			var date = new Date(timestamp)
+			return "due:" + date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " "
+		}
+		return ""
+	}
+	var popall = function() {
+		var results = [];
+		// Loop
+		for (var i in db.tasks) {
+			if(!db.tasks[i].hasOwnProperty('deleted') && !db.tasks[i].logged) {
+				results.push(i)
+			}
+		}
+		return results
+	}
+	var textfile = "",
+		sorted = sort(db, popall(), 'magic')
+
+	for (var i in sorted) { 
+		// Makes it easy
+		var id = sorted[i]
+		var task = db.tasks[id];
+
+		//Adds Priority
+		switch(task.priority) {
+			case 'high':
+				textfile += '(A) '
+				break
+			case 'medium':
+				textfile += '(B) '
+				break
+			case 'low':
+				textfile += '(C) '
+				break
+		}
+
+		//Adds Content
+		textfile += task.content + " "
+
+		//List
+		var list = ""
+		if (task.list == 'today' || task.list == 'next') {
+			list = task.list
+		} else {
+			list = db.lists.items[task.list].name
+		}
+		textfile += "@" + list + " "
+
+		//Date
+		textfile += convert_date_for_jono(task.date)
+
+		//Tags
+		for (var t in task.tags) {
+			textfile += "+" + task.tags[t] + " "
+		}
+		textfile += "\n"
+	}
+	return textfile
+}
+
+var sort
+(function() {
+
+	var priorityWorth = { none: 0, low: 1, medium: 2, high: 3 };
+
+	var getDateWorth = function(timestamp) {
+
+		if(timestamp == "") {
+			return 0;
+		}
+
+		var due = new Date(timestamp),
+			today = new Date();
+
+		// Copy date parts of the timestamps, discarding the time parts.
+		var one = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+		var two = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+		
+		// Do the math.
+		var millisecondsPerDay = 1000 * 60 * 60 * 24;
+		var millisBetween = one.getTime() - two.getTime();
+		var days = millisBetween / millisecondsPerDay;
+		
+		// Round down.
+		var diff = Math.floor(days)
+
+		if(diff > 14) {
+			diff = 14
+		}
+
+		return 14 - diff + 1;
+
+	}
+	
+	sort = function(db, array, method) {
+
+		// Clone list
+		list = array.slice(0)
+
+		// Convert task IDs to obects
+		for(var i = 0; i < list.length; i++) {
+			var id = list[i];
+			list[i] = db.tasks[list[i]];
+			list[i].arrayID = id;
+		}
+		
+		// Sorting methods
+		switch(method) {
+			
+			case "magic":
+				list.sort(function(a, b) {
+
+					var rating = {
+						a: getDateWorth(a.date),
+						b: getDateWorth(b.date)
+					}
+
+					var worth = { none: 0, low: 2, medium: 4, high: 6 }
+
+					rating.a += worth[a.priority]
+					rating.b += worth[b.priority]
+
+					if(a.logged && !b.logged) return 1
+					else if(!a.logged && b.logged) return -1
+					else if(a.logged && b.logged) return 0
+
+					return rating.b - rating.a
+	
+				})
+				break
+				
+			case "manual":
+				break;
+				
+			case "priority":
+				
+				list.sort(function(a,b) {
+					if(a.logged && !b.logged) return 1
+					else if(!a.logged && b.logged) return -1
+					else if(a.logged && b.logged) return 0
+					return priorityWorth[b.priority] - priorityWorth[a.priority]
+				});
+				break;
+				
+			case "date":
+				list.sort(function(a,b) {
+					if(a.logged && !b.logged) return 1
+					else if(!a.logged && b.logged) return -1
+					else if(a.logged && b.logged) return 0
+					// Handle tasks without dates
+					if(a.date=="" && b.date !== "") return 1;
+					else if(b.date=="" && a.date !== "") return -1;
+					else if (a.date == "" && b.date == "") return 0;
+					// Sort by priority if dates match
+					if (a.date == b.date) return priorityWorth[b.priority] - priorityWorth[a.priority];
+					// Sort timestamps
+					return a.date -  b.date
+				});
+				break;
+			
+		}
+		
+		// Unconvert task IDs to obects
+		for(var i = 0; i < list.length; i++) {
+			var id = list[i].arrayID
+			delete list[i].arrayID
+			list[i] = id
+		}
+		
+		return list;
+		
+	}
+})();
