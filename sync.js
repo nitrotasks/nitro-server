@@ -267,7 +267,7 @@ function sync(req, res) {
 					var options = {
 						host: 'nitrotasks.com',
 						port: 80,
-						path: '/analytics/server.php?fingerprint=' + recievedData.stats.uid + '&backend=' + service + '&version=' + recievedData.stats.version + '&os=' + recievedData.stats.os + '&language=' + recievedData.stats.language
+						path: '/analytics/server.php?fingerprint=' + recievedData.stats.uid + '&backend=' + service + '&version=' + recievedData.stats.version + '&os=' + recievedData.stats.os + '&language=' + recievedData.stats.language + '&time=' + Date.now()
 					};
 		
 					require('http').get(options, function() {});
