@@ -13,7 +13,9 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-console.info('Nitro Sync 1.4.5\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
+ /* jshint asi: true */
+
+console.info('Nitro Sync 1.4.7\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 
 settings = {
 	version: "1.4.7",
@@ -107,7 +109,7 @@ function requestURL(req, res) {
 	switch (req.param('service')) {
 		case "dropbox":
 			// Request a token from dropbox
-			dbox.request_token(function (status, request_token) {
+			dbox.requesttoken(function (status, request_token) {
 				users.dropbox[request_token.oauth_token] = {
 					token_secret: request_token.oauth_token_secret
 				}
@@ -157,10 +159,10 @@ function authenticate(req, res) {
 				if(user.token_secret === user_token.oauth_token_secret) {
 					if(user.hasOwnProperty('uid')) {
 						// Check token
-						dbox.access_token(user_token, function (status, access_token) {
+						dbox.accesstoken(user_token, function (status, access_token) {
 							// Token is good :D
 							if (status === 200) {
-								dbox.createClient(access_token).account(function (status, reply) {					
+								dbox.client(access_token).account(function (status, reply) {					
 									// Send access token to client so they can use it again
 									res.json({
 										access: access_token,
@@ -233,7 +235,7 @@ function sync(req, res) {
 	// Get client
 	switch (service) {
 		case "dropbox":
-			user = dbox.createClient(access_token)
+			user = dbox.client(access_token)
 			break
 		case "ubuntu":
 			user = access_token
@@ -440,8 +442,6 @@ function decompress(obj) {
 
 function todo_txt_gen(db) {
 
-	console.log(typeof db)
-
 	var convert_date_for_jono = function(timestamp) {
 		if (timestamp != "") {
 			var date = new Date(timestamp)
@@ -453,7 +453,7 @@ function todo_txt_gen(db) {
 		var results = [];
 		// Loop
 		for (var i in db.tasks) {
-			if(!db.tasks[i].hasOwnProperty('deleted') && !db.tasks[i].logged) {
+			if (typeof(db.tasks[i]) == 'object' && !db.tasks[i].hasOwnProperty('deleted') && !db.tasks[i].logged) {
 				results.push(i)
 			}
 		}
