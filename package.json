@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "express": "2.5.8",
-    "dbox": "0.5.1",
+    "dbox": "0.5.3",
     "ubuntu-one": "git://github.com/stayradiated/node-oauth.git"
   }
 }

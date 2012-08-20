@@ -13,17 +13,16 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
- /* jshint asi: true */
-
-console.info('Nitro Sync 1.4.7\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
-
 settings = {
 	version: "1.4.7",
 	filename: 'nitro_data.json',
 	todo: 'todo.txt',
+	// url: 'http://app.nitrotasks.com',
 	url: 'http://localhost:3000',
 	debugMode: false
-}
+};
+
+console.info('Nitro Sync '+settings.version+'\nCopyright (C) 2012 Caffeinated Code\nBy George Czabania & Jono Cooper');
 
 // Node Packages
 var express = require('express'),
@@ -69,25 +68,49 @@ app.post('/sync/', function (req, res){
 
 // Dropbox callback
 app.get('/dropbox', function (req, res) {
-	res.send('<meta HTTP-EQUIV="REFRESH" content="0; url='+settings.url+'/success/">');
+
+	// Get UID and token
 	var uid = req.query.uid,
-		token = req.query.oauth_token
-		if(users.dropbox.hasOwnProperty(token)) {
-			users.dropbox[token].uid = uid
+		token = req.query.oauth_token,
+		url = settings.url+'/success/';
+
+	// Update user token
+	if(users.dropbox.hasOwnProperty(token)) {
+		users.dropbox[token].uid = uid
+
+		// If using web version, redirect back to web app
+		if (users.dropbox[token].app == 'web') {
+			url = settings.url;
 		}
-})
+	}
+
+	// Redirect user
+	res.send('<meta HTTP-EQUIV="REFRESH" content="0; url='+url+'">');
+});
 
 // Ubuntu callback for oauth verifier
 app.get('/ubuntu-one/', function (req, res) {
-	res.send('<meta HTTP-EQUIV="REFRESH" content="0; url='+settings.url+'/success/">')
-	var token = req.query.oauth_token
+
+	// Get token
+	var token = req.query.oauth_token,
+		url = settings.url + '/success/';
+
+	// Update user token
 	if(users.ubuntu.hasOwnProperty(token)) {
 		ubuntu.getOAuthAccessToken(token, users.ubuntu[token].request_secret, req.query.oauth_verifier, function(e, t, s, r) {
 			users.ubuntu[token].oauth_token = t
 			users.ubuntu[token].oauth_secret = s
-		})
+		});
+
+		// If using web version, redirect back to web app
+		if (users.ubuntu[token].app == 'web') {
+			url = settings.url;
+		}
 	}
-})
+
+	// Redirect user
+	res.send('<meta HTTP-EQUIV="REFRESH" content="0; url='+url+'">');
+});
 
 port = process.env.PORT || 3000
 app.listen(port)
@@ -103,7 +126,6 @@ ArrayDiff = function(a,b) { return a.filter(function(i) {return !(b.indexOf(i) >
 // Remap console.log() to msg()
 msg = console.log
 
-
 function requestURL(req, res) {
 
 	switch (req.param('service')) {
@@ -111,9 +133,11 @@ function requestURL(req, res) {
 			// Request a token from dropbox
 			dbox.requesttoken(function (status, request_token) {
 				users.dropbox[request_token.oauth_token] = {
-					token_secret: request_token.oauth_token_secret
+					token_secret: request_token.oauth_token_secret,
+					app: req.param('app') == 'web' ? 'web' : 'js'
 				}
-				request_token.authorize_url += "&oauth_callback=" + settings.url + "/dropbox"
+
+				request_token.authorize_url += "&oauth_callback=" + settings.url + "/dropbox";
 				res.json(request_token)
 			})
 			break
@@ -227,7 +251,8 @@ function authenticate(req, res) {
 }
 
 function sync(req, res) {
-	var service = req.param('service');
+	var service = req.param('service'),
+		user;
 	
 	var access_token = req.param('access');
 	if(typeof access_token === 'string') access_token = JSON.parse(access_token);
@@ -460,11 +485,14 @@ function todo_txt_gen(db) {
 		return results
 	}
 	var textfile = "",
-		sorted = sort(db, popall(), 'magic')
+		sorted = sort(db, popall(), 'magic');
 
-	for (var i in sorted) { 
+	for (var i = 0; i < sorted.length; i++) {
+
+		if (typeof(sorted[i]) !== 'string') continue;
+
 		// Makes it easy
-		var id = sorted[i]
+		var id = sorted[i];
 		var task = db.tasks[id];
 
 		//Adds Priority
@@ -496,9 +524,10 @@ function todo_txt_gen(db) {
 		textfile += convert_date_for_jono(task.date)
 
 		//Tags
-		for (var t in task.tags) {
-			textfile += "+" + task.tags[t] + " "
+		for (var t = 0; t < task.tags; t++) {
+			textfile += "+" + task.tags[t] + " ";
 		}
+
 		textfile += "\n"
 	}
 	return textfile
@@ -541,7 +570,7 @@ var sort
 	sort = function(db, array, method) {
 
 		// Clone list
-		list = array.slice(0)
+		var list = array.slice(0)
 
 		// Convert task IDs to obects
 		for(var i = 0; i < list.length; i++) {
