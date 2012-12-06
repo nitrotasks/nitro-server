@@ -1,16 +1,20 @@
-app = require('express').createServer()
-io = require('socket.io').listen(app)
+express = require('express')
+http    = require('http')
+
+port = process.env.PORT || 5000
+
+app = express()
+server = app.listen(port)
+io = require('socket.io').listen(server)
+
+app.configure ->
+  app.use express.static(__dirname + '/public')
 
 # Configure for Heroku
 io.configure ->
   io.set "log level", 1
   io.set "transports", ["xhr-polling"]
   io.set "polling duration", 10
-
-# Start express
-port = process.env.PORT || 5000
-app.listen port, ->
-  console.log "Express server listening on hpord %d in %s mode", app.address().port, app.settings.env
 
 # Store user data
 storage =
