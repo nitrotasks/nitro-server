@@ -1,4 +1,5 @@
-io = require('socket.io').listen(8080);
+port = process.env.PORT || 8080
+io = require('socket.io').listen(port)
 
 # Hide debug messages
 io.set('log level', 1)
