@@ -21,7 +21,7 @@ storage =
   "username":
     data:
       Settings: [{"sort":true,"id":"c-0"}]
-      List: [{"name":"Hfiiywrst","id":"c-0"}]
+      List: [{"name":"Some random list","id":"c-0"}]
       Task: [{"name":"# low That is awesome","completed":false,"priority":1,"list":"inbox","id":"c-0"},{"name":"#medium","completed":false,"priority":2,"list":"c-0","id":"c-2"},{"name":"#high","completed":false,"priority":3,"list":"c-0","id":"c-4"},{"name":"Just a test","completed":false,"priority":1,"list":"inbox","id":"c-3"}]
 
 # User connects
@@ -42,7 +42,7 @@ io.sockets.on 'connection', (socket) ->
     switch model
       when "Task"
         user.data.Task.push(item)
-      when "list"
+      when "List"
         user.data.List.push(item)
     console.log item.name
     socket.broadcast.emit 'create', [model, item]
@@ -55,6 +55,10 @@ io.sockets.on 'connection', (socket) ->
         for task, index in user.data.Task
           if task.id is item.id then break
         user.data.Task[index] = item
+      when "List"
+        for list, index in user.data.Task
+          if list.id is item.id then break
+        user.data.List[index] = item
     console.log "Updated: #{ item.name }"
     socket.broadcast.emit 'update', [model, item]
 
@@ -66,5 +70,9 @@ io.sockets.on 'connection', (socket) ->
         for task, index in user.data.Task
           if task.id is id then break
         user.data.Task.splice(index, 1)
+      when "List"
+        for list, index in user.data.List
+          if list.id is id then break
+        user.data.List.splice(index, 1)
     console.log "Item #{ id } has been destroyed"
     socket.broadcast.emit 'destroy', [model, id]

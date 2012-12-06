@@ -35,7 +35,7 @@
         ],
         List: [
           {
-            "name": "Hfiiywrst",
+            "name": "Some random list",
             "id": "c-0"
           }
         ],
@@ -89,14 +89,14 @@
         case "Task":
           user.data.Task.push(item);
           break;
-        case "list":
+        case "List":
           user.data.List.push(item);
       }
       console.log(item.name);
       return socket.broadcast.emit('create', [model, item]);
     });
     socket.on('update', function(data) {
-      var index, item, model, task, _i, _len, _ref;
+      var index, item, list, model, task, _i, _j, _len, _len1, _ref, _ref1;
       model = data[0], item = data[1];
       switch (model) {
         case "Task":
@@ -108,12 +108,22 @@
             }
           }
           user.data.Task[index] = item;
+          break;
+        case "List":
+          _ref1 = user.data.Task;
+          for (index = _j = 0, _len1 = _ref1.length; _j < _len1; index = ++_j) {
+            list = _ref1[index];
+            if (list.id === item.id) {
+              break;
+            }
+          }
+          user.data.List[index] = item;
       }
       console.log("Updated: " + item.name);
       return socket.broadcast.emit('update', [model, item]);
     });
     return socket.on('destroy', function(data) {
-      var id, index, model, task, _i, _len, _ref;
+      var id, index, list, model, task, _i, _j, _len, _len1, _ref, _ref1;
       model = data[0], id = data[1];
       switch (model) {
         case "Task":
@@ -125,6 +135,16 @@
             }
           }
           user.data.Task.splice(index, 1);
+          break;
+        case "List":
+          _ref1 = user.data.List;
+          for (index = _j = 0, _len1 = _ref1.length; _j < _len1; index = ++_j) {
+            list = _ref1[index];
+            if (list.id === id) {
+              break;
+            }
+          }
+          user.data.List.splice(index, 1);
       }
       console.log("Item " + id + " has been destroyed");
       return socket.broadcast.emit('destroy', [model, id]);
