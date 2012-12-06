@@ -1,11 +1,15 @@
-port = process.env.PORT || 8080
-io = require('socket.io').listen(port)
+port = process.env.PORT || 5000
 
-# Hide debug messages
-io.set('log level', 1)
+app = require('express')()
+server = require('http').createServer(app)
+io = require('socket.io').listen(server)
+server.listen(port)
+
+console.log port
 
 # Configure for Heroku
 io.configure ->
+  io.set "log level", 1
   io.set "transports", ["xhr-polling"]
   io.set "polling duration", 10
 
