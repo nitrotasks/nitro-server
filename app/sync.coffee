@@ -101,15 +101,17 @@ class Sync
   # -------------------
 
   # Return timestamp for an item or attribute
-  getTimestamp: (className, id, attr) =>
+  getTime: (className, id, attr) =>
     if attr?
-      @user.data("Time")[className]?[id]?[attr]
+      @user.data("Time")?[className]?[id]?[attr]
     else
-      @user.data("Time")[className]?[id]
+      @user.data("Time")?[className]?[id]
 
   # Set timestamp for an attribute
-  setTimestamp: (className, id, attr, time) =>
+  setTime: (className, id, attr, time) =>
     # Makes sure the entry exists
+    if not @user.data("Time")
+      @user.data("Time", {})
     if not (className of @user.data("Time"))
       @user.data("Time")[className] = {}
     if not (id of @user.data("Time")[className])

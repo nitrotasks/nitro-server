@@ -72,6 +72,17 @@ describe "Sync ->", ->
     assert.equal Array.isArray(empty), yes
     assert.equal empty.length, 0
 
+  it "Timestamps", ->
+    now = Date.now()
+    sync.setTime "Task", "0", "name", now
+    time = sync.getTime "Task", "0", "name"
+    assert.equal now, time
+    # Should return undefined on non-existing items
+    no_key = sync.getTime "Task", "0", "missing"
+    no_id  = sync.getTime "Task", "100", "name"
+    no_class = sync.getTime "missing", "100", "name"
+    assert.equal no_key, no_id, no_class, undefined
+
   it "Update Task", ->
     sync.update ["Task", {id: "0", name: "Task 1 has been renamed"}]
     sync.update ["Task", {id: "1", name: "Task 2 has been renamed"}]
