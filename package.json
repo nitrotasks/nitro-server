@@ -1,13 +1,15 @@
 {
-  "name": "nitro-sync",
-  "version": "1.2.3",
-  "engines": {
-    "node": "0.6.x",
-    "npm":  "1.0.x"
-  },
+  "name": "NitroSync",
+  "version": "1.9.0",
   "dependencies": {
-    "express": "2.5.8",
-    "dbox": "0.5.3",
-    "ubuntu-one": "git://github.com/stayradiated/node-oauth.git"
+    "express": "3.0.x",
+    "socket.io": "0.9.x",
+    "redis": "0.7.3",
+    "bcrypt": "*",
+    "q": "*"
+  },
+  "engines": {
+    "node": "0.8.x",
+    "npm": "1.1.x"
   }
 }

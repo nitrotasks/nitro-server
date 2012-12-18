@@ -33,7 +33,12 @@
 ehthumbs.db
 Thumbs.db
 
-# Folders
-######################
+# Folders #
+###########
 .sass-cache
 node_modules
+
+# Misc #
+########
+*.sublime-project
+*.sublime-workspace
