@@ -1,7 +1,8 @@
-express = require('express')
-http    = require('http')
-Auth    = require('./auth')
-User    = require('./storage')
+express = require "express"
+http    = require "http"
+Q       = require "q"
+Auth    = require "./auth"
+User    = require "./storage"
 
 # Easy way to disable logging if needed
 Log = (args...) =>
@@ -139,24 +140,28 @@ class Sync
   # --------------
 
   # Temp function to handle usernames and rooms
-  login: (username, fn) =>
-    # Add user to database if they don't already exist
-    User.getByName username, (err, user) =>
+  login: (username) =>
 
-      setUser = (user) =>
-        # Set user
-        @user = user
-        # Move user to their own room
-        @socket.join(@user.username)
-        Log "#{ @user.username } has logged in"
-        fn() if fn
+    deferred = Q.defer()
 
-      if err
-        # Add user if they don't already exist
-        User.add username, "email-#{Date.now()}", "password", (err, user) ->
-          setUser(user)
+    Q.fcall( ->
+      User.usernameExists username
+    ).then( (exists) ->
+      if exists
+        User.getByName username
       else
-        setUser(user)
+        # Add user to database if they don't already exist
+        User.add username, "email-#{Date.now()}", "password"
+    ).then( (user) =>
+      # Set user
+      @user = user
+      # Move user to their own room
+      @socket.join(@user.username)
+      Log "#{ @user.username } has logged in"
+      deferred.resolve @user
+    )
+
+    return deferred.promise
 
   logout: =>
     Log "#{ @user.username } has logged out"
