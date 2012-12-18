@@ -1,1 +1,1 @@
-web: node sync.js
+web: node app.js
