@@ -1,8 +1,0 @@
-body { background: #ebebeb url(../bg.png); font-family: "helvetica neue", "ubuntu", "arial", "sans-serif"; }
-
-.paper-stack { background: #fdfdfd; width: 500px; border: 1px solid #cccccc; position: relative; -webkit-border-radius: 2px; -moz-border-radius: 2px; -ms-border-radius: 2px; -o-border-radius: 2px; border-radius: 2px; -webkit-box-shadow: 0 8px 10px rgba(0, 0, 0, 0.15), 0 8px 10px rgba(0, 0, 0, 0.05); -moz-box-shadow: 0 8px 10px rgba(0, 0, 0, 0.15), 0 8px 10px rgba(0, 0, 0, 0.05); box-shadow: 0 8px 10px rgba(0, 0, 0, 0.15), 0 8px 10px rgba(0, 0, 0, 0.05); position: absolute; top: 50%; left: 50%; margin: -175px 0 0 -250px; height: 270px; text-align: center; }
-.paper-stack:before, .paper-stack:after { content: ''; position: absolute; background: #e4e4e4; border: 1px solid #cccccc; height: 2px; }
-.paper-stack:before { width: 497px; bottom: -4px; left: 1px; z-index: 2; }
-.paper-stack:after { width: 494px; bottom: -7px; left: 3px; z-index: 1; }
-.paper-stack h2 { color: #333; }
-.paper-stack p { color: #666; font-size: 14px; }
