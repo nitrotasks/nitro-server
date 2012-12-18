@@ -80,17 +80,20 @@ class Sync
     model
 
   # Replace model
-  replace: (className, id, data) ->
+  replace: (className, id, data) =>
     @user.data(className)[id] = data
     @user.save(className)
 
   # Convert data object into spine array
-  getArray: (className) ->
-    items = []
-    for id, model in @user.data(className)
-      # Hide deleted objects
-      if not item.deleted
-        items.push item
+  getArray: (className) =>
+    models = []
+    data = @user.data(className)
+    return [] unless data
+    # Return all live items
+    for id, model of data
+      if not model.deleted
+        models.push model
+    models
 
 
   # -------------------
@@ -227,6 +230,7 @@ class Sync
 
   # Sync
   sync: (queue, fn) =>
+    Log "Running sync"
     for event in queue
       [type, [className, model], timestamp] = event
       switch type
@@ -236,28 +240,6 @@ class Sync
           @update [className, model]
         when "destroy"
           @destroy [className, model]
-
-
-  # Create
-  syncCreate: (data, timestamp) =>
-    [className, model] = data
-    # Simple validation
-    return unless className in ["List", "Task"]
-    Log className, model, timestamp
-    @create(data)
-    # @user.data[className].push model
-    # Broadcast event to connected clients
-
-  # Update
-  syncUpdate: (data, timestamp) =>
-    [className, model] = data
-    return unless className in ["List", "Task"]
-    Log className, model, timestamp
-
-  # Destroy
-  syncDestroy: (data, timestamp) =>
-    [className, id] = data
-    return unless className in ["List", "Task"]
-    Log className, model, timestamp
+    fn [@getArray("Task"), @getArray("List")] if fn
 
 module?.exports = Sync

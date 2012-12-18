@@ -46,6 +46,32 @@ describe "Sync ->", ->
     assert.equal lists["1"].name, "List 2"
     assert.equal lists["2"].name, "List 3"
 
+  it "Find model", ->
+    # Should find tasks
+    task = sync.find("Task", "0")
+    assert.equal task.name, "Task 1"
+    # Should find lists
+    list = sync.find("List", "2")
+    assert.equal list.name, "List 3"
+    # Missing items should return undefined
+    no_model = sync.find("Task", "-1")
+    no_class = sync.find("Empty", "2")
+    assert.equal no_model, no_class, undefined
+
+  it "Get array", ->
+    tasks = sync.getArray("Task")
+    lists = sync.getArray("List")
+    empty = sync.getArray("Empty")
+    # Should return an array
+    assert.equal Array.isArray(tasks), yes
+    # Should return our tasks and lists
+    assert.equal tasks[0].name, "Task 1"
+    assert.equal lists[2].name, "List 3"
+    # If the class doesn't exist, it should return an empty array
+    # BTW ([] == []) === false
+    assert.equal Array.isArray(empty), yes
+    assert.equal empty.length, 0
+
   it "Update Task", ->
     sync.update ["Task", {id: "0", name: "Task 1 has been renamed"}]
     sync.update ["Task", {id: "1", name: "Task 2 has been renamed"}]
