@@ -1,5 +1,6 @@
-redis = require("redis").createClient()
-Q = require "q"
+redis   = require("redis").createClient()
+Q       = require "q"
+shrink  = require "./shrink"
 
 # Set up
 redis.flushdb()
@@ -117,7 +118,7 @@ class User
   _load: (atts) =>
     for key, value of atts
       if key.slice(0,5) is "data:"
-        @[key] = JSON.parse(value)
+        @[key] = shrink.expand value
       else
         @[key] = value
     this
@@ -127,6 +128,9 @@ class User
     deferred = Q.defer()
     # Update local object
     @_update(key, value)
+    # Compress data
+    if key.slice(0,5) is "data:"
+      value = shrink.compress value
     # Stringify objects
     if typeof value is "object"
       value = JSON.stringify(value)

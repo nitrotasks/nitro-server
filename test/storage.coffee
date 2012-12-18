@@ -97,22 +97,47 @@ describe "Storage ->", ->
         done()
 
   it "Save Data", (done) ->
-    fakeData =
-      a_string: "Just some random data"
-      a_number: 1234
-      a_boolean: true
-      an_array: ["word", 12, false]
-      an_object:
-        neat: "yep"
-        awesome: "nope"
+
+    tasks =
+      "1":
+        name: "Task 1"
+        date: 1355863711107
+        priority: "2"
+        notes: "Just some notes"
+      "2":
+        name: "Task 2"
+        date: 1355863711407
+        priority: "1"
+        notes: "Not many notes"
+    lists =
+      "1":
+        name: "List 1"
+      "2":
+        name: "List 2"
+
     Q.spread [
       User.get(users[1][3])
       User.get(users[1][3])
     ], (u1, u2) ->
-      u1.data("Fake", fakeData)
-      u1.save("Fake").then ->
-        assert.equal fakeData, u1.data("Fake"), u2.data("Fake")
+      Q.fcall( ->
+        u1.data("Task", tasks)
+        u1.save("Task")
+      ).then( ->
+        u2.data("List", lists)
+        u2.save("List")
+      ).then( ->
+        assert.equal tasks, u1.data("Task"), u2.data("Task")
+        assert.equal lists, u1.data("List"), u2.data("List")
+
+        # Release the user
+        # This forces User.get() to fetch the data from Redis
+        User.release(users[1][3])
+        User.get(users[1][3])
+      ).then( (u3) ->
+        assert.equal JSON.stringify(tasks), JSON.stringify(u3.data("Task"))
         done()
+      )
+
 
   it "Data Index", (done) ->
     User.get(users[1][3]).then (user) ->

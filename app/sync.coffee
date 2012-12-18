@@ -38,6 +38,7 @@ init = ->
 # Does all the useful stuff
 class Sync
 
+  # Starts socket.io server
   @init: init
 
   # Store user data
@@ -100,15 +101,32 @@ class Sync
   # Timestamp functions
   # -------------------
 
+  # Used to shorten timestamps
+  # Set to the 1st of Jan, 2013
+  baseTime: 1356951600000
+
   # Return timestamp for an item or attribute
   getTime: (className, id, attr) =>
-    if attr?
-      @user.data("Time")?[className]?[id]?[attr]
-    else
-      @user.data("Time")?[className]?[id]
+    time = @user.data("Time")?[className]?[id]?[attr]
+    if time then time += @baseTime
+    time
+
+  # Remove all timestamps for an object
+  clearTime: (className, id) =>
+    delete @user.data("Time")[className][id]
+    @user.save("Time")
 
   # Set timestamp for an attribute
   setTime: (className, id, attr, time) =>
+
+    # If attr is an object, loop through it
+    if typeof attr is "object"
+      for key, time of attr
+        @setTime className, id, key, time
+      return
+
+    time -= @baseTime
+
     # Makes sure the entry exists
     if not @user.data("Time")
       @user.data("Time", {})
@@ -117,9 +135,10 @@ class Sync
     if not (id of @user.data("Time")[className])
       @user.data("Time")[className][id] = {}
 
+    # Update all existing values
     if attr is "all"
       for attr of @user.data(className)[id]
-        continue if attr is "id"
+        continue if attr is "id" # Ignore ID
         @user.data("Time")[className][id][attr] = time
     else
       @user.data("Time")[className][id][attr] = time
@@ -194,10 +213,14 @@ class Sync
     model.id = id
     # Add item to server
     group = @user.data(className)
-    if !group
+    if not group
       group = @user.data(className, {})
     group[id] = model
+    # Save to server
     @user.save(className)
+    # Set timestamp
+    timestamp = data[2] or Date.now()
+    @setTime className, id, "all", timestamp
     Log "Created item: #{ model.name }"
     # Return new ID
     if fn? then fn(id)
@@ -211,6 +234,15 @@ class Sync
     # Update model
     id = changes.id
     model = @set className, id, changes
+    # Set timestamp
+    timestamps = data[2]
+    if not timestamps
+      timestamps = {}
+      now = Date.now()
+      for k of changes
+        continue if k is "id"
+        timestamps[k] = now
+    @setTime className, id, timestamps
     Log "Updated item: #{ model.name }"
     # Broadcast event to connected clients
     @emit 'update', [className, model]
@@ -223,6 +255,9 @@ class Sync
     @replace className, id,
       id: id
       deleted: yes
+    # Set timestamp
+    timestamp = data[2] or Date.now()
+    @setTime className, id, "deleted", timestamp
     Log "Destroyed item #{ id }"
     @emit 'destroy', [className, id]
 
@@ -238,11 +273,11 @@ class Sync
       [type, [className, model], timestamp] = event
       switch type
         when "create"
-          @create [className, model]
+          @create [className, model, timestamp]
         when "update"
-          @update [className, model]
+          @update [className, model, timestamp]
         when "destroy"
-          @destroy [className, model]
+          @destroy [className, model, timestamp]
     fn [@getArray("Task"), @getArray("List")] if fn
 
 module?.exports = Sync

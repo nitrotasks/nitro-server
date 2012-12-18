@@ -74,18 +74,39 @@ describe "Sync ->", ->
 
   it "Timestamps", ->
     now = Date.now()
+
+    # Setting and getting
     sync.setTime "Task", "0", "name", now
     time = sync.getTime "Task", "0", "name"
     assert.equal now, time
+
     # Setting all timestamps
     sync.setTime "Task", "1", "all", now
     time = sync.getTime "Task", "1", "name"
     assert.equal now, time
+
+    # Setting a group of timestamps
+    times =
+      name: now
+      date: now + 10
+      priority: now - 10
+      notes: now + 20
+    sync.setTime "Task", "2", times
+    time = sync.getTime "Task", "2", "notes"
+    assert.equal time, times.notes
+    time = sync.getTime "Task", "2", "date"
+    assert.equal time, times.date
+
     # Should return undefined on non-existing items
     no_key = sync.getTime "Task", "0", "missing"
     no_id  = sync.getTime "Task", "100", "name"
     no_class = sync.getTime "missing", "100", "name"
     assert.equal no_key, no_id, no_class, undefined
+
+    # Clearing timestamps
+    sync.clearTime "Task", "2"
+    model = sync.user.data("Time")["Task"]["2"]
+    assert.equal model, undefined
 
   it "Update Task", ->
     sync.update ["Task", {id: "0", name: "Task 1 has been renamed"}]
