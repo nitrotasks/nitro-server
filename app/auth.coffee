@@ -25,8 +25,8 @@ class Auth
     User.getByName(username)
       .fail( -> deferred.reject())
       .then (user) =>
-        @compare password, user.password, deferred.resolve
-    return deferred.resolve
+        @compare(password, user.password).then deferred.resolve
+    return deferred.promise
 
   @register: (name, email, pass) =>
     deferred = Q.defer()
