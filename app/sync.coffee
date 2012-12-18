@@ -37,7 +37,7 @@ init = ->
 # Does all the useful stuff
 class Sync
 
-  # init: init
+  @init: init
 
   # Store user data
   user: no

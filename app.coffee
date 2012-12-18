@@ -1,3 +1,3 @@
 # Start sync
-# require './sync.js'
-require './app/storage'
+Sync = require './app/sync'
+Sync.init()
