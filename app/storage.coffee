@@ -47,7 +47,7 @@ class User
           user = @records[id] = new @(obj)
           deferred.resolve user._clone()
         else
-          deferred.reject()
+          deferred.reject("User not found")
     else
       deferred.resolve user._clone()
     return deferred.promise
@@ -55,19 +55,17 @@ class User
   @getByName: (username) =>
     deferred = Q.defer()
     redis.hget "users:username", username, (err, id) =>
-      if id is null then return deferred.reject()
+      if id is null then return deferred.reject("Username not found")
       @get(id)
-        .then(deferred.resolve)
-        .fail(deferred.reject)
+        .then(deferred.resolve, deferred.reject)
     deferred.promise
 
   @getByEmail: (email) ->
     deferred = Q.defer()
     redis.hget "users:email", email, (err, id) =>
-      if id is null then return deferred.reject()
+      if id is null then return deferred.reject("Email not found")
       @get(id)
-        .then(deferred.resolve)
-        .fail(deferred.reject)
+        .then(deferred.resolve, deferred.reject)
     deferred.promise
 
   @usernameExists: (username) ->

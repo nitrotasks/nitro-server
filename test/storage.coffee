@@ -12,29 +12,56 @@ describe "Storage ->", ->
 
   it "Add users", (done) ->
     users.forEach (user, i, array) ->
-      User.add(user[0], user[1], user[2]).then (data) ->
+      User.add(user[0], user[1], user[2])
+      .then (data) ->
         assert.equal data.username, user[0]
         assert.equal data.email, user[1]
         assert.equal data.password, user[2]
         if i is array.length - 1
           done()
 
+  it "Add existing user fails", ->
+    users.forEach (user, i, array) ->
+      User.add(user[0], user[1], user[2]).fail ->
+        done()
+
   it "Get users by name", (done) ->
     users.forEach (user, i, array) ->
-      User.getByName(user[0]).then( (data) ->
-        assert.equal user[0], data.username
-        array[i][3] = data.id
-        if i is array.length - 1 then done()
-      ).fail (err) ->
-        console.log err
+      User.getByName(user[0]).then(
+        (data) ->
+          assert.equal user[0], data.username
+          array[i][3] = data.id
+          if i is array.length - 1 then done()
+        (err) ->
+          console.log err
+      )
+
+  it "Get non-existing user by name fails", (done) ->
+    User.getByName("Phillip").then(
+      (data) ->
+        console.log data
+      (err) ->
         done()
+    )
 
   it "Get users by email", (done) ->
     users.forEach (user, i, array) ->
-      User.getByEmail(user[1]).then (data) ->
-        assert.equal user[1], data.email
-        if i is array.length - 1 then done()
+      User.getByEmail(user[1])
+      .then(
+        (data) ->
+          assert.equal user[1], data.email
+          if i is array.length - 1 then done()
+        (err) ->
+          console.log err
+      )
 
+  it "Get non-existing user by email fails", (done) ->
+    User.getByEmail("john@example.com").then(
+      (data) ->
+        console.log data
+      (err) ->
+        done()
+    )
 
   it "Change password", (done) ->
     Q.spread [
