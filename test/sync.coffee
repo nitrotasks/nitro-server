@@ -77,6 +77,10 @@ describe "Sync ->", ->
     sync.setTime "Task", "0", "name", now
     time = sync.getTime "Task", "0", "name"
     assert.equal now, time
+    # Setting all timestamps
+    sync.setTime "Task", "1", "all", now
+    time = sync.getTime "Task", "1", "name"
+    assert.equal now, time
     # Should return undefined on non-existing items
     no_key = sync.getTime "Task", "0", "missing"
     no_id  = sync.getTime "Task", "100", "name"

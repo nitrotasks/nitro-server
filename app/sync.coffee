@@ -118,7 +118,8 @@ class Sync
       @user.data("Time")[className][id] = {}
 
     if attr is "all"
-      for attr of @user.data("Time")[className][id]
+      for attr of @user.data(className)[id]
+        continue if attr is "id"
         @user.data("Time")[className][id][attr] = time
     else
       @user.data("Time")[className][id][attr] = time
