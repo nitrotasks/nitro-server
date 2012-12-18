@@ -15,10 +15,10 @@ class User
     deferred = Q.defer()
     self = @
 
-    redis.hexists "users:username", name, (err, exists) ->
-      deferred.reject("Username is aleady taken") unless exists is 0
-      redis.hexists "users:email", name, (err, exists) ->
-        deferred.reject("Email is already in use") unless exists is 0
+    @usernameExists(name).then (exists) ->
+      if exists then return deferred.reject("Username is aleady taken")
+      self.emailExists(email).then (exists) ->
+        if exists then return deferred.reject("Email is already in use")
         redis.incr "users:index", (err, id) ->
           user =
             id: id.toString()
@@ -55,13 +55,37 @@ class User
   @getByName: (username) =>
     deferred = Q.defer()
     redis.hget "users:username", username, (err, id) =>
-      @get(id).then(deferred.resolve).fail(deferred.fail)
+      if id is null then return deferred.reject()
+      @get(id)
+        .then(deferred.resolve)
+        .fail(deferred.reject)
     deferred.promise
 
   @getByEmail: (email) ->
     deferred = Q.defer()
     redis.hget "users:email", email, (err, id) =>
-      @get(id).then(deferred.resolve)
+      if id is null then return deferred.reject()
+      @get(id)
+        .then(deferred.resolve)
+        .fail(deferred.reject)
+    deferred.promise
+
+  @usernameExists: (username) ->
+    deferred = Q.defer()
+    redis.hexists "users:username", username, (err, exists) ->
+      if exists is 0
+        return deferred.resolve no
+      else
+        return deferred.resolve yes
+    deferred.promise
+
+  @emailExists: (email) ->
+    deferred = Q.defer()
+    redis.hexists "users:email", email, (err, exists) ->
+      if exists is 0
+        return deferred.resolve no
+      else
+        return deferred.resolve yes
     deferred.promise
 
   @remove: (id) =>
