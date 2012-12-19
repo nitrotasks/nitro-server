@@ -6,7 +6,8 @@
     "socket.io": "0.9.x",
     "redis": "0.7.3",
     "bcrypt": "*",
-    "q": "*"
+    "q": "*",
+    "msgpack": "*"
   },
   "engines": {
     "node": "0.8.x",

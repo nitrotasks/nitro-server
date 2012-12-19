@@ -1,6 +1,7 @@
-redis   = require("redis").createClient()
+redis   = require("redis").createClient(null, null, {detect_buffers: true})
 Q       = require "q"
 shrink  = require "./shrink"
+msgpack = require "msgpack"
 
 # Set up
 redis.flushdb()
@@ -43,7 +44,8 @@ class User
     deferred = Q.defer()
     user = @records[id]
     if not user
-      redis.hgetall "users:#{id}", (err, obj) =>
+      # Get data as a buffer so that we can unpack the msgpack encoding
+      redis.hgetall new Buffer("users:#{id}"), (err, obj) =>
         if obj
           user = @records[id] = new @(obj)
           deferred.resolve user._clone()
@@ -118,9 +120,9 @@ class User
   _load: (atts) =>
     for key, value of atts
       if key.slice(0,5) is "data:"
-        @[key] = shrink.expand value
+        @[key] = shrink.expand msgpack.unpack value
       else
-        @[key] = value
+        @[key] = value.toString()
     this
 
   # Change a value
@@ -130,10 +132,7 @@ class User
     @_update(key, value)
     # Compress data
     if key.slice(0,5) is "data:"
-      value = shrink.compress value
-    # Stringify objects
-    if typeof value is "object"
-      value = JSON.stringify(value)
+      value = msgpack.pack shrink.compress value
     # Update redis
     redis.hset "users:#{@id}", key, value, =>
       redis.hset "users:#{@id}", "updated_at", Date.now().toString()

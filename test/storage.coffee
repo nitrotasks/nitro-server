@@ -134,7 +134,7 @@ describe "Storage ->", ->
         User.release(users[1][3])
         User.get(users[1][3])
       ).then( (u3) ->
-        assert.equal JSON.stringify(tasks), JSON.stringify(u3.data("Task"))
+        assert.deepEqual tasks, u3.data("Task")
         done()
       )
 
