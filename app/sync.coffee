@@ -144,6 +144,21 @@ class Sync
       @user.data("Time")[className][id][attr] = time
     @user.save("Time")
 
+  # Check if the variable `time` is greater than any times stored in the DB
+  checkTime: (className, id, time) =>
+
+    return unless @user.data("Time")?[className]?[id]?
+
+    pass = yes
+
+    for attr of @user.data("Time")[className][id]
+      val = @getTime(className, id, attr)
+      if val > time then pass = no
+
+    return pass
+
+
+
 
   # -----------------
   # Socket.IO Comands
@@ -208,7 +223,7 @@ class Sync
     [className, model] = data
     return unless className in ["List", "Task"]
     # Generate new id
-    id = @user.index(className)
+    id = "s-" + @user.index(className)
     @user.incrIndex className
     model.id = id
     # Add item to server
@@ -222,6 +237,7 @@ class Sync
     timestamp = data[2] or Date.now()
     @setTime className, id, "all", timestamp
     Log "Created item: #{ model.name }"
+    console.log id
     # Return new ID
     if fn? then fn(id)
     # Broadcast event to connected clients
@@ -231,18 +247,24 @@ class Sync
   update: (data) =>
     [className, changes] = data
     return unless className in ["List", "Task"]
-    # Update model
     id = changes.id
-    model = @set className, id, changes
     # Set timestamp
     timestamps = data[2]
-    if not timestamps
+    if timestamps
+      for attr, time of timestamps
+        old = @getTime className, id, attr
+        if old > time
+          delete timestamps[attr]
+          delete changes[attr]
+    else
       timestamps = {}
       now = Date.now()
       for k of changes
         continue if k is "id"
         timestamps[k] = now
     @setTime className, id, timestamps
+    # Save to server
+    model = @set className, id, changes
     Log "Updated item: #{ model.name }"
     # Broadcast event to connected clients
     @emit 'update', [className, model]
@@ -251,12 +273,14 @@ class Sync
   destroy: (data) =>
     [className, id] = data
     return unless className in ["List", "Task"]
+    # Check that the model hasn't been updated after this event
+    timestamp = data[2] or Date.now()
+    return unless @checkTime className, id, timestamp
     # Replace task with deleted template
     @replace className, id,
       id: id
       deleted: yes
     # Set timestamp
-    timestamp = data[2] or Date.now()
     @setTime className, id, "deleted", timestamp
     Log "Destroyed item #{ id }"
     @emit 'destroy', [className, id]

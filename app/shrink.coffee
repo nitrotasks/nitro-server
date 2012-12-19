@@ -8,6 +8,8 @@ tableTo =
 
   # Properties
   name: "n"
+  completed: "c"
+  id: "i"
   priority: "p"
   date: "d"
   deleted: "x"
