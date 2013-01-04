@@ -30,4 +30,4 @@ describe 'Auth API', ->
     request(app)
       .post("/api/v0/auth/login")
       .send( email: "random@thing.net", password: "password" )
-      .expect( "err_bad_email", done )
+      .expect( "err_bad_pass", done )

@@ -10,6 +10,12 @@ app.configure ->
   app.use express.static(__dirname + '/public')
   app.use express.bodyParser()
 
+  # Allow CORS
+  app.all "/*", (req, res, next) ->
+    res.header "Access-Control-Allow-Origin", "*"
+    res.header "Access-Control-Allow-Headers", "X-Requested-With"
+    next()
+
 # GET and POST requests
 api =
   "v0":
@@ -48,8 +54,8 @@ bind api, "api", app
 
 
 # Start sync
-# server = app.listen(port)
-# Sync = require "./app/sync"
-# Sync.init server
+server = app.listen(port)
+Sync = require "./app/sync"
+Sync.init server
 
 module.exports = app

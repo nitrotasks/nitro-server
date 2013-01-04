@@ -23,7 +23,7 @@ class Auth
   @login: (email, password) =>
     deferred = Q.defer()
     User.getByEmail(email)
-      .fail( -> deferred.reject("err_bad_email") )
+      .fail( -> deferred.reject("err_bad_pass") )
       .then (user) =>
         @compare(password, user.password).then (same) ->
           if same then deferred.resolve() else deferred.reject("err_bad_pass")
