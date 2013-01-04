@@ -1,6 +1,6 @@
-bcrypt = require "bcrypt"
-User = require "./storage"
-Q = require "q"
+bcrypt  = require "bcrypt"
+User    = require "./storage"
+Q       = require "q"
 
 class Auth
 
@@ -20,12 +20,13 @@ class Auth
       deferred.resolve same
     return deferred.promise
 
-  @login: (username, password) =>
+  @login: (email, password) =>
     deferred = Q.defer()
-    User.getByName(username)
-      .fail( -> deferred.reject())
+    User.getByEmail(email)
+      .fail( -> deferred.reject("err_bad_email") )
       .then (user) =>
-        @compare(password, user.password).then deferred.resolve
+        @compare(password, user.password).then (same) ->
+          if same then deferred.resolve() else deferred.reject("err_bad_pass")
     return deferred.promise
 
   @register: (name, email, pass) =>
@@ -37,8 +38,8 @@ class Auth
       User.add name, email, hash
     ).then( (user) ->
       deferred.resolve user
-    ).fail( ->
-      deferred.reject()
+    ).fail( (err) ->
+      deferred.reject(err)
     )
 
     return deferred.promise

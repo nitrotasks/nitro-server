@@ -17,25 +17,22 @@ class User
     deferred = Q.defer()
     self = @
 
-    @usernameExists(name).then (exists) ->
-      if exists then return deferred.reject("Username is aleady taken")
-      self.emailExists(email).then (exists) ->
-        if exists then return deferred.reject("Email is already in use")
-        redis.incr "users:index", (err, id) ->
-          user =
-            id: id.toString()
-            username: name
-            password: password
-            email: email
-            has_pro: "0"
-            created_at: Date.now().toString()
-          # Save to redis
-          redis.hmset "users:#{id}", user
-          # Add to lookup
-          redis.hset "users:username", name, id
-          redis.hset "users:email", email, id
-          # Resolve promise
-          self.get(id).then deferred.resolve
+    @emailExists(email).then (exists) ->
+      if exists then return deferred.reject("err_bad_email")
+      redis.incr "users:index", (err, id) ->
+        user =
+          id: id.toString()
+          name: name
+          password: password
+          email: email
+          has_pro: "0"
+          created_at: Date.now().toString()
+        # Save to redis
+        redis.hmset "users:#{id}", user
+        # Add to lookup
+        redis.hset "users:email", email, id
+        # Resolve promise
+        self.get(id).then deferred.resolve
 
     return deferred.promise
 
@@ -55,29 +52,12 @@ class User
       deferred.resolve user._clone()
     return deferred.promise
 
-  @getByName: (username) =>
-    deferred = Q.defer()
-    redis.hget "users:username", username, (err, id) =>
-      if id is null then return deferred.reject("Username not found")
-      @get(id)
-        .then(deferred.resolve, deferred.reject)
-    deferred.promise
-
   @getByEmail: (email) ->
     deferred = Q.defer()
     redis.hget "users:email", email, (err, id) =>
       if id is null then return deferred.reject("Email not found")
       @get(id)
         .then(deferred.resolve, deferred.reject)
-    deferred.promise
-
-  @usernameExists: (username) ->
-    deferred = Q.defer()
-    redis.hexists "users:username", username, (err, exists) ->
-      if exists is 0
-        return deferred.resolve no
-      else
-        return deferred.resolve yes
     deferred.promise
 
   @emailExists: (email) ->
@@ -94,7 +74,6 @@ class User
     @get(id).then (user) =>
       return unless user
       @release(id)
-      redis.hdel "users:username", user.username
       redis.hdel "users:email", user.email
       redis.del "users:#{id}", deferred.resolve
       true

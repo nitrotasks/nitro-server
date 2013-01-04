@@ -1,7 +1,4 @@
-express = require "express"
-http    = require "http"
 Q       = require "q"
-Auth    = require "./auth"
 User    = require "./storage"
 
 # Easy way to disable logging if needed
@@ -11,16 +8,10 @@ Log = (args...) =>
   console?.log?(args...)
 
 # Start server
-init = ->
-  port = process.env.PORT || 5000
+init = (server) ->
 
-  app = express()
-  server = app.listen(port)
+  # Start SocketIO
   io = require('socket.io').listen(server)
-
-  # Serve up static files in the public folder
-  app.configure ->
-    app.use express.static(__dirname + '/public')
 
   # Socket.IO settings
   io.configure ->
