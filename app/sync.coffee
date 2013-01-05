@@ -27,13 +27,9 @@ init = (server) ->
       uid = cookie.getItem("uid")
       token = cookie.getItem("token")
       if uid isnt null and token isnt null
-        salt = "$2a$10$" + token[0...22]
-        token = token[22..]
-        Auth.hash(token, salt).then (rawHash) ->
-          hash = rawHash[29..]
-          User.checkLoginToken(uid, hash).then (exists) ->
-            handshakeData.uid = uid
-            callback(null, exists)
+        User.checkLoginToken(uid, token).then (exists) ->
+          handshakeData.uid = uid
+          callback(null, exists)
       else
         callback(null, no)
 

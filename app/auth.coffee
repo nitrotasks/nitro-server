@@ -38,15 +38,9 @@ class Auth
 
   # Just a wrapper for generating token, saving it and then returning the token
   @saveToken: (id) =>
-    deferred = Q.defer()
     token = @createToken()
-    @hash(token).then (secret) ->
-      salt = secret[7...29]
-      hash = secret[29..]
-      User.addLoginToken(id, hash)
-      deferred.resolve "#{salt}#{token}"
-    , deferred.reject
-    deferred.promise
+    User.addLoginToken(id, token)
+    token
 
   # Gives the user a token to use to connect to SocketIO
   @login: (email, password) =>
@@ -57,8 +51,7 @@ class Auth
         @compare(password, user.password).then (same) =>
           if not same then return deferred.reject("err_bad_pass")
           # Generate login token for user
-          @saveToken(user.id).then (token) ->
-            deferred.resolve [user.id, token]
+          deferred.resolve [user.id, @saveToken(user.id)]
     return deferred.promise
 
   @register: (name, email, pass) =>
@@ -84,8 +77,7 @@ class Auth
       ).then( (hash) ->
         User.add name, email, hash
       ).then( (user) =>
-        @saveToken(user.id).then (token) ->
-          deferred.resolve [user.id, token]
+        deferred.resolve [user.id, @saveToken(user.id)]
       ).fail( (err) ->
         deferred.reject(err)
       )

@@ -18,7 +18,7 @@ describe "Auth API", ->
         assert.equal typeof parseInt(data[0], 10), "number"
         # The second part shuold be the token
         assert.equal typeof data[1], "string"
-        assert.equal data[1].length, 64+29
+        assert.equal data[1].length, 64
         done()
 
   it "Login with real password", (done) ->
