@@ -4,13 +4,20 @@ Q       = require "q"
 
 class Auth
 
-  @hash: (data) ->
+  @hash: (data, salt) ->
     deferred = Q.defer()
-    bcrypt.genSalt 10, (err, salt) ->
-      if err then return deferred.reject()
+
+    hash = (salt) ->
       bcrypt.hash data, salt, (err, hash) ->
         if err then return deferred.reject()
         deferred.resolve hash
+
+    if not salt
+      bcrypt.genSalt 10, (err, salt) ->
+        if err then return deferred.reject()
+        hash(salt)
+    else hash(salt)
+
     return deferred.promise
 
   @compare: (data, hash) ->
@@ -20,27 +27,68 @@ class Auth
       deferred.resolve same
     return deferred.promise
 
+  # Generate a random string
+  @createToken: (len=64) ->
+    token = ""
+    chars = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$"
+    for i in [1..len] by 1
+      key = Math.floor(Math.random() * chars.length)
+      token += chars[key]
+    return token
+
+  # Just a wrapper for generating token, saving it and then returning the token
+  @saveToken: (id) =>
+    deferred = Q.defer()
+    token = @createToken()
+    @hash(token).then (secret) ->
+      salt = secret[7...29]
+      hash = secret[29..]
+      User.addLoginToken(id, hash)
+      deferred.resolve "#{salt}#{token}"
+    , deferred.reject
+    deferred.promise
+
+  # Gives the user a token to use to connect to SocketIO
   @login: (email, password) =>
     deferred = Q.defer()
     User.getByEmail(email)
       .fail( -> deferred.reject("err_bad_pass") )
       .then (user) =>
-        @compare(password, user.password).then (same) ->
-          if same then deferred.resolve() else deferred.reject("err_bad_pass")
+        @compare(password, user.password).then (same) =>
+          if not same then return deferred.reject("err_bad_pass")
+          # Generate login token for user
+          @saveToken(user.id).then (token) ->
+            deferred.resolve [user.id, token]
     return deferred.promise
 
   @register: (name, email, pass) =>
     deferred = Q.defer()
 
-    Q.fcall( =>
-      @hash pass
-    ).then( (hash) ->
-      User.add name, email, hash
-    ).then( (user) ->
-      deferred.resolve user
-    ).fail( (err) ->
-      deferred.reject(err)
-    )
+    valid = yes
+
+    if name.length is 0
+      deferred.reject("err_bad_name")
+      valid = no
+
+    if email.length is 0
+      deferred.reject("err_bad_email")
+      valid = no
+
+    if pass.length is 0
+      deferred.reject("err_bad_pass")
+      valid = no
+
+    if valid
+      Q.fcall( =>
+        @hash pass
+      ).then( (hash) ->
+        User.add name, email, hash
+      ).then( (user) =>
+        @saveToken(user.id).then (token) ->
+          deferred.resolve [user.id, token]
+      ).fail( (err) ->
+        deferred.reject(err)
+      )
 
     return deferred.promise
 

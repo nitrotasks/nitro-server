@@ -6,27 +6,32 @@ data =
   name: "George Czabania"
   password: "password"
 
-describe "Auth ->", ->
+describe "Auth API", ->
 
-  it "Register user", (done) ->
+  it "sholud be able to register a user", (done) ->
     Auth.register(data.name, data.email, data.password)
       .fail( -> console.log arguments )
-      .then (user) ->
-        assert.equal "George Czabania", data.name
-        assert.equal "george@czabania.com", user.email
+      .then (data) ->
+        # Should return an array
+        assert.equal Array.isArray(data), yes
+        # The first part should be the userID
+        assert.equal typeof parseInt(data[0], 10), "number"
+        # The second part shuold be the token
+        assert.equal typeof data[1], "string"
+        assert.equal data[1].length, 64+29
         done()
 
   it "Login with real password", (done) ->
     Auth.login(data.email, data.password)
       .fail( -> console.log arguments )
-      .then (success) ->
-        assert.equal success, yes
+      .then ->
         done()
 
   it "Login with wrong password", (done) ->
-    Auth.login(data.email, "hunter2")
-      .fail( -> console.log arguments)
-      .then (success) ->
-        assert.equal success, no
-        done()
+    Auth.login(data.email, "hunter2").fail ->
+      done()
+
+  it "should generate a random token", ->
+    token = Auth.createToken(64)
+    assert.equal token.length, 64
 

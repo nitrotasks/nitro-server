@@ -18,7 +18,7 @@ class User
     self = @
 
     @emailExists(email).then (exists) ->
-      if exists then return deferred.reject("err_bad_email")
+      if exists then return deferred.reject("err_old_email")
       redis.incr "users:index", (err, id) ->
         user =
           id: id.toString()
@@ -86,6 +86,18 @@ class User
   # Because you can't reconnect the instance to the record
   @release: (id) =>
     delete @records[id]
+
+  # Login tokens expire after 2 weeks
+  @addLoginToken: (id, token) =>
+    redis.setex "token:#{id}:#{token}", 1209600, Date.now()
+
+  @checkLoginToken: (id, token) =>
+    deferred = Q.defer()
+    redis.exists "token:#{id}:#{token}", (err, exists) ->
+      if err then return deferred.reject(err)
+      if exists is 0 then return deferred.resolve(no)
+      else return deferred.resolve(yes)
+    deferred.promise
 
   constructor: (atts) ->
     @_load atts if atts

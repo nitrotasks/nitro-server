@@ -1,5 +1,7 @@
-Q       = require "q"
-User    = require "./storage"
+Q      = require "q"
+User   = require "./storage"
+Cookie = require "./cookieParser"
+Auth   = require "./auth"
 
 # Easy way to disable logging if needed
 Log = (args...) =>
@@ -20,6 +22,20 @@ init = (server) ->
     # Configure for Heroku
     # io.set "transports", ["xhr-polling"]
     # io.set "polling duration", 10
+    io.set "authorization", (handshakeData, callback) ->
+      cookie = new Cookie handshakeData.headers.cookie
+      uid = cookie.getItem("uid")
+      token = cookie.getItem("token")
+      if uid isnt null and token isnt null
+        salt = "$2a$10$" + token[0...22]
+        token = token[22..]
+        Auth.hash(token, salt).then (rawHash) ->
+          hash = rawHash[29..]
+          User.checkLoginToken(uid, hash).then (exists) ->
+            handshakeData.uid = uid
+            callback(null, exists)
+      else
+        callback(null, no)
 
   # Fired when user connects to server
   io.sockets.on 'connection', (socket) ->
@@ -45,11 +61,12 @@ class Sync
     'update': 'update'
     'destroy': 'destroy'
 
-  constructor: (@socket) ->
+  constructor: (@socket, uid=@socket.handshake.uid) ->
     Log "-- A user has connected to the server --"
     # Bind socket.io events
     for event, fn of @events
       @on event, @[fn]
+    @login uid
 
 
   # ------------------
@@ -156,13 +173,14 @@ class Sync
   # -----------------
 
   # Emit event
-  emit: (name, data) =>
-    @socket.broadcast.to(@user.name).emit(name, data)
+  emit: (event, data) =>
+    Log "-- Emitting event #{event} "
+    @socket.broadcast.to(@user.email).emit(event, data)
 
   # Bind event to function
   on: (event, fn) =>
-    @socket.on event, (args...) =>
-      return unless @user or event is "login"
+    @socket.on event, (args...) ->
+      Log "-- Received event #{event} --"
       fn(args...)
 
 
@@ -170,32 +188,20 @@ class Sync
   # General Events
   # --------------
 
-  # Temp function to handle usernames and rooms
-  login: (username) =>
-
+  login: (uid) =>
     deferred = Q.defer()
-
-    Q.fcall( ->
-      User.usernameExists username
-    ).then( (exists) ->
-      if exists
-        User.getByName username
-      else
-        # Add user to database if they don't already exist
-        User.add username, "email-#{Date.now()}", "password"
-    ).then( (user) =>
+    Log "-- Logging in #{uid} --"
+    User.get(uid).then (user) =>
       # Set user
       @user = user
       # Move user to their own room
-      @socket.join(@user.username)
-      Log "#{ @user.username } has logged in"
-      deferred.resolve @user
-    )
-
+      @socket.join(@user.email)
+      Log "#{ @user.name } has logged in"
+      deferred.resolve user
     return deferred.promise
 
   logout: =>
-    Log "#{ @user.username } has logged out"
+    Log "#{ @user.name } has logged out"
     Log "-- Releasing connection --"
 
   # Return all models in database
@@ -228,7 +234,6 @@ class Sync
     timestamp = data[2] or Date.now()
     @setTime className, id, "all", timestamp
     Log "Created item: #{ model.name }"
-    console.log id
     # Return new ID
     if fn? then fn(id)
     # Broadcast event to connected clients

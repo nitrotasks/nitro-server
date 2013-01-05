@@ -25,19 +25,19 @@ api =
           name: req.body.name
           email: req.body.email
           password: req.body.password
-        Auth.register(user.name, user.email, user.password).then( ->
-          res.send yes
+        Auth.register(user.name, user.email, user.password).then( (data) ->
+          res.send data
         ).fail( (err) ->
-          res.send err
+          res.status(400).send err
         )
       "post_login": (req, res) ->
         user =
           email: req.body.email
           password: req.body.password
-        Auth.login(user.email, user.password).then( ->
-          res.send yes
+        Auth.login(user.email, user.password).then( (data) ->
+          res.send data
         ).fail( (err) ->
-          res.send err
+          res.status(401).send err
         )
 
 # Bind requests to Express App
@@ -52,9 +52,10 @@ bind = (obj, prefix, app) ->
         app.post "/#{prefix}/#{key.slice(5)}", value
 bind api, "api", app
 
+# Start Server
+server = app.listen(port)
 
 # Start sync
-server = app.listen(port)
 Sync = require "./app/sync"
 Sync.init server
 
