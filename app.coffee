@@ -1,5 +1,7 @@
 express = require "express"
 Auth    = require "./app/auth"
+User    = require "./app/storage"
+Q       = require "q"
 
 port = process.env.PORT || 5000
 
@@ -25,20 +27,80 @@ api =
           name: req.body.name
           email: req.body.email
           password: req.body.password
-        Auth.register(user.name, user.email, user.password).then( (data) ->
-          res.send data
-        ).fail( (err) ->
-          res.status(400).send err
-        )
+        Auth.register(user.name, user.email, user.password)
+          .then (data) ->
+            res.send data
+          .fail (err) ->
+            res.status(400).send err
+
       "post_login": (req, res) ->
         user =
           email: req.body.email
           password: req.body.password
-        Auth.login(user.email, user.password).then( (data) ->
-          res.send data
-        ).fail( (err) ->
-          res.status(401).send err
-        )
+        Auth.login(user.email, user.password)
+          .then (data) ->
+            res.send data
+          .fail (err) ->
+            res.status(401).send err
+
+
+      # Password Resetting
+      "get_forgot": (req, res) ->
+        res.send """
+          <h1>Totally legit password reset page</h1>
+          <form method="post" action="#">
+            <input name="email" type="email" placeholder="Your email">
+            <button>Reset Password</button>
+          </form>
+        """
+
+      "post_forgot": (req, res) ->
+        email = req.body.email
+        Auth.generateResetToken(email)
+          .then (token) ->
+            res.send """
+              <h1>Hurrah! We have send you an email</h1>
+              <p>If you didn't get it, use this: <pre>#{token}</pre></p>
+            """
+          .fail (msg) ->
+            res.status(400).send "#{msg}"
+
+      "get_forgot/*": (req, res) ->
+        token = req.params[0]
+        User.checkResetToken(token)
+          .then ->
+            res.send """
+              <h1>Now you can reset your password!</h1>
+              <form method="post" action="#">
+                <input name="password" type="password" placeholder="Password">
+                <input name="passwordConfirmation" type="password" placeholder="Confirmation">
+                <button>Reset Password</button>
+              </form>
+            """
+          .fail (err) ->
+            res.send err
+
+      "post_forgot/*": (req, res) ->
+        password = req.body.password
+        confirmation = req.body.passwordConfirmation
+        token = req.params[0]
+
+        if password isnt confirmation
+          return res.status(401).send "err_bad_pass"
+
+        User.checkResetToken(token)
+          .then (id) ->
+
+            Q.spread [
+              User.get(id)
+              Auth.hash(password)
+            ], (user, hash) ->
+              user.changePassword(hash)
+              User.removeResetToken(token)
+              res.send "Changed password"
+            , (err) ->
+              res.status(401).send err
+
 
 # Bind requests to Express App
 bind = (obj, prefix, app) ->
@@ -56,7 +118,7 @@ bind api, "api", app
 server = app.listen(port)
 
 # Start sync
-Sync = require "./app/sync"
-Sync.init server
+# Sync = require "./app/sync"
+# Sync.init server
 
 module.exports = app

@@ -2,6 +2,8 @@ app = require "../app"
 request = require "supertest"
 assert = require "assert"
 
+global = {}
+
 describe 'Auth API', ->
 
 
@@ -66,3 +68,29 @@ describe 'Auth API', ->
       .post("/api/v0/auth/login")
       .send( email: "random@thing.net", password: "password" )
       .expect( "err_bad_pass", done )
+
+  it "should allow users to reset their password", (done) ->
+    request(app)
+      .post("/api/v0/auth/forgot/")
+      .send( email: "example@email.com" )
+      .end (err, res) ->
+        assert.notEqual res.text, "err_bad_email"
+        global.token = res.text
+        done()
+
+  it "should fail if the email address doesn't exist", (done) ->
+    request(app)
+      .post("/api/v0/auth/forgot/")
+      .send( email: "not.an@email.com" )
+      .expect( "err_bad_email", done )
+
+  it "should allow the user to use a token", (done) ->
+    request(app)
+      .get("/api/v0/auth/forgot/#{global.token}")
+      .end (err, res) ->
+        done()
+
+  it "should fail if the token doesn't exist", (done) ->
+    request(app)
+      .get("/api/v0/auth/forgot/somesillytoken")
+      .expect( "err_bad_token", done )

@@ -30,7 +30,7 @@ class Auth
   # Generate a random string
   @createToken: (len=64) ->
     token = ""
-    chars = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$"
+    chars = "._+-=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$"
     for i in [1..len] by 1
       key = Math.floor(Math.random() * chars.length)
       token += chars[key]
@@ -83,5 +83,17 @@ class Auth
       )
 
     return deferred.promise
+
+  # Generate a reset password token for the user
+  @generateResetToken: (email) =>
+    deferred = Q.defer()
+    token = @createToken()
+    User.getByEmail(email)
+      .then (user) ->
+        User.addResetToken user.id, token
+        deferred.resolve(token)
+      .fail ->
+        deferred.reject "err_bad_email"
+    deferred.promise
 
 module?.exports = Auth

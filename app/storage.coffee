@@ -99,6 +99,21 @@ class User
       else return deferred.resolve(yes)
     deferred.promise
 
+  # Token will expire in 24 hours (86400 seconds)
+  @addResetToken: (id, token) ->
+    redis.setex "forgot:#{token}", 86400, id
+
+  @checkResetToken: (token) ->
+    deferred = Q.defer()
+    redis.get "forgot:#{token}", (err, id) ->
+      if err then return deferred.reject(err)
+      if id is null then return deferred.reject("err_bad_token")
+      deferred.resolve id
+    deferred.promise
+
+  @removeResetToken: (token) ->
+    redis.del "forgot:#{token}"
+
   constructor: (atts) ->
     @_load atts if atts
 
@@ -186,9 +201,5 @@ class User
     deferred = Q.defer()
     @_set("has_pro", status).then(deferred.resolve)
     deferred.promise
-
-  # Token will expire in 24 hours (86400 seconds)
-  addResetToken: (token) =>
-    redis.setex "forgot:#{token}", 86400, @id
 
 module?.exports = User
