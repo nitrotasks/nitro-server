@@ -216,13 +216,14 @@ class Sync
     [className, model] = data
     return unless className in ["List", "Task"]
     # Generate new id
-    id = "s-" + @user.index(className)
-    @user.incrIndex className
-    model.id = id
+    if model.id is "inbox" then id is model.id
+    else
+      id = "s-" + @user.index(className)
+      @user.incrIndex className
+      model.id = id
+    console.log model
     # Add item to server
-    group = @user.data(className)
-    if not group
-      group = @user.data(className, {})
+    group = @user.data(className) or @user.data(className, {})
     group[id] = model
     # Save to server
     @user.save(className)
@@ -240,6 +241,12 @@ class Sync
     [className, changes] = data
     return unless className in ["List", "Task"]
     id = changes.id
+
+    # Check model exists on server
+    if not @user.data(className).hasOwnProperty id
+      console.log "#{className} doesn't exist on server"
+      return
+
     # Set timestamp
     timestamps = data[2]
     if timestamps
@@ -278,22 +285,27 @@ class Sync
     @emit 'destroy', [className, id]
 
 
-  # -----------
-  # Sync Events
-  # -----------
+  # --------------------
+  # Offline Sync Merging
+  # --------------------
 
   # Sync
   sync: (queue, fn) =>
     Log "Running sync"
     for event in queue
       [type, [className, model], timestamp] = event
+
       switch type
         when "create"
           @create [className, model, timestamp]
+
         when "update"
           @update [className, model, timestamp]
+
         when "destroy"
-          @destroy [className, model, timestamp]
+          if @checkTime className, id, timestamp
+            @destroy [className, model, timestamp]
+
     fn [@getArray("Task"), @getArray("List")] if fn
 
 module?.exports = Sync
