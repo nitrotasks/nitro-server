@@ -186,6 +186,11 @@ class User
   # Change Password
   changePassword: (newPassword) =>
     deferred = Q.defer()
+    # Delete login tokens
+    redis.keys "token:#{@id}:*", (err, data) ->
+      for token in data
+        redis.del token
+    # Save password
     @_set("password", newPassword).then(deferred.resolve)
     deferred.promise
 
