@@ -2,6 +2,7 @@ express = require "express"
 Auth    = require "./app/auth"
 User    = require "./app/storage"
 Q       = require "q"
+Mail    = require "./app/mail"
 
 port = process.env.PORT || 5000
 
@@ -58,9 +59,14 @@ api =
         email = req.body.email
         Auth.generateResetToken(email)
           .then (token) ->
+            Mail.send
+              to: email
+              subject: "Reset Password Token"
+              html: """
+                <a href="http://localhost:5000/api/v0/auth/forgot/#{token}">Reset Password</a>
+              """
             res.send """
-              <h1>Hurrah! We have send you an email</h1>
-              <p>If you didn't get it, use this: <pre>#{token}</pre></p>
+              <h1>Hurrah! We have sent you an email containing a token</h1>
             """
           .fail (msg) ->
             res.status(400).send "#{msg}"
@@ -118,7 +124,7 @@ bind api, "api", app
 server = app.listen(port)
 
 # Start sync
-# Sync = require "./app/sync"
-# Sync.init server
+Sync = require "./app/sync"
+Sync.init server
 
 module.exports = app

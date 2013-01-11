@@ -32,15 +32,10 @@ sendMail = (options) ->
 
 Mail =
   send: (options) ->
-    options.from ?= "NitroTasks"
+    options.from ?= "Nitro Tasks <hello@nitrotasks.com>"
     sendMail options
 
 # if you don't want to use this transport object anymore, uncomment following line
 # smtpTransport.close(); // shut down the connection pool, no more messages
 
 module.exports = Mail
-
-Mail.send
-  to: "dev@stayradiated.com"
-  subject: "Hi Stayrad"
-  text: "What are you doing today?"
