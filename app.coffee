@@ -4,6 +4,8 @@ User    = require "./app/storage"
 Q       = require "q"
 Mail    = require "./app/mail"
 
+DebugMode = on # Enable debug mode
+
 port = process.env.PORT || 5000
 
 app = express()
@@ -59,17 +61,19 @@ api =
         email = req.body.email
         Auth.generateResetToken(email)
           .then (token) ->
+             message = "<h1>Hurrah! We have sent you an email containing a token</h1>"
+             link = "<a href=\"http://localhost:5000/api/v0/auth/forgot/#{token}\">Reset Password</a>"
+
+            if DebugMode then return res.send message + "<br><br>" + link
+
             Mail.send
               to: email
               subject: "Reset Password Token"
-              html: """
-                <a href="http://localhost:5000/api/v0/auth/forgot/#{token}">Reset Password</a>
-              """
-            res.send """
-              <h1>Hurrah! We have sent you an email containing a token</h1>
-            """
-          .fail (msg) ->
-            res.status(400).send "#{msg}"
+              html: link
+            res.send message
+
+          .fail (err) ->
+            res.status(400).send "#{err}"
 
       "get_forgot/*": (req, res) ->
         token = req.params[0]

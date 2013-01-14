@@ -15,7 +15,6 @@ describe "Auth API", ->
 
 sync = no
 
-
 describe "Sync API", ->
 
   it "should create a new user", (done) ->
@@ -31,42 +30,44 @@ describe "Sync API", ->
       assert.equal sync.user.name, "George"
       done()
 
-  it "should add tasks", ->
-    sync.create ["Task", {name: "Task 1"}]
-    sync.create ["Task", {name: "Task 2"}]
-    sync.create ["Task", {name: "Task 3"}]
-    # Check tasks exist
-    tasks = sync.user.data("Task")
-    assert.equal tasks["s-0"].name, "Task 1"
-    assert.equal tasks["s-1"].name, "Task 2"
-    assert.equal tasks["s-2"].name, "Task 3"
-
-  it "Add list", ->
-    sync.create ["List", {name: "List 1"}]
-    sync.create ["List", {name: "List 2"}]
-    sync.create ["List", {name: "List 3"}]
+  it "should add lists", ->
+    sync.create ["List", name: "List 1", tasks: []]
+    sync.create ["List", name: "List 2", tasks: []]
+    sync.create ["List", name: "List 3", tasks: []]
     # Check lists exist
     lists = sync.user.data("List")
     assert.equal lists["s-0"].name, "List 1"
     assert.equal lists["s-1"].name, "List 2"
     assert.equal lists["s-2"].name, "List 3"
 
+  it "should add tasks", ->
+    sync.create ["Task", name: "Task 1", list: "s-0"]
+    sync.create ["Task", name: "Task 2", list: "s-0"]
+    sync.create ["Task", name: "Task 3", list: "s-0"]
+    # Check tasks exist
+    tasks = sync.user.data("Task")
+    lists = sync.user.data("List")
+    assert.equal tasks["s-0"].name, "Task 1"
+    assert.equal tasks["s-1"].name, "Task 2"
+    assert.equal tasks["s-2"].name, "Task 3"
+    assert.deepEqual lists["s-0"].tasks, ["s-0", "s-1", "s-2"], "Tasks have been added to the list"
+
   it "Find model", ->
     # Should find tasks
-    task = sync.find("Task", "s-0")
+    task = sync.findModel("Task", "s-0")
     assert.equal task.name, "Task 1"
     # Should find lists
-    list = sync.find("List", "s-2")
+    list = sync.findModel("List", "s-2")
     assert.equal list.name, "List 3"
-    # Missing items should return undefined
-    no_model = sync.find("Task", "s--1")
-    no_class = sync.find("Empty", "s-2")
-    assert.equal no_model, no_class, undefined
+    # Missing items should return new objects
+    no_model = sync.findModel("Task", "s-100")
+    no_class = sync.hasModel("Empty", "s-2")
+    assert.deepEqual no_model, {}
 
   it "Get array", ->
-    tasks = sync.getArray("Task")
-    lists = sync.getArray("List")
-    empty = sync.getArray("Empty")
+    tasks = sync.exportModel("Task")
+    lists = sync.exportModel("List")
+    empty = sync.exportModel("Empty")
     # Should return an array
     assert.equal Array.isArray(tasks), yes
     # Should return our tasks and lists
@@ -106,7 +107,9 @@ describe "Sync API", ->
     no_key = sync.getTime "Task", "s-0", "missing"
     no_id  = sync.getTime "Task", "s-100", "name"
     no_class = sync.getTime "missing", "s-100", "name"
-    assert.equal no_key, no_id, no_class, undefined
+    assert.equal no_key, undefined
+    assert.equal no_id, undefined
+    assert.equal no_class, undefined
 
     # Clearing timestamps
     sync.clearTime "Task", "s-2"

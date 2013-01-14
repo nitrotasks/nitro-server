@@ -1,13 +1,13 @@
 Q      = require "q"
+Auth   = require "./auth"
 User   = require "./storage"
 Cookie = require "./cookieParser"
-Auth   = require "./auth"
 
 # Easy way to disable logging if needed
 Log = (args...) =>
   # return
   args.unshift('(Sync)')
-  console?.log?(args...)
+  console.log(args...)
 
 # Start server
 init = (server) ->
@@ -17,26 +17,59 @@ init = (server) ->
 
   # Socket.IO settings
   io.configure ->
+
     # Hide messages
     io.set "log level", 1
+
     # Configure for Heroku
     # io.set "transports", ["xhr-polling"]
     # io.set "polling duration", 10
-    io.set "authorization", (handshakeData, callback) ->
+
+    # Prevent unauthorised access to server
+    io.set "authorization", (handshakeData, fn) ->
       cookie = new Cookie handshakeData.headers.cookie
       uid = cookie.getItem("uid")
       token = cookie.getItem("token")
       if uid isnt null and token isnt null
         User.checkLoginToken(uid, token).then (exists) ->
           handshakeData.uid = uid
-          callback(null, exists)
+          fn(null, exists)
       else
-        callback(null, no)
+        fn(null, no)
+      return
 
   # Fired when user connects to server
   io.sockets.on 'connection', (socket) ->
     # Create a new Sync instance
     new Sync(socket)
+    return
+
+  return
+
+# Return the default task object
+Default = (name) ->
+
+  data =
+    Task:
+      completed: false
+      date: ""
+      list: "inbox"
+      name: "New Task"
+      notes: ""
+      priority: 1
+    List:
+      name: "New List"
+      tasks: []
+
+  clone = (obj) ->
+    newObj = {}
+    for key, value of obj
+      newObj[key] = value
+    return newObj
+
+  if data[name]
+    return clone data[name]
+
 
 # Does all the useful stuff
 class Sync
@@ -45,12 +78,11 @@ class Sync
   @init: init
 
   # Store user data
-  user: no
+  user: null
 
   # Socket.IO events
   events:
     'disconnect': 'logout'
-    'login': 'login'
     'fetch': 'fetch'
     'sync': 'sync'
     'create': 'create'
@@ -58,39 +90,42 @@ class Sync
     'destroy': 'destroy'
 
   constructor: (@socket, uid=@socket.handshake.uid) ->
-    Log "-- A user has connected to the server --"
+    Log "A user has connected to the server"
     # Bind socket.io events
     for event, fn of @events
       @on event, @[fn]
     @login uid
+    return
 
 
   # ------------------
-  # Utility Functions
+  # Storage Functions
   # ------------------
 
   # Return model
-  find: (className, id) =>
-    data = @user.data(className)
-    if !data
-      data = @user.data(className, {})
-    data?[id]
+  findModel: (className, id) =>
+    @user.data(className)[id] ?= {}
+    return @user.data(className)[id]
+
+  hasModel: (className, id) =>
+    return @user.data(className)?[id]?
 
   # Update attributes
-  set: (className, id, data) =>
-    model = @find className, id
-    for key, value of data
+  setModelAttributes: (className, id, attributes) =>
+    model = @findModel className, id
+    for key, value of attributes
       model[key] = value
     @user.save(className)
-    model
+    return model
 
   # Replace model
-  replace: (className, id, data) =>
-    @user.data(className)[id] = data
+  setModel: (className, id, attributes) =>
+    @user.data(className)[id] = attributes
     @user.save(className)
+    return attributes
 
   # Convert data object into spine array
-  getArray: (className) =>
+  exportModel: (className) =>
     models = []
     data = @user.data(className)
     return [] unless data
@@ -98,7 +133,7 @@ class Sync
     for id, model of data
       if not model.deleted
         models.push model
-    models
+    return models
 
 
   # -------------------
@@ -111,14 +146,14 @@ class Sync
 
   # Return timestamp for an item or attribute
   getTime: (className, id, attr) =>
-    time = @user.data("Time")?[className]?[id]?[attr]
+    time = @findModel("Time", className)?[id]?[attr]
     if time then time += @baseTime
-    time
+    return time
 
   # Remove all timestamps for an object
   clearTime: (className, id) =>
-    delete @user.data("Time")[className][id]
-    @user.save("Time")
+    delete @findModel("Time", className)[id]
+    return id
 
   # Set timestamp for an attribute
   setTime: (className, id, attr, time) =>
@@ -129,33 +164,33 @@ class Sync
         @setTime className, id, key, time
       return
 
+    # Compress timestamp to save space
     time -= @baseTime
 
     # Makes sure the entry exists
-    if not @user.data("Time")
-      @user.data("Time", {})
-    if not (className of @user.data("Time"))
-      @user.data("Time")[className] = {}
-    if not (id of @user.data("Time")[className])
-      @user.data("Time")[className][id] = {}
+    # Todo: Make a function that will make this work
+    @findModel("Time", className)[id] ?= {}
 
     # Update all existing values
     if attr is "all"
-      for attr of @user.data(className)[id]
+      for attr of @findModel(className, id)
         continue if attr is "id" # Ignore ID
+        # Can't use @setModelAttributes because it's three layers deep
         @user.data("Time")[className][id][attr] = time
     else
       @user.data("Time")[className][id][attr] = time
     @user.save("Time")
 
+    return
+
   # Check if the variable `time` is greater than any times stored in the DB
   checkTime: (className, id, time) =>
 
-    return unless @user.data("Time")?[className]?[id]?
+    return unless @findModel("Time", className)?[id]?
 
     pass = yes
 
-    for attr of @user.data("Time")[className][id]
+    for attr of @findModel("Time", className)[id]
       val = @getTime(className, id, attr)
       if val > time then pass = no
 
@@ -168,9 +203,14 @@ class Sync
   # Socket.IO Comands
   # -----------------
 
-  # Emit event
+  # Emit event (goes to everyone)
   emit: (event, data) =>
-    Log "-- Emitting event #{event} "
+    Log "-- Emitting event #{event} --\n"
+    @socket.emit(event, data)
+
+  # Broadcast event (goes to everyone except @user)
+  broadcast: (event, data) =>
+    Log "-- Broadcasting event #{event} --\n"
     @socket.broadcast.to(@user.email).emit(event, data)
 
   # Bind event to function
@@ -186,7 +226,7 @@ class Sync
 
   login: (uid) =>
     deferred = Q.defer()
-    Log "-- Logging in #{uid} --"
+    Log "User #{uid} is logging in"
     User.get(uid).then (user) =>
       # Set user
       @user = user
@@ -198,13 +238,10 @@ class Sync
 
   logout: =>
     Log "#{ @user.name } has logged out"
-    Log "-- Releasing connection --"
 
   # Return all models in database
   fetch: (className, fn) =>
-    # Create model in data
-    if not @user.data(className) then @user.data(className, {})
-    fn @getArray(className)
+    fn @exportModel(className)
 
 
   # ---------------
@@ -215,26 +252,32 @@ class Sync
   create: (data, fn) =>
     [className, model] = data
     return unless className in ["List", "Task"]
+
     # Generate new id
-    if model.id is "inbox" then id is model.id
+    if className is "List" and model.id is "inbox"
+      id = model.id
+      if @hasModel("List", "inbox") then return
     else
       id = "s-" + @user.index(className)
       @user.incrIndex className
       model.id = id
-    console.log model
+
+    # Add task to list
+    if className is "Task"
+      listId = model.list
+      @taskAdd id, listId
+
     # Add item to server
-    group = @user.data(className) or @user.data(className, {})
-    group[id] = model
-    # Save to server
-    @user.save(className)
+    @setModel(className, id, model)
     # Set timestamp
     timestamp = data[2] or Date.now()
     @setTime className, id, "all", timestamp
-    Log "Created item: #{ model.name }"
+    Log "Created #{className}: #{ model.name }"
+    # Broadcast event to connected clients
+    @broadcast 'create', [className, model]
     # Return new ID
     if fn? then fn(id)
-    # Broadcast event to connected clients
-    @emit 'create', [className, model]
+
 
   # Update existing model
   update: (data) =>
@@ -243,9 +286,13 @@ class Sync
     id = changes.id
 
     # Check model exists on server
-    if not @user.data(className).hasOwnProperty id
-      console.log "#{className} doesn't exist on server"
+    if not @hasModel(className, id)
+      Log "#{className} doesn't exist on server"
       return
+      # model = Default className
+      # for k, v of changes
+      #   model[k] = v
+      # changes = model
 
     # Set timestamp
     timestamps = data[2]
@@ -261,28 +308,54 @@ class Sync
       for k of changes
         continue if k is "id"
         timestamps[k] = now
+
     @setTime className, id, timestamps
+
+    # Update list
+    if className is "Task" and changes.list?
+      oldTask = @findModel className, id
+      if oldTask.list isnt changes.list
+        @taskMove id, oldTask.list, changes.list
+
     # Save to server
-    model = @set className, id, changes
-    Log "Updated item: #{ model.name }"
+    model = @setModelAttributes className, id, changes
+    Log "Updated #{className}: #{ model.name }"
+
     # Broadcast event to connected clients
-    @emit 'update', [className, model]
+    @broadcast 'update', [className, model]
+
 
   # Delete existing model
   destroy: (data) =>
     [className, id] = data
     return unless className in ["List", "Task"]
+    model = @findModel className, id
+
     # Check that the model hasn't been updated after this event
     timestamp = data[2] or Date.now()
     return unless @checkTime className, id, timestamp
+
+    # Destroy all tasks within that list
+    if className is "List"
+      for taskId in model.tasks
+        Log "Destroying Task #{taskId}"
+        # TODO: Prevent server from broadcasting these changes
+        #       And make the client delete the tasks
+        @destroy ["Task", taskId]
+
+    # Remove from list
+    else if className is "Task"
+      @taskRemove id, model.list
+
     # Replace task with deleted template
-    @replace className, id,
+    @setModel className, id,
       id: id
       deleted: yes
+
     # Set timestamp
     @setTime className, id, "deleted", timestamp
-    Log "Destroyed item #{ id }"
-    @emit 'destroy', [className, id]
+    Log "Destroyed #{className} #{id}"
+    @broadcast 'destroy', [className, id]
 
 
   # --------------------
@@ -297,7 +370,8 @@ class Sync
 
       switch type
         when "create"
-          @create [className, model, timestamp]
+          @create [className, model, timestamp], (newId) ->
+            Log "Changing #{className} #{model.id} to #{newId}"
 
         when "update"
           @update [className, model, timestamp]
@@ -306,6 +380,39 @@ class Sync
           if @checkTime className, id, timestamp
             @destroy [className, model, timestamp]
 
-    fn [@getArray("Task"), @getArray("List")] if fn
+    fn [@exportModel("Task"), @exportModel("List")] if fn
 
-module?.exports = Sync
+
+  # ----------
+  # Task Order
+  # ----------
+
+  # Add a tasks to a list
+  taskAdd: (taskId, listId) ->
+    tasks = @findModel("List", listId).tasks
+    if tasks.indexOf(taskId) < 0
+      tasks.push taskId
+      @setModelAttributes "List", listId, tasks:tasks
+
+  # Remove a task from a list
+  taskRemove: (taskId, listId) ->
+    tasks = @findModel("List", listId).tasks
+    index = tasks.indexOf taskId
+    if index > -1
+      tasks.splice index, 1
+      @setModelAttributes "List", listId, tasks:tasks
+
+  # Move a task from list to another
+  taskMove: (taskId, oldListId, newListId) ->
+    @taskAdd taskId, newListId
+    @taskRemove taskId, oldListId
+
+  # Replace a task ID
+  taskUpdateId: (oldId, newId, listId) ->
+    tasks = @findModel("List", listId).tasks
+    index = tasks.indexOf oldId
+    if index > -1
+      tasks.spice index, 1, newId
+      @setModelAttributes "List", listId, tasks:tasks
+
+module.exports = Sync

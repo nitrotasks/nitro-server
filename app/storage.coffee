@@ -114,6 +114,13 @@ class User
   @removeResetToken: (token) ->
     redis.del "forgot:#{token}"
 
+
+  # Notifications
+  @addNotification: (uid, time, type) ->
+    # notifications:<time> = {
+    #   <uid> = <type>
+    # }
+
   constructor: (atts) ->
     @_load atts if atts
 
@@ -152,10 +159,14 @@ class User
       records[@id][key] = value
 
   # Just an easy way to get user data
-  data: (className, data) =>
+  data: (className, replaceWith) =>
     key = "data:#{className}"
-    if data
-      @[key] = data
+    # Easy way to replace an entire key
+    if replaceWith?
+      @[key] = replaceWith
+    # Create the object if it doesn't exist
+    else if not @.hasOwnProperty(key)
+      @[key] = {}
     @[key]
 
   # Get the index for a dataset
