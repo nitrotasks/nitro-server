@@ -241,6 +241,7 @@ class Sync
 
   # Return all models in database
   fetch: (className, fn) =>
+    return unless fn
     fn @exportModel(className)
 
 
@@ -266,6 +267,8 @@ class Sync
     if className is "Task"
       listId = model.list
       @taskAdd id, listId
+    else if className is "List"
+      model.tasks = []
 
     # Add item to server
     @setModel(className, id, model)
@@ -326,13 +329,11 @@ class Sync
 
 
   # Delete existing model
-  destroy: (data) =>
-    [className, id] = data
+  destroy: ([className, id], timestamp=Date.now()) =>
     return unless className in ["List", "Task"]
     model = @findModel className, id
 
     # Check that the model hasn't been updated after this event
-    timestamp = data[2] or Date.now()
     return unless @checkTime className, id, timestamp
 
     # Destroy all tasks within that list
@@ -365,22 +366,69 @@ class Sync
   # Sync
   sync: (queue, fn) =>
     Log "Running sync"
-    for event in queue
-      [type, [className, model], timestamp] = event
+
+    # Store clientIDs to localIDs (USED ONLY FOR LISTS)
+    client = {}
+
+    i = 0
+    max = 100
+
+    while i < queue.length and i < max
+      [type, [className, model], timestamp] = queue[i]
 
       switch type
         when "create"
+
+          # Check for client IDs
+          console.log "Client:", client
+          console.log className, model
+          if className is "Task" and model.list.slice(0,2) is "c-"
+
+            # The list hasn't been assigned a server ID yet
+            if client[model.list] is undefined
+
+              # We have already checked this task
+              if model._missing
+                Log "We have a missing task!"
+                i++
+                continue
+
+              else
+                Log "Moving Task #{model.id} in list #{model.list} to back of queue"
+                model._missing = yes
+                queue[queue.length] = queue[i]
+                queue[i] = []
+                i++
+                continue
+
+            else
+              Log "Found List ID #{model.list} has changed to #{client[model.list]}"
+              model.list = client[model.list]
+              delete model._missing
+
+          oldId = model.id
           @create [className, model, timestamp], (newId) ->
-            Log "Changing #{className} #{model.id} to #{newId}"
+            if className is "List"
+              Log "Changing List #{oldId} to #{newId}"
+              client[oldId] = newId
 
         when "update"
+          # Is a client ID
+          if model.list?.slice(0,2) is "c-"
+            if client[className][model.id]?
+              model.list = client[className][model.list]
           @update [className, model, timestamp]
 
         when "destroy"
-          if @checkTime className, id, timestamp
-            @destroy [className, model, timestamp]
+          @destroy [className, model, timestamp]
+
+      i++
 
     fn [@exportModel("Task"), @exportModel("List")] if fn
+
+  # Make sure data is in the right format
+  parse: (event, data) ->
+    return data
 
 
   # ----------

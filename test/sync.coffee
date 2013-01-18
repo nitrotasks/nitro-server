@@ -30,7 +30,12 @@ describe "Sync API", ->
       assert.equal sync.user.name, "George"
       done()
 
-  it "should add lists", ->
+  it "should add lists and tasks", ->
+
+    # -----
+    # Lists
+    # -----
+
     sync.create ["List", name: "List 1", tasks: []]
     sync.create ["List", name: "List 2", tasks: []]
     sync.create ["List", name: "List 3", tasks: []]
@@ -40,7 +45,10 @@ describe "Sync API", ->
     assert.equal lists["s-1"].name, "List 2"
     assert.equal lists["s-2"].name, "List 3"
 
-  it "should add tasks", ->
+    # -----
+    # Tasks
+    # -----
+
     sync.create ["Task", name: "Task 1", list: "s-0"]
     sync.create ["Task", name: "Task 2", list: "s-0"]
     sync.create ["Task", name: "Task 3", list: "s-0"]
@@ -52,19 +60,29 @@ describe "Sync API", ->
     assert.equal tasks["s-2"].name, "Task 3"
     assert.deepEqual lists["s-0"].tasks, ["s-0", "s-1", "s-2"], "Tasks have been added to the list"
 
-  it "Find model", ->
+
+  it "should be able to find models", ->
     # Should find tasks
     task = sync.findModel("Task", "s-0")
     assert.equal task.name, "Task 1"
     # Should find lists
     list = sync.findModel("List", "s-2")
     assert.equal list.name, "List 3"
-    # Missing items should return new objects
-    no_model = sync.findModel("Task", "s-100")
-    no_class = sync.hasModel("Empty", "s-2")
-    assert.deepEqual no_model, {}
 
-  it "Get array", ->
+  it "should be able to detect if a model exists", ->
+    # Existing items should return true
+    exists = sync.hasModel("Task", "s-0")
+    assert.equal exists, yes
+
+    # Missing items should return false
+    no_model = sync.hasModel("Task", "s-100")
+    assert.equal no_model, no
+    no_class = sync.hasModel("Empty", "s-2")
+    assert.equal no_class, no
+
+
+
+  it "should export an array", ->
     tasks = sync.exportModel("Task")
     lists = sync.exportModel("List")
     empty = sync.exportModel("Empty")
@@ -78,7 +96,7 @@ describe "Sync API", ->
     assert.equal Array.isArray(empty), yes
     assert.equal empty.length, 0
 
-  it "Timestamps", ->
+  it "should work with timestamps", ->
     now = Date.now()
 
     # Setting and getting
@@ -116,7 +134,13 @@ describe "Sync API", ->
     model = sync.user.data("Time")["Task"]["s-2"]
     assert.equal model, undefined
 
-  it "Update Task", ->
+
+  it "should handle task and list updates", ->
+
+    # -----
+    # Tasks
+    # -----
+
     sync.update ["Task", {id: "s-0", name: "Task 1 has been renamed"}]
     sync.update ["Task", {id: "s-1", name: "Task 2 has been renamed"}]
     sync.update ["Task", {id: "s-2", name: "Task 3 has been renamed"}]
@@ -126,7 +150,10 @@ describe "Sync API", ->
     assert.equal tasks["s-1"].name, "Task 2 has been renamed"
     assert.equal tasks["s-2"].name, "Task 3 has been renamed"
 
-  it "Update List", ->
+    # -----
+    # Lists
+    # -----
+
     sync.update ["List", {id: "s-0", name: "List 1 has been renamed"}]
     sync.update ["List", {id: "s-1", name: "List 2 has been renamed"}]
     sync.update ["List", {id: "s-2", name: "List 3 has been renamed"}]
@@ -136,7 +163,13 @@ describe "Sync API", ->
     assert.equal lists["s-1"].name, "List 2 has been renamed"
     assert.equal lists["s-2"].name, "List 3 has been renamed"
 
-  it "Destroy Tasks", ->
+
+  it "should handle task and list destruction", ->
+
+    # -----
+    # Tasks
+    # -----
+
     sync.destroy ["Task", "s-0"]
     sync.destroy ["Task", "s-1"]
     sync.destroy ["Task", "s-2"]
@@ -146,7 +179,10 @@ describe "Sync API", ->
     assert.equal tasks["s-1"].hasOwnProperty("deleted"), yes
     assert.equal tasks["s-2"].hasOwnProperty("deleted"), yes
 
-  it "Destroy Lists", ->
+    # -----
+    # Lists
+    # -----
+
     sync.destroy ["List", "s-0"]
     sync.destroy ["List", "s-1"]
     sync.destroy ["List", "s-2"]
@@ -156,5 +192,45 @@ describe "Sync API", ->
     assert.equal lists["s-1"].hasOwnProperty("deleted"), yes
     assert.equal lists["s-2"].hasOwnProperty("deleted"), yes
 
-  it "Logout", ->
+
+  it "should handle offline sync", ->
+
+    tasks = []
+    listId = 0
+
+    # Create basic lists and tasks
+    sync.create ["List", name: "Just a list", tasks: []], (id) ->
+      listId = id
+      sync.create ["Task", name: "Task 1", list: listId], (id) ->
+        tasks[0] = id
+      sync.create ["Task", name: "Task 2", list: listId], (id) ->
+        tasks[1] = id
+      sync.create ["Task", name: "Task 3", list: listId], (id) ->
+        tasks[2] = id
+
+    now = Date.now()
+
+    queue = [
+      # Destroy tasks
+      [ "destroy", [ "Task", tasks[0] ], now ]
+      [ "destroy", [ "Task", tasks[1] ], now ]
+      [ "destroy", [ "Task", tasks[2] ], now ]
+
+      # Update the list
+      [ "update", [ "List", {id: listId, name: "Changed"} ], now]
+
+      # Create a new list
+      [ "create",  [ "List", {id: "c-1", name:"List", tasks:[]} ], now ]
+
+      # Create a new task
+      [ "create", [ "Task", {id: "c-1", name:"Task", list: "c-1"}], now]
+    ]
+
+    fn = (results) ->
+      console.log results
+
+    sync.sync(queue, fn)
+
+
+  it "should logout user", ->
     sync.logout()
