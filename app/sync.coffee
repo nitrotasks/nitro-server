@@ -371,34 +371,39 @@ class Sync
     while i < queue.length and i < max
       [type, [className, model], timestamp] = queue[i]
 
+      ## Handles client list IDs ##
+
+      # Example: You create a task in list "c-10"
+      # The list ID gets changed to "s-5" on the server
+      # This code matches that list back to the task
+
+      if type in ["create", "update"] and
+      className is "Task" and model.list.slice(0,2) is "c-"
+
+        # The list hasn't been assigned a server ID yet
+        if client[model.list] is undefined
+
+          # We have already checked this task
+          if model._missing
+            Log "We have a missing task!"
+            i++
+            continue
+
+          else
+            Log "Moving Task #{model.id} in list #{model.list} to back of queue"
+            model._missing = yes
+            queue[queue.length] = queue[i]
+            queue[i] = []
+            i++
+            continue
+
+        else
+          Log "Found List ID #{model.list} has changed to #{client[model.list]}"
+          model.list = client[model.list]
+          delete model._missing
+
       switch type
         when "create"
-
-          # Check for client IDs
-          if className is "Task" and model.list.slice(0,2) is "c-"
-
-            # The list hasn't been assigned a server ID yet
-            if client[model.list] is undefined
-
-              # We have already checked this task
-              if model._missing
-                Log "We have a missing task!"
-                i++
-                continue
-
-              else
-                Log "Moving Task #{model.id} in list #{model.list} to back of queue"
-                model._missing = yes
-                queue[queue.length] = queue[i]
-                queue[i] = []
-                i++
-                continue
-
-            else
-              Log "Found List ID #{model.list} has changed to #{client[model.list]}"
-              model.list = client[model.list]
-              delete model._missing
-
           oldId = model.id
           @create [className, model, timestamp], (newId) ->
             if className is "List"
@@ -406,10 +411,6 @@ class Sync
               client[oldId] = newId
 
         when "update"
-          # Is a client ID
-          if model.list?.slice(0,2) is "c-"
-            if client[className][model.id]?
-              model.list = client[className][model.list]
           @update [className, model, timestamp]
 
         when "destroy"
@@ -431,6 +432,7 @@ class Sync
   # Add a tasks to a list
   taskAdd: (taskId, listId) ->
     tasks = @findModel("List", listId).tasks
+    return false unless tasks
     if tasks.indexOf(taskId) < 0
       tasks.push taskId
       @setModelAttributes "List", listId, tasks:tasks
@@ -438,6 +440,7 @@ class Sync
   # Remove a task from a list
   taskRemove: (taskId, listId) ->
     tasks = @findModel("List", listId).tasks
+    return false unless tasks
     index = tasks.indexOf taskId
     if index > -1
       tasks.splice index, 1
