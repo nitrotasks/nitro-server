@@ -20,9 +20,12 @@ app.configure ->
     next()
 
 # DebugMode
-DebugMode = on
+DebugMode = off
 app.__debug = ->
+  console.warn "\u001b[31mRunning in debug mode!\u001b[0m"
   DebugMode = on
+# Enable debug mode if passed as argument
+if "--debug" in process.argv then app.__debug()
 
 # GET and POST requests
 api =
