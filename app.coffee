@@ -41,7 +41,7 @@ api =
         password: req.body.password
       Auth.register(user.name, user.email, user.password)
         .then (token) ->
-          link = "http://localhost:5000/api/v0/register/#{token}"
+          link = "http://nitro-sync-v2.herokuapp.com/api/v0/register/#{token}"
           if DebugMode then return res.send link
           # Send email to user
           Mail.send
@@ -101,7 +101,7 @@ api =
         Auth.generateResetToken(email)
           .then (token) ->
             message = "<h1>Hurrah! We have sent you an email containing a token</h1>"
-            link = "<a href=\"http://localhost:5000/api/v0/auth/forgot/#{token}\">Reset Password</a>"
+            link = "<a href=\"http://nitro-sync-v2.herokuapp.com/api/v0/auth/forgot/#{token}\">Reset Password</a>"
 
             if DebugMode then return res.send message + "<br><br>" + link
 

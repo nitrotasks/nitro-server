@@ -5,9 +5,10 @@
 - Coffeescript
 - Redis Server
 
-## To run ##
+## To install and run ##
 - `npm install .` to install the dependencies
-- `coffee app.coffee`
+- `redis-server` to start Redis
+- `coffee app.coffee` to run the app
 
 ## To start in debug mode ##
 - Enables logging

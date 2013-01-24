@@ -3,6 +3,7 @@
   "version": "1.9.0",
   "dependencies": {
     "bcrypt": "0.7.x",
+    "coffee-script": "1.4.x",
     "express": "3.0.x",
     "lodash": "1.0.x",
     "msgpack": "0.1.x",

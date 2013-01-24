@@ -17,8 +17,8 @@ init = (server) ->
     io.set "log level", 1
 
     # Configure for Heroku
-    # io.set "transports", ["xhr-polling"]
-    # io.set "polling duration", 10
+    io.set "transports", ["xhr-polling"]
+    io.set "polling duration", 10
 
     # Prevent unauthorised access to server
     io.set "authorization", (handshakeData, fn) ->
