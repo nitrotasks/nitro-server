@@ -22,6 +22,7 @@ app.configure ->
 # Enable debug mode if passed as argument
 if "--debug" in process.argv
   process.env.NODE_ENV = "development"
+  DebugMode = on
   console.warn "\u001b[31mRunning in debug mode!\u001b[0m"
 
 # GET and POST requests
@@ -40,8 +41,23 @@ api =
         password: req.body.password
       Auth.register(user.name, user.email, user.password)
         .then (token) ->
-          res.send token
+          link = "http://localhost:5000/api/v0/register/#{token}"
+          if DebugMode then return res.send link
+          # Send email to user
+          Mail.send
+            to: user.email
+            subject: "Verify your email address"
+            html: """
+              Hi #{user.name}!
+              <br><br>
+              Thanks for signing up to Nitro.
+              <br><br>
+              You'll need to click this link to verify your account first though:
+              <a href="#{link}">#{link}</a>
+            """
+          res.send "true"
         .fail (err) ->
+          console.error err
           res.status(400).send err
 
     "get_register/*": (req, res) ->
