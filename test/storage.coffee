@@ -10,10 +10,9 @@ users = [
 
 describe "Storage API", ->
 
-  it "should be ablet to add users", (done) ->
+  it "should be able to add users", (done) ->
     users.forEach (user, i, array) ->
-      User.add(user[0], user[1], user[2])
-      .then (data) ->
+      User.add(user[0], user[1], user[2]).then (data) ->
         assert.equal data.name, user[0]
         assert.equal data.email, user[1]
         assert.equal data.password, user[2]
@@ -51,9 +50,10 @@ describe "Storage API", ->
         User.get(users[0][3])
         User.get(users[0][3])
     ], (u1, u2) ->
-      u1.changePassword("my-new-password").then ->
-        assert.equal "my-new-password", u1.password, u2.password
-        done()
+      u1.changePassword("my-new-password")
+      assert.equal "my-new-password", u1.password
+      assert.equal "my-new-password", u2.password
+      done()
 
   it "should let users change their email address", (done) ->
     newEmail = users[1][1] = "example@mail.com"
@@ -102,25 +102,22 @@ describe "Storage API", ->
       User.get(users[1][3])
       User.get(users[1][3])
     ], (u1, u2) ->
-      Q.fcall( ->
-        u1.data("Task", tasks)
-        u1.save("Task")
-      ).then( ->
-        u2.data("List", lists)
-        u2.save("List")
-      ).then( ->
-        assert.equal tasks, u1.data("Task"), u2.data("Task")
-        assert.equal lists, u1.data("List"), u2.data("List")
+      u1.data("Task", tasks)
+      u1.save("Task")
+      u2.data("List", lists)
+      u2.save("List")
 
-        # Release the user
-        # This forces User.get() to fetch the data from Redis
-        User.release(users[1][3])
-        User.get(users[1][3])
-      ).then( (u3) ->
+      assert.equal tasks, u1.data("Task"), u2.data("Task")
+      assert.equal lists, u1.data("List"), u2.data("List")
+
+      # Release the user
+      # This forces User.get() to fetch the data from disk
+      User.release(users[1][3])
+      User.get(users[1][3]).then (u3) ->
         assert.deepEqual tasks, u3.data("Task")
+        u3.data("Task")["1"].name = "Task 1 - Changed"
+        u3.save()
         done()
-      )
-
 
   it "should increment data index", (done) ->
     User.get(users[1][3]).then (user) ->
@@ -143,8 +140,24 @@ describe "Storage API", ->
 
   it "should be able to delete users from disk", (done) ->
     users.forEach (user, i, array) ->
-      User.remove(user[3]).then( ->
-        User.get(user[3])
-      ).fail ->
-        if i is  array.length - 1
+      User.remove(user[3]).then ->
+        User.get(user[3]).fail ->
+          if i is array.length - 1
+            done()
+
+  it "should register users temporarily until verified", (done) ->
+    user =
+      name: "George"
+      email: "mail@example.com"
+      password: "abc123"
+
+    User.register("1234567890", user.name, user.email, user.password)
+      .then (token) ->
+        User.getRegistration(token).then (data) ->
+          assert.equal user.name, data.name
+          assert.equal user.email, data.email
+          assert.equal user.password, data.pass
           done()
+
+    User.getRegistration("abc").fail (err) ->
+      assert.equal(err, "err_bad_token")
