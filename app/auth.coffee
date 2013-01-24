@@ -72,15 +72,16 @@ class Auth
       valid = no
 
     if valid
-      Q.fcall( =>
-        @hash pass
-      ).then( (hash) ->
-        User.add name, email, hash
-      ).then( (user) =>
-        deferred.resolve [user.id, @saveToken(user.id)]
-      ).fail( (err) ->
-        deferred.reject(err)
-      )
+      Q
+        .fcall =>
+          @hash(pass)
+        .then (hash) =>
+          token = @createToken()
+          User.register(token, name, email, hash)
+        .then (token) ->
+          deferred.resolve(token)
+        .fail (err) ->
+          deferred.reject(err)
 
     return deferred.promise
 
