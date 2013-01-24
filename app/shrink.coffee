@@ -1,21 +1,32 @@
 # Lookup table for compressing data
 tableTo =
 
+  # User
+  email:      "@"
+  password:   "X"
+  has_pro:    "$"
+  created_at: ":"
+  updated_at: "#"
+
+  data_Task: "dT"
+  data_List: "dL"
+  data_Time: "dX"
+
   # Class names
   Task: "T"
   List: "L"
   Time: "M"
 
   # Properties
-  name: "n"
+  name:      "n"
   completed: "c"
-  id: "i"
-  priority: "p"
-  date: "d"
-  deleted: "x"
-  notes: "o"
-  tasks: "t"
-  list: "l"
+  id:        "i"
+  priority:  "p"
+  date:      "d"
+  deleted:   "x"
+  notes:     "o"
+  tasks:     "t"
+  list:      "l"
 
 tableFrom = {}
 
