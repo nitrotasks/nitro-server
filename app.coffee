@@ -19,13 +19,10 @@ app.configure ->
     res.header "Access-Control-Allow-Headers", "X-Requested-With"
     next()
 
-# DebugMode
-DebugMode = off
-app.__debug = ->
-  console.warn "\u001b[31mRunning in debug mode!\u001b[0m"
-  DebugMode = on
 # Enable debug mode if passed as argument
-if "--debug" in process.argv then app.__debug()
+if "--debug" in process.argv
+  process.env.NODE_ENV = "development"
+  console.warn "\u001b[31mRunning in debug mode!\u001b[0m"
 
 # GET and POST requests
 api =
