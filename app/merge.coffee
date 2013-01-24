@@ -1,4 +1,5 @@
 # Merge Array Order with Timestamps
+Log = require "./log"
 
 ArrayDiff = (a, b) ->
   a.filter (i) ->
@@ -19,18 +20,18 @@ merge = (client, server) ->
 
     # Use newer timestamp
     if client.time > server.time
-      console.log "List order: Same keys so going with latest version - Client"
+      Log "List order: Same keys so going with latest version - Client"
       return [client.order, client.time]
 
     else
-      console.log "List order: Same keys so going with latest version - Server"
+      Log "List order: Same keys so going with latest version - Server"
       return [server.order, server.time]
 
   # Use algorithm if keys are different
   else
 
     # Crazy merging code
-    console.log "List order: Merging with algorithm"
+    Log "List order: Merging with algorithm"
 
     # Remove all keys that aren't in the server
     client.order = ArrayDiff(client.order, cD)

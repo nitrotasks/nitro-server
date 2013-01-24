@@ -1,6 +1,7 @@
 nodemailer = require "nodemailer"
 Q          = require "q"
 KeyChain   = require "./keychain"
+Log        = require "./log"
 
 # create reusable transport method (opens pool of SMTP connections)
 smtpTransport = nodemailer.createTransport "SMTP",
@@ -25,13 +26,14 @@ sendMail = (options) ->
   # send mail with defined transport object
   smtpTransport.sendMail options, (error, response) ->
     if error
-      console.log error
+      Log error
     else
-      console.log "Message sent: " + response.message
+      Log "Message sent: " + response.message
   deferred.promise
 
 Mail =
   send: (options) ->
+    Log "Sending mail to #{options.to}"
     options.from ?= "Nitro Tasks <hello@nitrotasks.com>"
     sendMail options
 

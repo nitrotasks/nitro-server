@@ -2,12 +2,7 @@ Q      = require "q"
 Auth   = require "./auth"
 User   = require "./storage"
 Cookie = require "./cookieParser"
-
-# Easy way to disable logging if needed
-Log = (args...) =>
-  return unless process.env.NODE_ENV is "development"
-  args.unshift('(Sync)')
-  console.log(args...)
+Log    = require "./log"
 
 # Start server
 init = (server) ->
@@ -380,8 +375,6 @@ class Sync
         when "create"
 
           # Check for client IDs
-          console.log "Client:", client
-          console.log className, model
           if className is "Task" and model.list.slice(0,2) is "c-"
 
             # The list hasn't been assigned a server ID yet
