@@ -1,8 +1,49 @@
 bcrypt  = require "bcrypt"
 User    = require "./storage"
+oauth   = require "./oauth"
 Q       = require "q"
+Keys    = require "./keychain"
 
 class Auth
+
+  @oauth:
+
+    request: oauth.request
+    verify: oauth.verify
+    access: oauth.access
+
+    login: (service, access) ->
+      deferred = Q.defer()
+      oauth.userinfo(service, access).then ([email, name]) ->
+        User.getByEmail(email, service)
+
+          # User already exists, so we can sign them in
+          .then (user) ->
+            deferred.resolve [
+              user.id
+              Auth.saveToken(user.id)
+              user.email
+              user.name
+            ]
+
+          # User doesn't exist, so we register them
+          .fail ->
+            User.add({
+              name: name
+              email: email
+              password: "*"
+              service: service })
+              .then (user) ->
+                deferred.resolve [
+                  user.id
+                  Auth.saveToken(user.id)
+                  user.email
+                  user.name
+                ]
+              .fail (msg) ->
+                deferred.reject msg
+
+      return deferred.promise
 
   @hash: (data, salt) ->
     deferred = Q.defer()
@@ -30,7 +71,7 @@ class Auth
   # Generate a random string
   @createToken: (len=64) ->
     token = ""
-    chars = "._+-=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$"
+    chars = "-_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     for i in [1..len] by 1
       key = Math.floor(Math.random() * chars.length)
       token += chars[key]
@@ -51,7 +92,7 @@ class Auth
         @compare(password, user.password).then (same) =>
           if not same then return deferred.reject("err_bad_pass")
           # Generate login token for user
-          deferred.resolve [user.id, @saveToken(user.id)]
+          deferred.resolve [user.id, @saveToken(user.id), user.email, user.name]
     return deferred.promise
 
   @register: (name, email, pass) =>

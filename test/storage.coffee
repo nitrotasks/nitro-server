@@ -12,7 +12,11 @@ describe "Storage API", ->
 
   it "should be able to add users", (done) ->
     users.forEach (user, i, array) ->
-      User.add(user[0], user[1], user[2]).then (data) ->
+      User.add(
+        name: user[0]
+        email: user[1]
+        password: user[2]
+      ).then (data) ->
         assert.equal data.name, user[0]
         assert.equal data.email, user[1]
         assert.equal data.password, user[2]
@@ -21,7 +25,7 @@ describe "Storage API", ->
 
   it "should not allow duplicate email addresses", ->
     users.forEach (user, i, array) ->
-      User.add(user[0], user[1], user[2]).fail ->
+      User.add({name:user[0], email:user[1], password:user[2]}).fail ->
         done()
 
   it "should get users by email", (done) ->
@@ -156,7 +160,7 @@ describe "Storage API", ->
         User.getRegistration(token).then (data) ->
           assert.equal user.name, data.name
           assert.equal user.email, data.email
-          assert.equal user.password, data.pass
+          assert.equal user.password, data.password
           done()
 
     User.getRegistration("abc").fail (err) ->

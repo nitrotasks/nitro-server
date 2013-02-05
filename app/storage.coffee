@@ -1,9 +1,16 @@
-redis   = require("redis").createClient(null, null, {detect_buffers: true})
+redis   = require("redis")
 Q       = require "q"
 shrink  = require "./shrink"
 msgpack = require "msgpack"
 fs      = require "fs"
 _       = require "lodash"
+
+if process.env.REDISTOGO_URL
+  rtg = require("url").parse(process.env.REDISTOGO_URL)
+  redis = redis.createClient(rtg.port, rtg.hostname)
+  redis.auth(rtg.auth.split(":")[1])
+else
+  redis = redis.createClient()
 
 # Set up
 redis.flushdb()
@@ -75,7 +82,7 @@ class User
       return array
 
   # Register user data in a temporary key until they have verified their account
-  @register: (token, name, email, pass) ->
+  @register: (token, name, email, password) ->
     deferred = Q.defer()
     @emailExists(email).then (exists) ->
       if exists then return deferred.reject("err_old_email")
@@ -83,7 +90,7 @@ class User
       redis.hmset key,
         name: name
         email: email
-        pass: pass
+        password: password
       # Expire this key in 48 hours
       redis.expire(key, 172800)
       deferred.resolve(token)
@@ -101,20 +108,21 @@ class User
     return deferred.promise
 
   # Add user to database and return user as instance
-  @add: (name, email, password) =>
+  @add: (options) =>
     deferred = Q.defer()
-    @emailExists(email).then (exists) =>
+    @emailExists(options.email).then (exists) =>
       if exists then return deferred.reject("err_old_email")
       redis.incr "users:index", (err, id) =>
         user =
           id: id
-          name: name
-          password: password
-          email: email
+          name: options.name
+          password: options.password
+          email: options.email
           has_pro: 0
           created_at: Date.now()
         # Add to lookup
-        redis.hset "users:email", email, id
+        options.service ?= "native"
+        redis.hset "users:#{options.service}", options.email, id
         # Resolve promise
         File.write(user).then =>
           @get(id)
@@ -136,29 +144,29 @@ class User
       deferred.resolve user._clone()
     return deferred.promise
 
-  @getByEmail: (email) ->
+  @getByEmail: (email, service="native") ->
     deferred = Q.defer()
-    redis.hget "users:email", email, (err, id) =>
-      if id is null then return deferred.reject("Email not found")
+    redis.hget "users:#{service}", email, (err, id) =>
+      if id is null then return deferred.reject("User not found")
       @get(id)
         .then(deferred.resolve, deferred.reject)
-    deferred.promise
+    return deferred.promise
 
-  @emailExists: (email) ->
+  @emailExists: (email, service="native") ->
     deferred = Q.defer()
-    redis.hexists "users:email", email, (err, exists) ->
+    redis.hexists "users:#{service}", email, (err, exists) ->
       if exists is 0
         return deferred.resolve no
       else
         return deferred.resolve yes
-    deferred.promise
+    return deferred.promise
 
-  @remove: (id) =>
+  @remove: (id, service="native") =>
     deferred = Q.defer()
     @get(id).then (user) =>
       return unless user
       @release(id)
-      redis.hdel "users:email", user.email
+      redis.hdel "users:native", user.email
       File.del(id).then deferred.resolve
       return
     return deferred.promise
@@ -296,10 +304,10 @@ class User
     return deferred.promise
 
   # Change email
-  changeEmail: (newEmail) =>
+  changeEmail: (newEmail, service="native") =>
     deferred = Q.defer()
-    redis.hdel "users:email", @email
-    redis.hset "users:email", newEmail, @id, deferred.resolve
+    redis.hdel "users:#{service}", @email
+    redis.hset "users:#{service}", newEmail, @id, deferred.resolve
     @_set("email", newEmail)
     deferred.promise
 

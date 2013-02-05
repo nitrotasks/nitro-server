@@ -1,7 +1,6 @@
 Q      = require "q"
 Auth   = require "./auth"
 User   = require "./storage"
-Cookie = require "./cookieParser"
 Log    = require "./log"
 
 # Start server
@@ -22,10 +21,10 @@ init = (server) ->
 
     # Prevent unauthorised access to server
     io.set "authorization", (handshakeData, fn) ->
-      cookie = new Cookie handshakeData.headers.cookie
-      uid = cookie.getItem("uid")
-      token = cookie.getItem("token")
-      if uid isnt null and token isnt null
+      uid = handshakeData.query.uid
+      token = handshakeData.query.token
+      console.log uid, token
+      if uid? and token?
         User.checkLoginToken(uid, token).then (exists) ->
           handshakeData.uid = uid
           fn(null, exists)

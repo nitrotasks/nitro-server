@@ -19,136 +19,179 @@ app.configure ->
     res.header "Access-Control-Allow-Headers", "X-Requested-With"
     next()
 
-# Enable debug mode if passed as argument
-if "--debug" in process.argv
+DebugMode = off
+app.__debug = ->
   process.env.NODE_ENV = "development"
   DebugMode = on
   console.warn "\u001b[31mRunning in debug mode!\u001b[0m"
 
+# Enable debug mode if passed as argument
+if "--debug" in process.argv then app.__debug()
+
 # GET and POST requests
 api =
-  "v0":
+
+  # ------------
+  # Registration
+  # ------------
+
+  "post_register": (req, res) ->
+    user =
+      name: req.body.name
+      email: req.body.email
+      password: req.body.password
+    Auth.register(user.name, user.email, user.password)
+      .then (token) ->
+        link = "http://nitro-sync-v2.herokuapp.com/api/register/#{token}"
+        if DebugMode then return res.send [link, token]
+        # Send email to user
+        Mail.send
+          to: user.email
+          subject: "Verify your email address"
+          html: """
+            Hi #{user.name}!
+            <br><br>
+            Thanks for signing up to Nitro.
+            <br><br>
+            You'll need to click this link to verify your account first though:
+            <a href="#{link}">#{link}</a>
+          """
+        res.send "true"
+      .fail (err) ->
+        console.error err
+        res.status(400).send err
+
+  "get_register/*": (req, res) ->
+    token = req.params[0]
+    User.getRegistration(token)
+      .then (user) ->
+        User.add(
+          name: user.name
+          email: user.email
+          password: user.password
+          ).then -> res.send "success"
+      .fail (err) ->
+        res.send err
 
 
-    # ------------
-    # Registration
-    # ------------
+  # -----
+  # Login
+  # -----
 
-    "post_register": (req, res) ->
-      user =
-        name: req.body.name
-        email: req.body.email
-        password: req.body.password
-      Auth.register(user.name, user.email, user.password)
-        .then (token) ->
-          link = "http://nitro-sync-v2.herokuapp.com/api/v0/register/#{token}"
-          if DebugMode then return res.send link
-          # Send email to user
-          Mail.send
-            to: user.email
-            subject: "Verify your email address"
-            html: """
-              Hi #{user.name}!
-              <br><br>
-              Thanks for signing up to Nitro.
-              <br><br>
-              You'll need to click this link to verify your account first though:
-              <a href="#{link}">#{link}</a>
-            """
-          res.send "true"
-        .fail (err) ->
-          console.error err
-          res.status(400).send err
-
-    "get_register/*": (req, res) ->
-      token = req.params[0]
-      User.getRegistration(token)
-        .then (user) ->
-          User.add(user.name, user.email, user.pass).then ->
-            res.send "success"
-        .fail (err) ->
-          res.send err
+  "post_login": (req, res) ->
+    user =
+      email: req.body.email.toLowerCase()
+      password: req.body.password
+    Auth.login(user.email, user.password)
+      .then (data) ->
+        res.send(data)
+      .fail (err) ->
+        res.status(401).send err
 
 
-    # -----
-    # Login
-    # -----
+  # -----
+  # OAuth
+  # -----
+
+  "oauth":
+
+    "get_callback": (req, res) ->
+      service = req.param("service")
+      token = req.param("oauth_token")
+      verifier = req.param("oauth_verifier")
+      Auth.oauth.verify(service, token, verifier)
+      url = "http://localhost:9294"
+      res.redirect(301, url)
+
+    "post_request": (req, res) ->
+      service = req.body.service
+      Auth.oauth.request(service).then (request) ->
+        res.send request
+
+    "post_access": (req, res) ->
+      service = req.body.service
+      request =
+        oauth_token: req.body.token
+        oauth_token_secret: req.body.secret
+      Auth.oauth.access(service, request).then (access) ->
+        res.send access
 
     "post_login": (req, res) ->
-      user =
-        email: req.body.email
-        password: req.body.password
-      Auth.login(user.email, user.password)
+      service = req.body.service
+      access =
+        oauth_token: req.body.token
+        oauth_token_secret: req.body.secret
+      Auth.oauth.login(service, access)
         .then (data) ->
           res.send data
         .fail (err) ->
           res.status(401).send err
 
-    "auth":
+  "auth":
 
-      # Password Resetting
-      "get_forgot": (req, res) ->
-        res.send """
-          <h1>Totally legit password reset page</h1>
-          <form method="post" action="#">
-            <input name="email" type="email" placeholder="Your email">
-            <button>Reset Password</button>
-          </form>
-        """
+    # Password Resetting
+    "get_forgot": (req, res) ->
+      res.send """
+        <h1>Totally legit password reset page</h1>
+        <form method="post" action="#">
+          <input name="email" type="email" placeholder="Your email">
+          <button>Reset Password</button>
+        </form>
+      """
 
-      "post_forgot": (req, res) ->
-        email = req.body.email
-        Auth.generateResetToken(email)
-          .then (token) ->
-            message = "<h1>Hurrah! We have sent you an email containing a token</h1>"
-            link = "<a href=\"http://nitro-sync-v2.herokuapp.com/api/v0/auth/forgot/#{token}\">Reset Password</a>"
+    "post_forgot": (req, res) ->
+      email = req.body.email
+      Auth.generateResetToken(email)
+        .then (token) ->
+          message = "<h1>Hurrah! We have sent you an email containing a token</h1>"
+          link = "<a href=\"http://nitro-sync-v2.herokuapp.com/api/auth/forgot/#{token}\">Reset Password</a>"
 
-            if DebugMode then return res.send message + "<br><br>" + link
+          if DebugMode then return res.send message + "<br><br>" + link
 
-            Mail.send
-              to: email
-              subject: "Reset Password Token"
-              html: link
-            res.send message
+          Mail.send
+            to: email
+            subject: "Reset Password Token"
+            html: link
+          res.send message
 
-          .fail (err) ->
-            res.status(400).send "#{err}"
+        .fail (err) ->
+          res.status(400).send "#{err}"
 
-      "get_forgot/*": (req, res) ->
-        token = req.params[0]
-        User.checkResetToken(token)
-          .then ->
-            res.send """
-              <h1>Now you can reset your password!</h1>
-              <form method="post" action="#">
-                <input name="password" type="password" placeholder="Password">
-                <input name="passwordConfirmation" type="password" placeholder="Confirmation">
-                <button>Reset Password</button>
-              </form>
-            """
-          .fail (err) ->
-            res.send err
+    "get_forgot/*": (req, res) ->
+      token = req.params[0]
+      User.checkResetToken(token)
+        .then ->
+          res.send """
+            <h1>Now you can reset your password!</h1>
+            <form method="post" action="#">
+              <input name="password" type="password" placeholder="Password">
+              <input name="passwordConfirmation" type="password" placeholder="Confirmation">
+              <button>Reset Password</button>
+            </form>
+          """
+        .fail (err) ->
+          res.send err
 
-      "post_forgot/*": (req, res) ->
-        password = req.body.password
-        confirmation = req.body.passwordConfirmation
-        token = req.params[0]
+    "post_forgot/*": (req, res) ->
+      password = req.body.password
+      confirmation = req.body.passwordConfirmation
+      token = req.params[0]
 
-        if password isnt confirmation
-          return res.status(401).send "err_bad_pass"
+      if password isnt confirmation
+        return res.status(401).send "err_bad_pass"
 
-        User.checkResetToken(token)
-          .then (id) ->
+      User.checkResetToken(token)
+        .then (id) ->
 
-            Q.spread [
-              User.get(id)
-              Auth.hash(password)
-            ], (user, hash) ->
-              user.changePassword(hash)
-              User.removeResetToken(token)
-              res.send "Changed password"
-            , (err) ->
-              res.status(401).send err
+          Q.spread [
+            User.get(id)
+            Auth.hash(password)
+          ], (user, hash) ->
+            user.changePassword(hash)
+            User.removeResetToken(token)
+            res.send "Changed password"
+          , (err) ->
+            res.status(401).send err
 
 
 # Bind requests to Express App
