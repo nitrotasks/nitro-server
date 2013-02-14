@@ -5,5 +5,5 @@ keys =
 
 module.exports = (key) ->
   if not keys.hasOwnProperty(key)
-    console.log "(KeyChain) key not found: #{key}"
+    console.warn "(KeyChain) key not found: #{key}"
   keys[key]
