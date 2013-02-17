@@ -128,3 +128,11 @@ describe 'Auth API', ->
     request(app)
       .get("/api/auth/forgot/somesillytoken")
       .expect( "err_bad_token", done )
+
+  it "should generate a todo.txt file", (done) ->
+    request(app)
+      .get("/api/todo.txt")
+      .send( uid: 0 )
+      .end (err, res) ->
+        console.log res.text
+        done()

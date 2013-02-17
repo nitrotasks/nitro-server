@@ -3,6 +3,7 @@ Auth    = require "./app/auth"
 User    = require "./app/storage"
 Q       = require "q"
 Mail    = require "./app/mail"
+TodoTxt = require "./app/todo.txt"
 
 port = process.env.PORT || 5000
 
@@ -30,6 +31,13 @@ if "--debug" in process.argv then app.__debug()
 
 # GET and POST requests
 api =
+
+  "get_todo.txt": (req, res) ->
+    uid = req.param("uid")
+    listId = req.param("list")
+    TodoTxt(uid, listId).then (data) ->
+      res.send(data.replace(/\n/g, "<br>"))
+
 
   # ------------
   # Registration

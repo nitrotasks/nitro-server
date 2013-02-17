@@ -428,7 +428,7 @@ class Sync
   # Task Order
   # ----------
 
-  # Add a tasks to a list
+  # Add a task to a list
   taskAdd: (taskId, listId) ->
     tasks = @findModel("List", listId).tasks
     return false unless tasks
