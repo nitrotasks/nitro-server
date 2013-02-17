@@ -41,7 +41,7 @@ get = (name, table) ->
 replace = (obj, table) ->
   out = {}
   for key, value of obj
-    if typeof value is "object" and not Array.isArray(obj)
+    if typeof value is "object" and not Array.isArray(value)
       for cKey, cValue of value
         out[get(key, table)] = replace(value, table)
     else
