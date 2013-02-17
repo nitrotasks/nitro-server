@@ -13,7 +13,7 @@ else
   redis = redis.createClient()
 
 # Set up
-redis.flushdb()
+# redis.flushdb()
 redis.setnx "users:index", "-1"
 
 # ---------------
@@ -21,6 +21,7 @@ redis.setnx "users:index", "-1"
 # ---------------
 
 File =
+
   # Write user object to file
   write: (user) ->
     deferred = Q.defer()
@@ -46,6 +47,16 @@ File =
     else
       # Save file
       fs.writeFile(path, data, deferred.resolve)
+    return deferred.promise
+
+  # Read user file
+  read: (id) ->
+    deferred = Q.defer()
+    [path, folder] = User.filename(id)
+    fs.readFile path, (err, buffer) =>
+      if err then return deferred.reject("err_no_user")
+      data = shrink.expand msgpack.unpack(buffer)
+      deferred.resolve(data)
     return deferred.promise
 
   # Delete user file
@@ -134,12 +145,12 @@ class User
     deferred = Q.defer()
     user = @records[id]
     if not user
-      # Read user data from file
-      fs.readFile @filename(id)[0], (err, buffer) =>
-        if err then return deferred.reject("err_no_user")
-        data = shrink.expand msgpack.unpack(buffer)
-        user = @records[id] = new @(data)
-        deferred.resolve user._clone()
+      File.read(id)
+        .then (data) =>
+          user = @records[id] = new @(data)
+          deferred.resolve user._clone()
+        .fail (err) ->
+          deferred.reject(err)
     else
       deferred.resolve user._clone()
     return deferred.promise
