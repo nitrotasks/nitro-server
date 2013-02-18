@@ -475,9 +475,9 @@ class Sync
         listName = user.data("List")[listId]?.name
         options =
           to: email
-          from: "CoffeeBot <hello@nitrotasks.com>"
-          subject: "#{user.name}'s list: #{listName}"
-          html: data.replace(/\n/g, "<br>")
+          from: "#{user.name} <hello@nitrotasks.com>"
+          subject: "I've sent you my #{listName} list"
+          html: "<h1>#{listName}</h1>" + data.replace(/\n/g, "<br>")
         console.log options
         require("./mail").send(options)
       .fail ->
