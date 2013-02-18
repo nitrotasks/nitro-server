@@ -82,6 +82,7 @@ class Sync
     'create': 'create'
     'update': 'update'
     'destroy': 'destroy'
+    'emailList': 'emailList'
 
   constructor: (@socket, uid=@socket.handshake.uid) ->
     Log "A user has connected to the server"
@@ -457,5 +458,29 @@ class Sync
     if index > -1
       tasks.spice index, 1, newId
       @setModelAttributes "List", listId, tasks:tasks
+
+
+  # --------------------
+  # Miscellaneous events
+  # --------------------
+
+  # @uid {integer}: a user ID
+  # @listId {string}: a list ID
+  # @email {string}: an email address
+  emailList: (data) ->
+    return false unless Array.isArray(data)
+    [uid, listId, email] = data
+    require("./todo.txt")(uid, listId)
+      .then ([data, user]) ->
+        listName = user.data("List")[listId]?.name
+        options =
+          to: email
+          from: "CoffeeBot <hello@nitrotasks.com>"
+          subject: "#{user.name}'s list: #{listName}"
+          html: data.replace(/\n/g, "<br>")
+        console.log options
+        require("./mail").send(options)
+      .fail ->
+        console.warn arguments
 
 module.exports = Sync

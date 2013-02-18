@@ -26,12 +26,12 @@ generate = (uid, listId) ->
           text[text.length] = " +" +lists[task.list].name
           text[text.length] = "\n"
 
-        deferred.resolve text.join("")
+        deferred.resolve [text.join(""), user]
 
-      else deferred.resolve "You'll need a Nitro Pro Account to generate todo.txt.\nLearn more at <a href=\"http://nitrotasks.com\">the nitrotasks website.</a>"
+      else deferred.resolve ["You'll need a Nitro Pro Account to generate todo.txt.\nLearn more at <a href=\"http://nitrotasks.com\">the nitrotasks website.</a>", user]
 
     .fail ->
-      deferred.resolve "Couldn't find user"
+      deferred.reject "err_no_user"
 
   return deferred.promise
 
