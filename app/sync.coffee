@@ -470,14 +470,16 @@ class Sync
   emailList: (data) ->
     return false unless Array.isArray(data)
     [uid, listId, email] = data
-    require("./todo.txt")(uid, listId)
+    require("./todo.html")(uid, listId)
       .then ([data, user]) ->
         listName = user.data("List")[listId]?.name
         options =
           to: email
+          replyTo: user.email
           from: "CoffeeBot <hello@nitrotasks.com>"
           subject: "#{user.name}'s list: #{listName}"
-          html: data.replace(/\n/g, "<br>")
+          html: data
+          generateTextFromHTML: true
         console.log options
         require("./mail").send(options)
       .fail ->
