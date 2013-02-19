@@ -4,6 +4,7 @@ User    = require "./app/storage"
 Q       = require "q"
 Mail    = require "./app/mail"
 TodoTxt = require "./app/todo.txt"
+TodoHtml = require "./app/todo.html"
 
 port = process.env.PORT || 5000
 
@@ -35,8 +36,14 @@ api =
   "get_todo.txt": (req, res) ->
     uid = req.param("uid")
     listId = req.param("list")
-    TodoTxt(uid, listId).then (data) ->
+    TodoTxt(uid, listId).then ([data]) ->
       res.send(data.replace(/\n/g, "<br>"))
+
+  "get_todo.html": (req, res) ->
+    uid = req.param("uid")
+    listId = req.param("list")
+    TodoHtml(uid, listId).then ([data]) ->
+      res.send(data)
 
 
   # ------------
