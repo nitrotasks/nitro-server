@@ -476,8 +476,8 @@ class Sync
         options =
           to: email
           replyTo: user.email
-          from: "CoffeeBot <hello@nitrotasks.com>"
-          subject: "#{user.name}'s list: #{listName}"
+          from: "#{user.name} <hello@nitrotasks.com>"
+          subject: "I've sent you my #{listName} list"
           html: data
           generateTextFromHTML: true
         console.log options
