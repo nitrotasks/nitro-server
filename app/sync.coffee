@@ -238,7 +238,7 @@ class Sync
       # Load user
       @userIsLoaded = true
       fn() for fn in @runOnUserLoad
-      @userIsLoaded = []
+      @runOnUserLoad = []
       deferred.resolve user
     return deferred.promise
 
