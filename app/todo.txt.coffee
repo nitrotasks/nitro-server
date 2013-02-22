@@ -13,7 +13,7 @@ generate = (uid, listId) ->
       # Try to get tasks in list, else just get all tasks
       list = lists[listId]?.tasks or Object.keys(tasks)
 
-      if user.has_pro is 0
+      if user.pro is 0
 
         text = []
         priorityArray = ["", "(A) ", "(B) ", "(C) "]

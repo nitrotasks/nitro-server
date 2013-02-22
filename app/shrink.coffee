@@ -4,13 +4,16 @@ tableTo =
   # User
   email:      "@"
   password:   "X"
-  has_pro:    "$"
+  pro:        "$"
   created_at: ":"
   updated_at: "#"
 
   data_Task: "dT"
   data_List: "dL"
   data_Time: "dX"
+
+  index_Task: "iT"
+  index_List: "iL"
 
   # Class names
   Task: "T"
@@ -27,6 +30,8 @@ tableTo =
   notes:     "o"
   tasks:     "t"
   list:      "l"
+  permanent: "q"
+  inbox:     "b"
 
 tableFrom = {}
 

@@ -79,9 +79,9 @@ describe "Storage API", ->
       User.get(users[2][3])
       User.get(users[2][3])
     ], (u1, u2) ->
-      u2.changeProStatus(hasPro).then ->
-        assert.equal hasPro, u1.has_pro, u2.has_pro
-        done()
+      u2.changeProStatus(hasPro)
+      assert.equal hasPro, u1.pro, u2.pro
+      done()
 
   it "should save user data", (done) ->
 

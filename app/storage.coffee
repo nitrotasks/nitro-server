@@ -30,10 +30,12 @@ File =
       name: user.name
       email: user.email
       password: user.password
-      has_pro: user.has_pro
+      pro: user.pro
       data_Task: user.data_Task or {}
       data_List: user.data_List or {}
       data_Time: user.data_Time or {}
+      index_Task: user.index_Task or 0
+      index_List: user.index_List or 0
       created_at: parseInt(user.created_at, 10)
       updated_at: Date.now()
     [path, folder] = User.filename(obj.id)
@@ -129,7 +131,7 @@ class User
           name: options.name
           password: options.password
           email: options.email
-          has_pro: 0
+          pro: 0
           created_at: Date.now()
         # Add to lookup
         options.service ?= "native"
@@ -260,8 +262,9 @@ class User
     @_update(key, value)
     # Save to disk
     @_write()
+    return value
 
-  # Update record
+  # Update record without writing to disk
   _update: (key, value) =>
     records = @constructor.records
     if @id of records
@@ -280,22 +283,16 @@ class User
 
   # Get the index for a dataset
   index: (className) =>
-    key = "index:#{className}"
+    key = "index_#{className}"
     index = @[key]
-    if !index
-      @_set key, "0"
-      return "0"
-    else
-      return index
+    return index ? @_set(key, 0)
 
-  # Increase the index for a dataset by one
+  # Increase the index for a class by one
   incrIndex: (className) =>
-    deferred = Q.defer()
-    key = "index:#{className}"
-    value = @[key] or "0"
-    @_update key, (parseInt(value, 10) + 1).toString()
-    redis.hincrby "users:#{@id}", key, 1, deferred.resolve
-    return deferred.promise
+    key = "index_#{className}"
+    value = @[key] ? 0
+    @_set key, ++value
+    return value
 
   # Change data
   save: (className) =>
@@ -323,6 +320,6 @@ class User
     deferred.promise
 
   changeProStatus: (status) =>
-    @_set("has_pro", status)
+    @_set("pro", status)
 
 module?.exports = User

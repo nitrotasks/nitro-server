@@ -23,7 +23,6 @@ init = (server) ->
     io.set "authorization", (handshakeData, fn) ->
       uid = handshakeData.query.uid
       token = handshakeData.query.token
-      console.log uid, token
       if uid? and token?
         User.checkLoginToken(uid, token).then (exists) ->
           handshakeData.uid = uid
@@ -91,6 +90,7 @@ class Sync
       @on event, @[fn]
     @login uid
     return
+
 
 
   # ------------------
@@ -210,9 +210,16 @@ class Sync
 
   # Bind event to function
   on: (event, fn) =>
-    @socket.on event, (args...) ->
+    @socket.on event, (args...) =>
       Log "-- Received event #{event} --"
-      fn(args...)
+
+      if @userIsLoaded
+        fn(args...)
+
+      else
+        Log "User is not loaded yet. Will run on load."
+        @runOnUserLoad.push ->
+          fn(args...)
 
 
   # --------------
@@ -228,6 +235,10 @@ class Sync
       # Move user to their own room
       @socket.join(@user.email)
       Log "#{ @user.name } has logged in"
+      # Load user
+      @userIsLoaded = true
+      fn() for fn in @runOnUserLoad
+      @userIsLoaded = []
       deferred.resolve user
     return deferred.promise
 
@@ -238,6 +249,13 @@ class Sync
   fetch: (className, fn) =>
     return unless fn
     fn @exportModel(className)
+
+  # Sometimes events can be sent to the server before we have loaded the user data
+  # from the server. So we store those events and then fire them when the user data
+  # has loaded.
+
+  userIsLoaded: false
+  runOnUserLoad: []
 
 
   # ---------------
@@ -257,6 +275,7 @@ class Sync
       id = "s-" + @user.index(className)
       @user.incrIndex className
       model.id = id
+      console.log id
 
     # Add task to list
     if className is "Task"
