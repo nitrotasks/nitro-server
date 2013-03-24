@@ -19,18 +19,24 @@ generate = (uid, listId) ->
         priorityArray = ["", "(A) ", "(B) ", "(C) "]
 
         for id, task of tasks
-          continue if task.completed or not (task.id in list)
+          continue if task.completed or task.deleted or not (task.id in list)
+          console.log(task)
+          if task.date?.length?
+            date = new Date(task.date).toDateString()
+          else
+            date = ""
           text[text.length] = priorityArray[task.priority]
           text[text.length] = task.name
-          text[text.length] = " due:" + new Date(task.date).toISOString().substr(0, 10) unless task.date is ""
-          text[text.length] = " +" +lists[task.list].name
+          text[text.length] = date
+          text[text.length] = " +" +lists[task.list]?.name
           text[text.length] = "\n"
 
         deferred.resolve [text.join(""), user]
 
       else deferred.resolve ["You'll need a Nitro Pro Account to generate todo.txt.\nLearn more at <a href=\"http://nitrotasks.com\">the nitrotasks website.</a>", user]
 
-    .fail ->
+    .fail (err) ->
+      console.error(err)
       deferred.reject "err_no_user"
 
   return deferred.promise

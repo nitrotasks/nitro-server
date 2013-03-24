@@ -27,16 +27,15 @@ generate = (uid, listId) ->
           continue if task.completed or not (task.id in list)
 
           priority = "width: 4px; background: #" + priorityArray[task.priority]
-          console.log task.date
-          date = if task.date isnt "" then new Date(task.date).toDateString() else ""
+          date = if task.date?.length? then new Date(task.date).toDateString() else ""
 
           text[text.length] = """
             <tr style="height: 30px;">
               <td style="#{priority}"></td>
               <td style="width: 15px"></td>
               <td style="width: 0px"></td>
-              <td style="padding-left: 10px; padding-right: 10px;">#{ task.name }</td>
-              <td style="padding-left: 10px; padding-right: 10px;">#{ date }</td>
+              <td style="padding: 0 10px;">#{ task.name }</td>
+              <td style="padding: 0 10px;">#{ date }</td>
             </tr>
           """
 
@@ -46,7 +45,10 @@ generate = (uid, listId) ->
 
         deferred.resolve [text.join(""), user]
 
-      else deferred.resolve ["You'll need a Nitro Pro Account to generate todo.txt.\nLearn more at <a href=\"http://nitrotasks.com\">the nitrotasks website.</a>", user]
+      else deferred.resolve [ """
+        You'll need a Nitro Pro Account to generate todo.txt.
+        Learn more at the <a href="http://nitrotasks.com">NitroTasks website.</a>
+        """, user]
 
     .fail ->
       deferred.reject "err_no_user"
