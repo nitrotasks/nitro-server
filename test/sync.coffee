@@ -1,4 +1,5 @@
 assert = require "assert"
+Q      = require "q"
 Sync   = require "../app/sync"
 Auth   = require "../app/auth"
 
@@ -13,21 +14,31 @@ socket =
 # Create a new user using the Auth API
 describe "Auth API", ->
 
-sync = no
+# local variables
+sync = null
+id   = null
 
 describe "Sync API", ->
 
   it "should create a new user", (done) ->
-    Auth.register("George", "mail@example.com", "password").then ->
+    Q.fcall ->
+      Auth.register("George", "mail@example.com", "password")
+    .then (token) ->
+      Auth.verifyRegistration(token)
+    .then (user) ->
+      id = user.id
       done()
+    .fail (err) ->
+      throw new Error(err)
 
   it "should login", (done) ->
-    sync = new Sync(socket, 1)
-    done()
+    sync = new Sync socket, id, (user) ->
+      assert.equal user.name, "George"
+      done()
 
   it "should login twice", (done) ->
-    sync.login(1).then ->
-      assert.equal sync.user.name, "George"
+    sync.login(id).then (user) ->
+      assert.equal user.name, "George"
       done()
 
   it "should add lists and tasks", ->
@@ -234,3 +245,5 @@ describe "Sync API", ->
 
   it "should logout user", ->
     sync.logout()
+
+###

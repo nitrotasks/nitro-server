@@ -113,17 +113,31 @@ class Auth
       valid = no
 
     if valid
-      Q
-        .fcall =>
-          @hash(pass)
-        .then (hash) =>
-          token = @createToken()
-          User.register(token, name, email, hash)
-        .then (token) ->
-          deferred.resolve(token)
-        .fail (err) ->
-          deferred.reject(err)
+      Q.fcall =>
+        @hash(pass)
+      .then (hash) =>
+        token = @createToken()
+        User.register(token, name, email, hash)
+      .then (token) ->
+        deferred.resolve(token)
+      .fail (err) ->
+        deferred.reject(err)
 
+    return deferred.promise
+
+  @verifyRegistration: (token) ->
+    deferred = Q.defer()
+    Q.fcall ->
+      User.getRegistration(token)
+    .then (user) ->
+      User.add
+        name: user.name
+        email: user.email
+        password: user.password
+    .then (user) ->
+      deferred.resolve(user)
+    .fail (err) ->
+      deferred.reject(err)
     return deferred.promise
 
   # Generate a reset password token for the user

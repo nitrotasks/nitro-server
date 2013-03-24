@@ -36,8 +36,11 @@ api =
   "get_todo.txt": (req, res) ->
     uid = req.param("uid")
     listId = req.param("list")
-    TodoTxt(uid, listId).then ([data]) ->
-      res.send(data.replace(/\n/g, "<br>"))
+    TodoTxt(uid, listId)
+      .then ([data]) ->
+        res.send(data.replace(/\n/g, "<br>"))
+      .fail (message) ->
+        res.send(message)
 
   "get_todo.html": (req, res) ->
     uid = req.param("uid")
@@ -73,20 +76,15 @@ api =
           """
         res.send "true"
       .fail (err) ->
-        console.error err
         res.status(400).send err
 
   "get_register/*": (req, res) ->
     token = req.params[0]
-    User.getRegistration(token)
+    Auth.verifyRegistration(token)
       .then (user) ->
-        User.add(
-          name: user.name
-          email: user.email
-          password: user.password
-          ).then -> res.send "success"
+        res.send("success")
       .fail (err) ->
-        res.send err
+        res.send(err)
 
 
   # -----
@@ -160,7 +158,6 @@ api =
         .then (token) ->
           message = "<h1>Hurrah! We have sent you an email containing a token</h1>"
           link = "<a href=\"http://localhost:5000/api/auth/forgot/#{token}\">Reset Password</a>"
-          console.log "debug", DebugMode
           if DebugMode then return res.send message + "<br><br>" + link
 
           Mail.send

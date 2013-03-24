@@ -1,20 +1,27 @@
-redis   = require("redis")
-Q       = require "q"
-shrink  = require "./shrink"
-msgpack = require "msgpack"
-fs      = require "fs"
-_       = require "lodash"
+nodeRedis = require "redis"
+Q         = require "q"
+shrink    = require "./shrink"
+msgpack   = require "msgpack"
+fs        = require "fs"
+_         = require "lodash"
+
+#------
+# Redis
+# -----
 
 if process.env.REDISTOGO_URL
+  # Using Redis-To-Go
   rtg = require("url").parse(process.env.REDISTOGO_URL)
-  redis = redis.createClient(rtg.port, rtg.hostname)
+  redis = nodeRedis.createClient(rtg.port, rtg.hostname)
   redis.auth(rtg.auth.split(":")[1])
-else
-  redis = redis.createClient()
 
-# Set up
-# redis.flushdb()
+else
+  # Using local Redis server
+  redis = nodeRedis.createClient()
+
+redis.flushdb()
 redis.setnx "users:index", "-1"
+
 
 # ---------------
 # Private Methods
@@ -56,7 +63,7 @@ File =
     deferred = Q.defer()
     [path, folder] = User.filename(id)
     fs.readFile path, (err, buffer) =>
-      if err then return deferred.reject("err_no_user")
+      if err then return deferred.reject("err_no_file")
       data = shrink.expand msgpack.unpack(buffer)
       deferred.resolve(data)
     return deferred.promise
@@ -152,7 +159,7 @@ class User
           user = @records[id] = new @(data)
           deferred.resolve user._clone()
         .fail (err) ->
-          deferred.reject(err)
+          deferred.reject("err_no_user")
     else
       deferred.resolve user._clone()
     return deferred.promise

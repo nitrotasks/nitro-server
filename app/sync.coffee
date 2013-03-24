@@ -12,12 +12,12 @@ init = (server) ->
   # Socket.IO settings
   io.configure ->
 
-    # Hide messages
+    # Hide irrelevant messages
     io.set "log level", 1
 
-    # Configure for Heroku
-    io.set "transports", ["xhr-polling"]
-    io.set "polling duration", 10
+    # Heroku doesn't support websockets
+    # io.set "transports", ["xhr-polling"]
+    # io.set "polling duration", 10
 
     # Prevent unauthorised access to server
     io.set "authorization", (handshakeData, fn) ->
@@ -29,15 +29,16 @@ init = (server) ->
           fn(null, exists)
       else
         fn(null, no)
-      return
+      return true
 
   # Fired when user connects to server
   io.sockets.on 'connection', (socket) ->
     # Create a new Sync instance
     new Sync(socket)
-    return
+    return true
 
-  return
+  return true
+
 
 # Return the default task object
 Default = (name) ->
@@ -83,14 +84,14 @@ class Sync
     'destroy': 'destroy'
     'emailList': 'emailList'
 
-  constructor: (@socket, uid=@socket.handshake.uid) ->
+  constructor: (@socket, uid=@socket.handshake.uid, callback) ->
     Log "A user has connected to the server"
     # Bind socket.io events
     for event, fn of @events
       @on event, @[fn]
-    @login uid
+    @login(uid).then (user) ->
+      if callback? then callback(user)
     return
-
 
 
   # ------------------
@@ -228,18 +229,19 @@ class Sync
 
   login: (uid) =>
     deferred = Q.defer()
-    Log "User #{uid} is logging in"
-    User.get(uid).then (user) =>
-      # Set user
-      @user = user
-      # Move user to their own room
-      @socket.join(@user.email)
-      Log "#{ @user.name } has logged in"
-      # Load user
-      @userIsLoaded = true
-      fn() for fn in @runOnUserLoad
-      @runOnUserLoad = []
-      deferred.resolve user
+    Log "User #{ uid } is logging in"
+    User.get(uid)
+      .then (@user) =>
+        # Move user to their own room
+        @socket.join(@user.email)
+        Log "#{ @user.name } has logged in"
+        # Load user
+        @userIsLoaded = true
+        fn() for fn in @runOnUserLoad
+        @runOnUserLoad = []
+        deferred.resolve user
+      .fail (error) ->
+        deferred.reject(error)
     return deferred.promise
 
   logout: =>
@@ -275,7 +277,6 @@ class Sync
       id = "s-" + @user.index(className)
       @user.incrIndex className
       model.id = id
-      console.log id
 
     # Add task to list
     if className is "Task"
@@ -381,14 +382,16 @@ class Sync
   sync: (queue, fn) =>
     Log "Running sync"
 
-    # Store clientIDs to localIDs (USED ONLY FOR LISTS)
+    # Map client IDs to server IDs -- for lists only
     client = {}
 
-    i = 0
-    max = 100
+    for item, i in queue
 
-    while i < queue.length and i < max
-      [type, [className, model], timestamp] = queue[i]
+      # TODO: Can't remember what this does.
+      # I think it stops it from infinite looping.
+      break if i >= 100
+
+      [type, [className, model], timestamp] = item
 
       ## Handles client list IDs ##
 
@@ -483,9 +486,13 @@ class Sync
   # Miscellaneous events
   # --------------------
 
-  # @uid {integer}: a user ID
-  # @listId {string}: a list ID
-  # @email {string}: an email address
+  ###*
+   * Send a users list to an email address
+   * @param {integer} uid: a user ID
+   * @param {string} listId: a list ID
+   * @param {string} email: an email address
+   * @return {boolean} false: if error
+  ###
   emailList: (data) ->
     return false unless Array.isArray(data)
     [uid, listId, email] = data
@@ -501,7 +508,7 @@ class Sync
           generateTextFromHTML: true
         console.log options
         require("./mail").send(options)
-      .fail ->
-        console.warn arguments
+      .fail (error) ->
+        console.warn error
 
 module.exports = Sync
