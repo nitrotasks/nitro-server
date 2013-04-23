@@ -56,7 +56,7 @@ api =
   "post_register": (req, res) ->
     user =
       name: req.body.name
-      email: req.body.email
+      email: req.body.email.toLowerCase()
       password: req.body.password
     Auth.register(user.name, user.email, user.password)
       .then (token) ->
@@ -153,7 +153,7 @@ api =
       """
 
     "post_forgot": (req, res) ->
-      email = req.body.email
+      email = req.body.email.toLowerCase()
       Auth.generateResetToken(email)
         .then (token) ->
           message = "<h1>Hurrah! We have sent you an email containing a token</h1>"
