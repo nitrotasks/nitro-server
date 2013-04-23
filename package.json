@@ -2,21 +2,21 @@
   "name": "NitroSync",
   "version": "1.9.0",
   "dependencies": {
-    "bcrypt": "0.7.x",
-    "coffee-script": "1.4.x",
-    "oauth": "*",
-    "express": "3.0.x",
-    "lodash": "1.0.x",
+    "bcrypt": "0.7",
+    "coffee-script": "1.6.x",
+    "oauth": "0.9.x",
+    "express": "3.2.x",
+    "lodash": "1.2.x",
     "msgpack": "0.1.x",
-    "nodemailer": "0.3.x",
-    "q": "0.8.x",
-    "redis": "0.7.x",
+    "nodemailer": "0.4.x",
+    "q": "0.9.x",
+    "redis": "0.8.x",
     "socket.io": "0.9.x",
-    "supertest": "0.5.x",
-    "forever": "*"
+    "supertest": "0.6.x",
+    "forever": "0.10.x"
   },
   "engines": {
-    "node": "0.8.x",
-    "npm": "1.1.x"
+    "node": ">0.8.0",
+    "npm": ">1.0.0"
   }
 }
