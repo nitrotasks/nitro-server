@@ -49,17 +49,18 @@ merge = (client, server) ->
 module.exports = merge
 
 ###
-# Merge Task Order (Uses same algorithm)
-for list of client.lists.items
-  if not server.lists.items[list].hasOwnProperty("deleted") and not client.lists.items[list].hasOwnProperty("deleted")
-    mlo.client =
-      order: client.lists.items[list].order
-      time: client.lists.items[list].time.order
+  # Merge Task Order (Uses same algorithm)
+  for list of client.lists.items
+    if not server.lists.items[list].hasOwnProperty("deleted") and not client.lists.items[list].hasOwnProperty("deleted")
+      mlo.client =
+        order: client.lists.items[list].order
+        time: client.lists.items[list].time.order
 
-    mlo.server =
-      order: server.lists.items[list].order
-      time: server.lists.items[list].time.order
+      mlo.server =
+        order: server.lists.items[list].order
+        time: server.lists.items[list].time.order
 
-    mlo.result = mlo.run(mlo.client, mlo.server)
-    server.lists.items[list].order = mlo.result[0]
-    server.lists.items[list].time.order = mlo.result[1]
+      mlo.result = mlo.run(mlo.client, mlo.server)
+      server.lists.items[list].order = mlo.result[0]
+      server.lists.items[list].time.order = mlo.result[1]
+  ###

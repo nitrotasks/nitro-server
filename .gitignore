@@ -45,3 +45,4 @@ node_modules
 .junk
 app/keychain.coffee
 /users/*-*
+/bin

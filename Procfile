@@ -1,1 +1,1 @@
-web: coffee app.coffee
+web: node bin/app.js
