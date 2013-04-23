@@ -12,7 +12,7 @@ app = express()
 
 # Serve up static files in the public folder
 app.configure ->
-  app.use express.static(__dirname + '/public')
+  app.use express.static('/var/www/html/nitro/public')
   app.use express.bodyParser()
 
   # Allow CORS
