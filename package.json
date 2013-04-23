@@ -12,7 +12,8 @@
     "q": "0.8.x",
     "redis": "0.7.x",
     "socket.io": "0.9.x",
-    "supertest": "0.5.x"
+    "supertest": "0.5.x",
+    "forever": "*"
   },
   "engines": {
     "node": "0.8.x",
