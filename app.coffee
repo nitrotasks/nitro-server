@@ -85,7 +85,7 @@ api =
     token = req.params[0]
     Auth.verifyRegistration(token)
       .then (user) ->
-        res.send("success")
+        res.send("<img src='http://nitrotasks.com/success.jpg' alt='success!'>")
       .fail (err) ->
         res.send(err)
 
