@@ -6,7 +6,7 @@ Mail    = require "./app/mail"
 TodoTxt = require "./app/todo.txt"
 TodoHtml = require "./app/todo.html"
 
-port = process.env.PORT || 5000
+port = 8080
 
 app = express()
 
@@ -32,6 +32,9 @@ if "--debug" in process.argv then app.__debug()
 
 # GET and POST requests
 api =
+  "get_test": (req, res) ->
+    console.log "hi"
+    res.send "hello"
 
   "get_todo.txt": (req, res) ->
     uid = req.param("uid")
