@@ -15,14 +15,12 @@ init = (server) ->
     # Hide irrelevant messages
     io.set "log level", 1
 
-    # Heroku doesn't support websockets
-    # io.set "transports", ["xhr-polling"]
-    # io.set "polling duration", 10
-
     # Prevent unauthorised access to server
     io.set "authorization", (handshakeData, fn) ->
       uid = handshakeData.query.uid
       token = handshakeData.query.token
+      if DebugMode
+        console.log "Received uid and token", uid
       if uid? and token?
         User.checkLoginToken(uid, token).then (exists) ->
           handshakeData.uid = uid

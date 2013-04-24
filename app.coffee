@@ -21,10 +21,10 @@ app.configure ->
     res.header "Access-Control-Allow-Headers", "X-Requested-With"
     next()
 
-DebugMode = off
+global.DebugMode = DebugMode = off
 app.__debug = ->
   process.env.NODE_ENV = "development"
-  DebugMode = on
+  global.DebugMode = DebugMode = on
   console.warn "\u001b[31mRunning in debug mode!\u001b[0m"
 
 # Enable debug mode if passed as argument
