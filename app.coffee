@@ -63,7 +63,7 @@ api =
       password: req.body.password
     Auth.register(user.name, user.email, user.password)
       .then (token) ->
-        link = "http://localhost:5000/api/register/#{token}"
+        link = "http://sync.nitrotasks.com/api/register/#{token}"
         if DebugMode then return res.send [link, token]
         # Send email to user
         Mail.send
