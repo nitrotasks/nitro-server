@@ -6,7 +6,7 @@ Mail    = require "./app/mail"
 TodoTxt = require "./app/todo.txt"
 TodoHtml = require "./app/todo.html"
 
-port = process.env.PORT || 5000
+port = 8080
 
 app = express()
 
