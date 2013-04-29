@@ -45,7 +45,8 @@ services =
 
 getAuthUrl = (service, token) ->
   url = services[service].authUrl
-  return url + token
+  callback = services[service].oauth._authorize_callback
+  return url + token + "&oauth_callback=" + callback
 
 # ------------------------------------------------------------------------------
 # PUBLIC FUNCTIONS
