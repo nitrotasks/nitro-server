@@ -19,7 +19,6 @@ else
   # Using local Redis server
   redis = nodeRedis.createClient()
 
-redis.flushdb()
 redis.setnx "users:index", "-1"
 
 
