@@ -12,7 +12,7 @@ app = express()
 
 # Serve up static files in the public folder
 app.configure ->
-  app.use express.static('/var/www/html/nitro/public')
+  # app.use express.static('/var/www/html/nitro/public')
   app.use express.bodyParser()
 
   # Allow CORS
@@ -116,7 +116,7 @@ api =
       token = req.param("oauth_token")
       verifier = req.param("oauth_verifier")
       Auth.oauth.verify(service, token, verifier)
-      url = "http://localhost:9294"
+      url = "http://beta.nitrotasks.com"
       res.redirect(301, url)
 
     "post_request": (req, res) ->

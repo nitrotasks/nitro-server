@@ -16,7 +16,7 @@ services =
       "https://one.ubuntu.com/oauth/request/",
       "https://one.ubuntu.com/oauth/access/",
       "ubuntuone", "hammertime",
-      "1.0", "http://localhost:5000/api/oauth/callback?service=ubuntu", "PLAINTEXT"
+      "1.0", "http://sync.nitrotasks.com/api/oauth/callback?service=ubuntu", "PLAINTEXT"
     )
   dropbox:
     authUrl: "https://www.dropbox.com/1/oauth/authorize?oauth_token="
@@ -25,7 +25,7 @@ services =
       "https://api.dropbox.com/1/oauth/request_token",
       "https://api.dropbox.com/1/oauth/access_token",
       Keys("db_key"), Keys("db_secret"),
-      "1.0", "http://localhost:5000/api/oauth/callback?service=dropbox", "PLAINTEXT"
+      "1.0", "http://sync.nitrotasks.com/api/oauth/callback?service=dropbox", "PLAINTEXT"
     )
   google:
     authUrl: "https://www.google.com/accounts/OAuthAuthorizeToken?oauth_token="
@@ -40,7 +40,7 @@ services =
       "https://www.google.com/accounts/OAuthGetRequestToken",
       "https://www.google.com/accounts/OAuthGetAccessToken",
       "anonymous", "anonymous",
-      "1.0A", "http://localhost:5000/oauth/callback", "HMAC-SHA1"
+      "1.0A", "http://sync.nitrotasks.com/api/oauth/callback", "HMAC-SHA1"
     )
 
 getAuthUrl = (service, token) ->
