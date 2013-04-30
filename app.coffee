@@ -36,24 +36,42 @@ app.get "/", (req, res) ->
 
 # GET and POST requests
 api =
-  "get_test": (req, res) ->
-    console.log "hi"
-    res.send "hello"
 
-  "get_todo.txt": (req, res) ->
-    uid = req.param("uid")
-    listId = req.param("list")
-    TodoTxt(uid, listId)
-      .then ([data]) ->
-        res.send(data.replace(/\n/g, "<br>"))
-      .fail (message) ->
-        res.send(message)
+  # ------------------
+  # PayPal integration
+  # ------------------
 
-  "get_todo.html": (req, res) ->
-    uid = req.param("uid")
-    listId = req.param("list")
-    TodoHtml(uid, listId).then ([data]) ->
-      res.send(data)
+  "post_pro": (req, res) ->
+    uid = req.body.uid
+    code = req.body.code
+    console.log uid, code
+
+    Users.get(uid)
+      .then (user) ->
+        user.changeProStatus(1)
+        res.end()
+      .fail ->
+        res.status(400).send('err')
+
+
+  # --------
+  # Todo.txt
+  # --------
+
+  # "get_todo.txt": (req, res) ->
+  #   uid = req.param("uid")
+  #   listId = req.param("list")
+  #   TodoTxt(uid, listId)
+  #     .then ([data]) ->
+  #       res.send(data.replace(/\n/g, "<br>"))
+  #     .fail (message) ->
+  #       res.send(message)
+
+  # "get_todo.html": (req, res) ->
+  #   uid = req.param("uid")
+  #   listId = req.param("list")
+  #   TodoHtml(uid, listId).then ([data]) ->
+  #     res.send(data)
 
 
   # ------------
@@ -220,9 +238,9 @@ bind = (obj, prefix, app) ->
       bind value, "#{prefix}/#{key}", app
     else
       if key.slice(0,4) is "get_"
-        app.get "/#{prefix}/#{key.slice(4)}", value
+        app.get "#{prefix}/#{key.slice(4)}", value
       else if key.slice(0,5) is "post_"
-        app.post "/#{prefix}/#{key.slice(5)}", value
+        app.post "#{prefix}/#{key.slice(5)}", value
 bind api, "", app
 
 # Start Server

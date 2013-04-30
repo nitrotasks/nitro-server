@@ -24,6 +24,7 @@ class Auth
               Auth.saveToken(user.id)
               user.email
               user.name
+              user.pro
             ]
 
           # User doesn't exist, so we register them
@@ -39,6 +40,7 @@ class Auth
                   Auth.saveToken(user.id)
                   user.email
                   user.name
+                  user.pro
                 ]
               .fail (msg) ->
                 deferred.reject msg
@@ -92,7 +94,13 @@ class Auth
         @compare(password, user.password).then (same) =>
           if not same then return deferred.reject("err_bad_pass")
           # Generate login token for user
-          deferred.resolve [user.id, @saveToken(user.id), user.email, user.name]
+          deferred.resolve [
+            user.id
+            @saveToken(user.id)
+            user.email
+            user.name
+            user.pro
+          ]
     return deferred.promise
 
   @register: (name, email, pass) =>
