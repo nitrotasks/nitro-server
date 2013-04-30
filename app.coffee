@@ -46,7 +46,7 @@ api =
     # code = req.body.code
     console.log uid
 
-    Users.get(uid)
+    User.get(uid)
       .then (user) ->
         user.changeProStatus(1)
         res.end()
