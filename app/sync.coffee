@@ -2,13 +2,9 @@ Q      = require "q"
 Auth   = require "./auth"
 User   = require "./storage"
 Log    = require "./log"
-express = require 'express'
-
-app = express()
-server = app.listen(443)
 
 # Start server
-init = ->
+init = (server) ->
 
   # Start SocketIO
   io = require('socket.io').listen(server)

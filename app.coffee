@@ -230,6 +230,6 @@ server = app.listen(port)
 
 # Start sync
 Sync = require "./app/sync"
-Sync.init()
+Sync.init server
 
 module.exports = app
