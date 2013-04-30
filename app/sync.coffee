@@ -3,11 +3,17 @@ Auth   = require "./auth"
 User   = require "./storage"
 Log    = require "./log"
 
+port = 4000
+express = require "express"
+app = express()
+sync_server = app.listen(port)
+
+
 # Start server
 init = (server) ->
 
   # Start SocketIO
-  io = require('socket.io').listen(server)
+  io = require('socket.io').listen(sync_server)
 
   # Socket.IO settings
   io.configure ->
