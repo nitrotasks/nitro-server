@@ -30,6 +30,10 @@ app.__debug = ->
 # Enable debug mode if passed as argument
 if "--debug" in process.argv then app.__debug()
 
+# Redirect requests to beta.nitrotasks.com
+app.get "/", (req, res) ->
+  res.redirect('http://beta.nitrotasks.com')
+
 # GET and POST requests
 api =
   "get_test": (req, res) ->
