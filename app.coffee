@@ -67,7 +67,7 @@ api =
       password: req.body.password
     Auth.register(user.name, user.email, user.password)
       .then (token) ->
-        link = "http://sync.nitrotasks.com/api/register/#{token}"
+        link = "http://sync.nitrotasks.com/register/#{token}"
         if DebugMode then return res.send [link, token]
         # Send email to user
         Mail.send
@@ -164,7 +164,7 @@ api =
       Auth.generateResetToken(email)
         .then (token) ->
           message = "<h1>Hurrah! We have sent you an email containing a token</h1>"
-          link = "<a href=\"http://localhost:5000/api/auth/forgot/#{token}\">Reset Password</a>"
+          link = "<a href=\"http://sync.nitrotasks.com/auth/forgot/#{token}\">Reset Password</a>"
           if DebugMode then return res.send message + "<br><br>" + link
 
           Mail.send
@@ -223,7 +223,7 @@ bind = (obj, prefix, app) ->
         app.get "/#{prefix}/#{key.slice(4)}", value
       else if key.slice(0,5) is "post_"
         app.post "/#{prefix}/#{key.slice(5)}", value
-bind api, "api", app
+bind api, "", app
 
 # Start Server
 server = app.listen(port)
