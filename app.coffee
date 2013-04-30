@@ -6,7 +6,7 @@ Mail    = require "./app/mail"
 TodoTxt = require "./app/todo.txt"
 TodoHtml = require "./app/todo.html"
 
-port = 443
+port = 8080
 
 app = express()
 
@@ -230,6 +230,6 @@ server = app.listen(port)
 
 # Start sync
 Sync = require "./app/sync"
-Sync.init server
+Sync.init()
 
 module.exports = app
