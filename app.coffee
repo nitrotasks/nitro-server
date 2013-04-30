@@ -41,10 +41,10 @@ api =
   # PayPal integration
   # ------------------
 
-  "post_pro": (req, res) ->
-    uid = req.body.uid
-    code = req.body.code
-    console.log uid, code
+  "get_pro": (req, res) ->
+    uid = req.param("uid")
+    # code = req.body.code
+    console.log uid
 
     Users.get(uid)
       .then (user) ->
