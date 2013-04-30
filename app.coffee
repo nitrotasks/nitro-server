@@ -6,7 +6,7 @@ Mail    = require "./app/mail"
 TodoTxt = require "./app/todo.txt"
 TodoHtml = require "./app/todo.html"
 
-port = 8080
+port = 443
 
 app = express()
 
