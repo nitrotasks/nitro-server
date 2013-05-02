@@ -121,7 +121,7 @@ text-align: center;
 margin: 2em auto;
 ">Success!<br>You can go back to Nitro to log in.</h1>
 </body></html>
-          """
+          """)
       .fail (err) ->
         res.send(err)
 
