@@ -262,7 +262,21 @@ margin: 2em auto;
             </form>
           """
         .fail (err) ->
-          res.send err
+          res.send """
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Password Reset Sent</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Sorry, an error occured.<br>Please try again later.</h1>
+</body></html>
+            """
 
     "post_forgot/*": (req, res) ->
       password = req.body.password
@@ -307,21 +321,7 @@ margin: 2em auto;
 ">Your password has been changed.</h1>
 </body></html>"""
           , (err) ->
-            res.status(401).send """
-<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<title>Password Reset Sent</title>
-<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
-</head><body><h1 style="
-max-width: 500px;
-font-family: 'Lato';
-font-weight: 300;
-text-align: center;
-margin: 2em auto;
-">Sorry, an error occured.<br>Please try again later.</h1>
-</body></html>
-            """
+            res.status(401).send err
 
 
 # Bind requests to Express App
