@@ -208,14 +208,28 @@ font-family:'Lato', sans-serif">Reset Password</button>
       email = req.body.email.toLowerCase()
       Auth.generateResetToken(email)
         .then (token) ->
-          message = "<h1>Hurrah! We have sent you an email containing a token</h1>"
+          message = """
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Password Reset Sent</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Hurrah! We have sent you an email to reset your password.</h1>
+</body></html>
+          """
           link = "<a href=\"http://sync.nitrotasks.com/auth/forgot/#{token}\">Reset Password</a>"
           if DebugMode then return res.send message + "<br><br>" + link
 
           Mail.send
             to: email
-            subject: "Reset Password Token"
-            html: link
+            subject: "Nitro Password Reset"
+            html: "Please click the link below to reset your password<br>" + link
           res.send message
 
         .fail (err) ->
