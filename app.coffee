@@ -107,9 +107,37 @@ api =
     token = req.params[0]
     Auth.verifyRegistration(token)
       .then (user) ->
-        res.send("<img src='http://nitrotasks.com/success.jpg' alt='success!'>")
+        res.send("""
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Authentication Successful!</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Success!<br>You can go back to Nitro to log in.</h1>
+</body></html>
+          """)
       .fail (err) ->
-        res.send(err)
+        res.send """
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Error!</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Sorry, an error occured.<br>Please try again later.</h1>
+</body></html>
+            """
 
 
   # -----
@@ -170,44 +198,127 @@ api =
     # Password Resetting
     "get_forgot": (req, res) ->
       res.send """
-        <h1>Totally legit password reset page</h1>
-        <form method="post" action="#">
-          <input name="email" type="email" placeholder="Your email">
-          <button>Reset Password</button>
-        </form>
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Reset Nitro Password</title><link href='http://fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet'>
+</head><body style="
+text-align:center;
+font-family:'Lato', sans-serif"><h1 style="
+font-weight:300;
+font-size:36px;
+margin-top:2em">Totally legit password reset page.</h1>
+<form method="post" action="#">
+<input name="email" type="email" placeholder="Your email" style="
+font-size:18px;
+border:1px solid #ccc;
+padding:5px 7px;
+outline:0;
+height:24px;
+font-family:'Lato', sans-serif;
+line-height:22px">
+<button style="
+font-size:16px;
+height: 36px;
+padding:5px 7px;
+border:1px solid #ccc;
+background:#fff;
+line-height:22px;
+vertical-align:top;
+color:#444;
+cursor:pointer;
+font-family:'Lato', sans-serif">Reset Password</button>
+</form><br>
+<a href="http://nitrotasks.com/app" style="color:#477fd2">Back to Nitro</a>
+</body></html>
       """
 
     "post_forgot": (req, res) ->
       email = req.body.email.toLowerCase()
       Auth.generateResetToken(email)
         .then (token) ->
-          message = "<h1>Hurrah! We have sent you an email containing a token</h1>"
+          message = """
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Password Reset Sent</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Hurrah! We have sent you an email to reset your password.</h1>
+</body></html>
+          """
           link = "<a href=\"http://sync.nitrotasks.com/auth/forgot/#{token}\">Reset Password</a>"
           if DebugMode then return res.send message + "<br><br>" + link
 
           Mail.send
             to: email
-            subject: "Reset Password Token"
-            html: link
+            subject: "Nitro Password Reset"
+            html: "Please click the link below to reset your password.<br>" + link
           res.send message
 
         .fail (err) ->
-          res.status(400).send "#{err}"
+          res.status(400).send "An error occured. Please try again later."
 
     "get_forgot/*": (req, res) ->
       token = req.params[0]
       User.checkResetToken(token)
         .then ->
           res.send """
-            <h1>Now you can reset your password!</h1>
-            <form method="post" action="#">
-              <input name="password" type="password" placeholder="Password">
-              <input name="passwordConfirmation" type="password" placeholder="Confirmation">
-              <button>Reset Password</button>
-            </form>
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Reset your password</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet'>
+<style>
+body {
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: center;
+    font-family: "Lato"
+}
+h1 {
+    margin: 2em 0 1em;
+    font-weight: 300;
+}
+input { width: 200px; border: 1px solid #ccc; font-size: 18px; padding: 5px 7px; font-family: "Lato"; outline: 0; }
+button {
+font-size:16px;
+padding:5px 15px;
+border:1px solid #ccc;
+background:#fff;
+margin-top: 0.5em;
+color:#444;
+cursor:pointer;
+}
+</style>
+</head><body style=""><h1>Now you can reset your password!</h1>
+<form method="post" action="#">
+  <input name="password" type="password" placeholder="Password">
+  <input name="passwordConfirmation" type="password" placeholder="Confirmation"><br>
+  <button>Reset Password</button>
+</form></body></html>
+
           """
         .fail (err) ->
-          res.send err
+          res.send """
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Error!</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Sorry, an error occured.<br>Please try again later.</h1>
+</body></html>
+            """
 
     "post_forgot/*": (req, res) ->
       password = req.body.password
@@ -215,7 +326,19 @@ api =
       token = req.params[0]
 
       if password isnt confirmation
-        return res.status(401).send "err_bad_pass"
+        return res.status(401).send """<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Passwords do not match!</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Passwords do not match.<br>Please try again.</h1>
+</body></html>"""
 
       User.checkResetToken(token)
         .then (id) ->
@@ -226,7 +349,19 @@ api =
           ], (user, hash) ->
             user.changePassword(hash)
             User.removeResetToken(token)
-            res.send "Changed password"
+            res.send """<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Password Changed</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Your password has been changed.</h1>
+</body></html>"""
           , (err) ->
             res.status(401).send err
 
