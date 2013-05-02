@@ -13,7 +13,7 @@ generate = (uid, listId) ->
       # Try to get tasks in list, else just get all tasks
       list = lists[listId]?.tasks or Object.keys(tasks)
 
-      if user.pro is 0
+      if user.pro is 1
 
         text = []
         priorityArray = ["", "1BC1F5", "9DD071", "E15556"]
@@ -45,10 +45,8 @@ generate = (uid, listId) ->
 
         deferred.resolve [text.join(""), user]
 
-      else deferred.resolve [ """
-        You'll need a Nitro Pro Account to generate todo.txt.
-        Learn more at the <a href="http://nitrotasks.com">NitroTasks website.</a>
-        """, user]
+      else
+        deferred.reject "err_not_pro"
 
     .fail ->
       deferred.reject "err_no_user"
