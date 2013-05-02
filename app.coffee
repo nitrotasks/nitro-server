@@ -170,11 +170,38 @@ api =
     # Password Resetting
     "get_forgot": (req, res) ->
       res.send """
-        <h1>Totally legit password reset page</h1>
-        <form method="post" action="#">
-          <input name="email" type="email" placeholder="Your email">
-          <button>Reset Password</button>
-        </form>
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Reset Nitro Password</title><link href='http://fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet'>
+</head><body style="
+text-align:center;
+font-family:'Lato', sans-serif"><h1 style="
+font-weight:300;
+font-size:36px;
+margin-top:2em">Totally legit password reset page.</h1>
+<form method="post" action="#">
+<input name="email" type="email" placeholder="Your email" style="
+font-size:18px;
+border:1px solid #ccc;
+padding:5px 7px;
+outline:0;
+height:24px;
+font-family:'Lato', sans-serif;
+line-height:22px">
+<button style="
+font-size:16px;
+height: 36px;
+padding:5px 7px;
+border:1px solid #ccc;
+background:#fff;
+line-height:22px;
+vertical-align:top;
+color:#444;
+cursor:pointer;
+font-family:'Lato', sans-serif">Reset Password</button>
+</form><br>
+<a href="http://nitrotasks.com/app" style="color:#477fd2">Back to Nitro</a>
+</body></html>
       """
 
     "post_forgot": (req, res) ->
