@@ -106,38 +106,35 @@ api =
   "get_register/*": (req, res) ->
     token = req.params[0]
     Auth.verifyRegistration(token)
-      .then (user) ->
-        res.send("""
-<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<title>Authentication Successful!</title>
-<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
-</head><body><h1 style="
-max-width: 500px;
-font-family: 'Lato';
-font-weight: 300;
-text-align: center;
-margin: 2em auto;
-">Success!<br>You can go back to Nitro to log in.</h1>
-</body></html>
-          """)
-      .fail (err) ->
-        res.send """
-<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<title>Error!</title>
-<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
-</head><body><h1 style="
-max-width: 500px;
-font-family: 'Lato';
-font-weight: 300;
-text-align: center;
-margin: 2em auto;
-">Sorry, an error occured.<br>Please try again later.</h1>
-</body></html>
-            """
+      .then (user) -> res.send("""
+        <!DOCTYPE html>
+        <html><head>
+        <meta charset="utf-8">
+        <title>Authentication Successful!</title>
+        <link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+        </head><body><h1 style="
+        max-width: 500px;
+        font-family: 'Lato';
+        font-weight: 300;
+        text-align: center;
+        margin: 2em auto;
+        ">Success!<br>You can go back to Nitro to log in.</h1>
+        </body></html>
+      """).fail (err) -> res.send """
+        <!DOCTYPE html>
+        <html><head>
+        <meta charset="utf-8">
+        <title>Error!</title>
+        <link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+        </head><body><h1 style="
+        max-width: 500px;
+        font-family: 'Lato';
+        font-weight: 300;
+        text-align: center;
+        margin: 2em auto;
+        ">Sorry, an error occured.<br>Please try again later.</h1>
+        </body></html>
+      """
 
 
   # -----
