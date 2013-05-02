@@ -111,7 +111,7 @@ api =
 <!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
-<title>Password Reset Sent</title>
+<title>Authentication Successful!</title>
 <link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
 </head><body><h1 style="
 max-width: 500px;
@@ -123,7 +123,21 @@ margin: 2em auto;
 </body></html>
           """)
       .fail (err) ->
-        res.send(err)
+        res.send """
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Error!</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Sorry, an error occured.<br>Please try again later.</h1>
+</body></html>
+            """
 
 
   # -----
@@ -266,7 +280,7 @@ margin: 2em auto;
 <!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
-<title>Password Reset Sent</title>
+<title>Error!</title>
 <link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
 </head><body><h1 style="
 max-width: 500px;
@@ -287,7 +301,7 @@ margin: 2em auto;
         return res.status(401).send """<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
-<title>Password Reset Sent</title>
+<title>Passwords do not match!</title>
 <link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
 </head><body><h1 style="
 max-width: 500px;
@@ -310,7 +324,7 @@ margin: 2em auto;
             res.send """<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
-<title>Password Reset Sent</title>
+<title>Password Changed</title>
 <link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
 </head><body><h1 style="
 max-width: 500px;
