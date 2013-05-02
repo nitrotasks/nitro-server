@@ -270,7 +270,19 @@ margin: 2em auto;
       token = req.params[0]
 
       if password isnt confirmation
-        return res.status(401).send "err_bad_pass"
+        return res.status(401).send """<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Password Reset Sent</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Passwords do not match.<br>Please try again.</h1>
+</body></html>"""
 
       User.checkResetToken(token)
         .then (id) ->
@@ -281,7 +293,19 @@ margin: 2em auto;
           ], (user, hash) ->
             user.changePassword(hash)
             User.removeResetToken(token)
-            res.send "Changed password"
+            res.send """<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Password Reset Sent</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Your password has been changed.</h1>
+</body></html>"""
           , (err) ->
             res.status(401).send err
 
