@@ -233,7 +233,7 @@ margin: 2em auto;
           res.send message
 
         .fail (err) ->
-          res.status(400).send "#{err}"
+          res.status(400).send "An error occured. Please try again later."
 
     "get_forgot/*": (req, res) ->
       token = req.params[0]
