@@ -107,7 +107,21 @@ api =
     token = req.params[0]
     Auth.verifyRegistration(token)
       .then (user) ->
-        res.send("<img src='http://nitrotasks.com/success.jpg' alt='success!'>")
+        res.send("""
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Password Reset Sent</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+</head><body><h1 style="
+max-width: 500px;
+font-family: 'Lato';
+font-weight: 300;
+text-align: center;
+margin: 2em auto;
+">Success!<br>You can go back to Nitro to log in.</h1>
+</body></html>
+          """
       .fail (err) ->
         res.send(err)
 
@@ -229,7 +243,7 @@ margin: 2em auto;
           Mail.send
             to: email
             subject: "Nitro Password Reset"
-            html: "Please click the link below to reset your password<br>" + link
+            html: "Please click the link below to reset your password.<br>" + link
           res.send message
 
         .fail (err) ->
