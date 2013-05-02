@@ -268,12 +268,40 @@ margin: 2em auto;
       User.checkResetToken(token)
         .then ->
           res.send """
-            <h1>Now you can reset your password!</h1>
-            <form method="post" action="#">
-              <input name="password" type="password" placeholder="Password">
-              <input name="passwordConfirmation" type="password" placeholder="Confirmation">
-              <button>Reset Password</button>
-            </form>
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>Reset your password</title>
+<link href='http://fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet'>
+<style>
+body {
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: center;
+    font-family: "Lato"
+}
+h1 {
+    margin: 2em 0 1em;
+    font-weight: 300;
+}
+input { width: 200px; border: 1px solid #ccc; font-size: 18px; padding: 5px 7px; font-family: "Lato"; outline: 0; }
+button {
+font-size:16px;
+padding:5px 15px;
+border:1px solid #ccc;
+background:#fff;
+margin-top: 0.5em;
+color:#444;
+cursor:pointer;
+}
+</style>
+</head><body style=""><h1>Now you can reset your password!</h1>
+<form method="post" action="#">
+  <input name="password" type="password" placeholder="Password">
+  <input name="passwordConfirmation" type="password" placeholder="Confirmation"><br>
+  <button>Reset Password</button>
+</form></body></html>
+
           """
         .fail (err) ->
           res.send """
