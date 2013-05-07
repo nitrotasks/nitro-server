@@ -86,6 +86,7 @@ class Sync
     'create': 'create'
     'update': 'update'
     'destroy': 'destroy'
+    'info': 'info'
     'emailList': 'emailList'
 
   constructor: (@socket, uid=@socket.handshake.uid, callback) ->
@@ -489,6 +490,15 @@ class Sync
   # --------------------
   # Miscellaneous events
   # --------------------
+
+  ###*
+   * Send the user info
+  ###
+  info: (id, sendback) =>
+    sendback
+      name: @user.name
+      email: @user.email
+      pro: @user.pro
 
   ###*
    * Send a users list to an email address
