@@ -124,7 +124,7 @@ class Auth
       Q.fcall =>
         @hash(pass)
       .then (hash) =>
-        token = @createToken()
+        token = @createToken(22)
         User.register(token, name, email, hash)
       .then (token) ->
         deferred.resolve(token)
@@ -151,7 +151,7 @@ class Auth
   # Generate a reset password token for the user
   @generateResetToken: (email) =>
     deferred = Q.defer()
-    token = @createToken()
+    token = @createToken(22)
     User.getByEmail(email)
       .then (user) ->
         User.addResetToken user.id, token
