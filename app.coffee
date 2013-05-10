@@ -214,6 +214,9 @@ bind = (obj, prefix, app) ->
         app.post "#{prefix}/#{key.slice(5)}", value
 bind api, "", app
 
+app.get "*", (req, res) ->
+  res.send "what???", 404
+
 # Start Server
 server = app.listen(port)
 
