@@ -215,7 +215,7 @@ bind = (obj, prefix, app) ->
 bind api, "", app
 
 app.get "*", (req, res) ->
-  res.sendfile __dirname + '/pages/404.html', 404
+  res.status(404).sendfile(__dirname + '/pages/404.html')
 
 # Start Server
 server = app.listen(port)
