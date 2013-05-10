@@ -214,8 +214,8 @@ bind = (obj, prefix, app) ->
         app.post "#{prefix}/#{key.slice(5)}", value
 bind api, "", app
 
-app.use (err, req, res, next) ->
-  res.status(404).sendfile(__dirname + '/pages/404.html')
+# app.use (err, req, res, next) ->
+  # res.status(404).sendfile(__dirname + '/pages/404.html')
 
 # Start Server
 server = app.listen(port)
