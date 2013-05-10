@@ -87,7 +87,7 @@ api =
     token = req.params[0]
     Auth.verifyRegistration(token)
       .then (user) -> res.sendfile(__dirname + '/pages/auth_success.html')
-      .fail (err) -> res.sendfile(__dirname + '/pages/auth_error.html')
+      .fail (err) -> res.sendfile(__dirname + '/pages/error.html')
 
 
   # -----
@@ -215,7 +215,7 @@ bind = (obj, prefix, app) ->
 bind api, "", app
 
 app.get "*", (req, res) ->
-  res.send "what???", 404
+  res.sendfile __dirname + '/pages/404.html', 404
 
 # Start Server
 server = app.listen(port)
