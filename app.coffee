@@ -1,13 +1,12 @@
-express = require "express"
-Auth    = require "./app/auth"
-User    = require "./app/storage"
-Q       = require "q"
-Mail    = require "./app/mail"
-TodoTxt = require "./app/todo.txt"
+Q        = require "q"
+express  = require "express"
+Auth     = require "./app/auth"
+User     = require "./app/storage"
+Mail     = require "./app/mail"
+TodoTxt  = require "./app/todo.txt"
 TodoHtml = require "./app/todo.html"
 
 port = 8080
-
 app = express()
 
 # Serve up static files in the public folder
@@ -141,7 +140,7 @@ api =
         .then (data) ->
           res.send data
         .fail (err) ->
-          res.status(401).send err
+          res.status(401).send(err)
 
   # ----
   # Auth
