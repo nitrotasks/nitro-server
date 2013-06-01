@@ -1,16 +1,14 @@
-Q      = require "q"
-Auth   = require "./auth"
-User   = require "./storage"
-Log    = require "./log"
-
-port = 4000
-express = require "express"
-app = express()
-sync_server = app.listen(port)
-
+Q       = require "q"
+Auth    = require "./auth"
+User    = require "./storage"
+Log     = require "./log"
 
 # Start server
-init = (server) ->
+init = ( sync_server ) ->
+
+  # Start server on it's own http server
+  # express = require 'express'
+  # sync_server = express().listen( port or 443 )
 
   # Start SocketIO
   io = require('socket.io').listen(sync_server)
