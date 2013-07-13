@@ -1,7 +1,10 @@
-Q       = require "q"
-Auth    = require "./auth"
-User    = require "./storage"
-Log     = require "./log"
+Q       = require 'q'
+Auth    = require './auth'
+User    = require './storage'
+Log     = require './log'
+
+# Constants
+SUPPORTED_CLASSES = ['List', 'Task', 'Setting']
 
 # Start server
 init = ( sync_server ) ->
@@ -17,14 +20,14 @@ init = ( sync_server ) ->
   io.configure ->
 
     # Hide irrelevant messages
-    io.set "log level", 1
+    io.set 'log level', 1
 
     # Prevent unauthorised access to server
-    io.set "authorization", (handshakeData, fn) ->
+    io.set 'authorization', (handshakeData, fn) ->
       uid = handshakeData.query.uid
       token = handshakeData.query.token
       if DebugMode
-        console.log "Received uid and token", uid
+        console.log 'Received uid and token', uid
       if uid? and token?
         User.checkLoginToken(uid, token).then (exists) ->
           handshakeData.uid = uid
@@ -48,13 +51,13 @@ Default = (name) ->
   data =
     Task:
       completed: false
-      date: ""
-      list: "inbox"
-      name: "New Task"
-      notes: ""
+      date: ''
+      list: 'inbox'
+      name: 'New Task'
+      notes: ''
       priority: 1
     List:
-      name: "New List"
+      name: 'New List'
       tasks: []
 
   clone = (obj) ->
@@ -78,17 +81,17 @@ class Sync
 
   # Socket.IO events
   events:
-    'disconnect': 'logout'
-    'fetch': 'fetch'
-    'sync': 'sync'
-    'create': 'create'
-    'update': 'update'
-    'destroy': 'destroy'
-    'info': 'info'
-    'emailList': 'emailList'
+    'disconnect' : 'logout'
+    'fetch'      : 'fetch'
+    'sync'       : 'sync'
+    'create'     : 'create'
+    'update'     : 'update'
+    'destroy'    : 'destroy'
+    'info'       : 'info'
+    'emailList'  : 'emailList'
 
   constructor: (@socket, uid=@socket.handshake.uid, callback) ->
-    Log "A user has connected to the server"
+    Log 'A user has connected to the server'
     # Bind socket.io events
     for event, fn of @events
       @on event, @[fn]
@@ -270,7 +273,7 @@ class Sync
   # Create a new model
   create: (data, fn) =>
     [className, model] = data
-    return unless className in ["List", "Task"]
+    return unless className in SUPPORTED_CLASSES
 
     # Generate new id
     if className is "List" and model.id is "inbox"
@@ -303,9 +306,9 @@ class Sync
   # Update existing model
   update: (data) =>
     [className, changes] = data
-    return unless className in ["List", "Task"]
+    return unless className in SUPPORTED_CLASSES
     id = changes.id
-
+    
     # Check model exists on server
     if not @hasModel(className, id)
       Log "#{className} doesn't exist on server"
@@ -348,7 +351,7 @@ class Sync
 
   # Delete existing model
   destroy: ([className, id], timestamp=Date.now()) =>
-    return unless className in ["List", "Task"]
+    return unless className in SUPPORTED_CLASSES
     model = @findModel className, id
 
     # Check that the model hasn't been updated after this event
@@ -360,10 +363,10 @@ class Sync
         Log "Destroying Task #{taskId}"
         # TODO: Prevent server from broadcasting these changes
         #       And make the client delete the tasks
-        @destroy ["Task", taskId]
+        @destroy ['Task', taskId]
 
     # Remove from list
-    else if className is "Task"
+    else if className is 'Task'
       @taskRemove id, model.list
 
     # Replace task with deleted template
@@ -403,7 +406,7 @@ class Sync
       # This code matches that list back to the task
 
       if type in ["create", "update"] and
-      className is "Task" and model.list.slice(0,2) is "c-"
+      className is 'Task' and model.list.slice(0,2) is "c-"
 
         # The list hasn't been assigned a server ID yet
         if client[model.list] is undefined
