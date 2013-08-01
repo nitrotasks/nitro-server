@@ -7,7 +7,8 @@ if '--debug' in process.argv
   global.DebugMode = on
   console.warn '\u001b[31m> Running in debug mode!\u001b[0m'
 
-port = if DebugMode then 8080 else 443
+# Port 443 should be piped to 8080
+port = 8080
 
 # Start api
 api = require './app/api'

@@ -10,6 +10,7 @@ app = express()
 
 # Serve up static files in the public folder
 app.configure ->
+
   # app.use express.static('/var/www/html/nitro/public')
   app.use express.bodyParser()
 
@@ -19,8 +20,11 @@ app.configure ->
     res.header 'Access-Control-Allow-Headers', 'X-Requested-With'
     next()
 
+
+# Basic configuration
 config =
   url: 'http://sync.nitrotasks.com:443/api'
+
 
 # GET and POST requests
 api =
