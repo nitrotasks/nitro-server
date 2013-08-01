@@ -22,8 +22,13 @@ app.configure ->
 
 
 # Basic configuration
-config =
-  url: 'http://sync.nitrotasks.com:443/api'
+config = {}
+
+# Set url
+config.url = if global.DebugMode
+  'http://localhost:8080/api'
+else
+  'http://sync.nitrotasks.com:443/api'
 
 
 # GET and POST requests
