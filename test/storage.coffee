@@ -1,5 +1,5 @@
 assert = require "assert"
-User = require "../app/storage"
+User = require "../app/user"
 Q = require "q"
 
 users = [

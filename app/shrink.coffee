@@ -1,3 +1,6 @@
+# Use MsgPack to compress data
+msgpack   = require 'msgpack'
+
 # Lookup table for compressing data
 tableTo =
 
@@ -63,9 +66,10 @@ makeObj = (obj) ->
 
 Shrink =
   compress: (obj) ->
-    replace(makeObj(obj), tableTo)
+    msgpack.pack replace(makeObj(obj), tableTo)
 
-  expand: (obj) ->
+  expand: (msg) ->
+    obj = msgpack.expand(msg)
     replace(makeObj(obj), tableFrom)
 
 module?.exports = Shrink

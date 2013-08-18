@@ -1,5 +1,5 @@
 bcrypt  = require "bcrypt"
-User    = require "./storage"
+User    = require "./user"
 oauth   = require "./oauth"
 Q       = require "q"
 Keys    = require "./keychain"

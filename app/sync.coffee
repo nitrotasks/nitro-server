@@ -1,6 +1,6 @@
 Q       = require 'q'
 Auth    = require './auth'
-User    = require './storage'
+User    = require './user'
 Log     = require './log'
 
 # Constants
@@ -148,20 +148,20 @@ class Sync
 
   # Return timestamp for an item or attribute
   getTime: (className, id, attr) =>
-    time = @findModel("Time", className)?[id]?[attr]
+    time = @findModel('Time', className)?[id]?[attr]
     if time then time += @baseTime
     return time
 
   # Remove all timestamps for an object
   clearTime: (className, id) =>
-    delete @findModel("Time", className)[id]
+    delete @findModel('Time', className)[id]
     return id
 
   # Set timestamp for an attribute
   setTime: (className, id, attr, time) =>
 
     # If attr is an object, loop through it
-    if typeof attr is "object"
+    if typeof attr is 'object'
       for key, time of attr
         @setTime className, id, key, time
       return
@@ -171,7 +171,7 @@ class Sync
 
     # Makes sure the entry exists
     # Todo: Make a function that will make this work
-    @findModel("Time", className)[id] ?= {}
+    @findModel('Time', className)[id] ?= {}
 
     # Update all existing values
     if attr is "all"

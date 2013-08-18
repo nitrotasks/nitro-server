@@ -1,4 +1,4 @@
-User = require("./storage")
+User = require("./user")
 Q = require("q")
 
 generate = (uid, listId) ->

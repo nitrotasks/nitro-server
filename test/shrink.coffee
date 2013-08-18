@@ -1,5 +1,5 @@
-assert = require "assert"
-Shrink = require "../app/shrink"
+assert = require 'assert'
+Shrink = require '../app/shrink'
 
 # Just some random data we want to compress
 data =

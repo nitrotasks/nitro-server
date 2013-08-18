@@ -1,6 +1,6 @@
 # Deprecated because no-one uses email anyway
 
-User = require "./storage"
+User = require "./user"
 mail = require "./mail"
 
 Notify =
