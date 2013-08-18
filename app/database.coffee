@@ -13,6 +13,7 @@ db = mysql.createConnection
   user: keychain('sql_user')
   password: keychain('sql_pass')
 
+# Connect to the MySQL server
 connect = ->
 
   db.connect (err) ->
@@ -62,15 +63,7 @@ close = ->
 # Add or update user details
 write_user = (user) ->
 
-  console.log 'Writing data to database'
-  console.log user
-
   deferred = Q.defer()
-
-  # Convert JSON objects into strings
-  tasks = if user.tasks? then JSON.stringify(user.tasks) else ""
-  lists = if user.lists? then JSON.stringify(user.lists) else ""
-  timestamps = if user.timestamps? then JSON.stringify(user.timestamps) else ""
 
   data =
     id:           user.id
@@ -78,16 +71,16 @@ write_user = (user) ->
     email:        user.email
     password:     user.password
     pro:          user.pro
-    tasks:        shrink.compress(user.data_Task or {})
-    lists:        shrink.compress(user.data_List or {})
-    timestamps:   shrink.compress(user.data_Time or {})
+    tasks:        shrink.pack(user.data_Task or {})
+    lists:        shrink.pack(user.data_List or {})
+    timestamps:   shrink.pack(user.data_Time or {})
     tasks_index:  user.index_Task or 0
     lists_index:  user.index_List or 0
     created_at:   user.created_at or new Date()
     # updated_at: set automatically by database
 
 
-  console.log data
+  console.log 'writing', data
     
   # Write to database
   db.query "INSERT INTO users SET ? ON DUPLICATE KEY UPDATE ?", [data, data], (err, result) ->
@@ -113,9 +106,9 @@ read_user = (uid, fn) ->
         email:       _user.email
         password:    _user.password
         pro:         _user.pro
-        data_Task:   shrink.expand _user.tasks.toString()
-        data_List:   shrink.expand _user.lists.toString()
-        data_Time:   shrink.expand _user.timestamps.toString()
+        data_Task:   shrink.unpack(_user.tasks)
+        data_List:   shrink.unpack(_user.lists)
+        data_Time:   shrink.unpack(_user.timestamps)
         index_Time:  _user.tasks_index
         index_List:  _user.lists_index
         created_at:  _user.created_at

@@ -1,3 +1,25 @@
+###
+
+     __        __                     __  
+    /__` |__| |__) | |\ | |__/     | /__` 
+    .__/ |  | |  \ | | \| |  \ .\__/ .__/ 
+
+    -------------------------------------
+
+    Compacts an object by replacing the
+    property names with letters.
+    And then packing it into a buffer
+    using msgpack.
+
+    Customise the `tableTo` object.
+    
+    It exposes two methods:
+      - pack
+      - unpack
+
+
+###
+
 # Use MsgPack to compress data
 msgpack   = require 'msgpack'
 
@@ -36,12 +58,13 @@ tableTo =
   permanent: "q"
   inbox:     "b"
 
+# Generate tableFrom object by inverting tableTo
 tableFrom = {}
-
 for k, v of tableTo
   tableFrom[v] = k
 
 # Get a value from the table
+# If value doesn't exist, then use the current value
 get = (name, table) ->
   table[name] or name
 
@@ -54,22 +77,21 @@ replace = (obj, table) ->
         out[get(key, table)] = replace(value, table)
     else
       out[get(key, table)] = value
-  out
+  return out
 
+# Make sure object is an object
 makeObj = (obj) ->
   if typeof obj is "string"
-    try
-      obj = JSON.parse obj
-    catch e
-      return {}
-  obj
+    try obj = JSON.parse obj
+    catch e then return {}
+  return obj
 
 Shrink =
-  compress: (obj) ->
+  pack: (obj) ->
     msgpack.pack replace(makeObj(obj), tableTo)
 
-  expand: (msg) ->
-    obj = msgpack.expand(msg)
+  unpack: (msg) ->
+    obj = msgpack.unpack(msg)
     replace(makeObj(obj), tableFrom)
 
 module?.exports = Shrink
