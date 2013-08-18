@@ -2,6 +2,7 @@
 # Dependencies
 mysql = require 'mysql'
 shrink = require './shrink'
+keychain = require './keychain'
 Q = require 'q'
 
 # Constants
@@ -9,8 +10,8 @@ DATABASE = 'Nitro'
 
 db = mysql.createConnection
   host: '127.0.0.1'
-  user: 'root'
-  password: 'ggthejoker'
+  user: keychain('sql_user')
+  password: keychain('sql_pass')
 
 connect = ->
 
