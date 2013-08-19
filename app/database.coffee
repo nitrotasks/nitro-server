@@ -4,6 +4,7 @@ mysql = require 'mysql'
 shrink = require './shrink'
 keychain = require './keychain'
 Q = require 'q'
+Log = require('./log')('Database', 'blue')
 
 # Constants
 DATABASE = 'Nitro'
@@ -18,10 +19,10 @@ connect = ->
 
   db.connect (err) ->
     if err
-      console.log 'Error connecting to database!'
+      Log "Error while connecting!"
       throw err
     else
-      console.log '> Connected to MySQL server'
+      Log "Connected to MySQL server"
       setup()
 
 # Initialise Nitro database
@@ -52,7 +53,7 @@ setup = ->
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
   """
 
-  console.log '> Set up Nitro database'
+  Log "Ready..."
 
 # Close database connection
 close = ->
@@ -80,11 +81,12 @@ write_user = (user) ->
     # updated_at: set automatically by database
 
 
-  console.log 'writing', data
-    
   # Write to database
   db.query "INSERT INTO users SET ? ON DUPLICATE KEY UPDATE ?", [data, data], (err, result) ->
     if err then return deferred.reject(err)
+
+    Log "Wrote user #{result.insertId}"
+
     # Return the user id
     deferred.resolve(result.insertId)
 
@@ -93,6 +95,9 @@ write_user = (user) ->
 
 # Get user data
 read_user = (uid, fn) ->
+  
+  Log "Fetching user #{uid}"
+
   deferred = Q.defer()
 
   db.query "SELECT * FROM users WHERE id=?", uid, (err, result) ->

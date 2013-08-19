@@ -2,6 +2,7 @@ nodeRedis = require 'redis'
 Q         = require 'q'
 _         = require 'lodash'
 dbase     = require './database'
+Log       = require('./log')('User', 'yellow')
 
 
 #==============================================================================
@@ -14,7 +15,7 @@ dbase     = require './database'
 #     email: string,
 #     password: string,
 #     pro: boolean,
-#     data_Task: object,
+#     data_Task: object,/
 #     data_List: object,
 #     data_Time: object,
 #     index_Task: int,
@@ -142,6 +143,7 @@ class User
   # Should only be used when all users have logged out though
   # Because you can't reconnect the instance to the record
   @release: (id) =>
+    Log "Removing record #{ id }"
     dbase.user.write @records[id]
     @records[id]._released = true
     delete @records[id]
@@ -201,7 +203,7 @@ class User
 
   # Write user data to disk (used with _.throttle in constructor)
   __write: =>
-    console.log 'writing to disk'
+    Log "Writing data to disk"
     # Don't save to disk if the user has been released
     return if @_released
     # Create user object
@@ -209,7 +211,7 @@ class User
 
   # Change a value
   _set: (key, value) =>
-    console.log 'SET', key
+    Log "Updating #{key}"
     # Update local object
     @_update(key, value)
     # Save to disk

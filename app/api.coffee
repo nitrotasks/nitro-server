@@ -11,15 +11,14 @@ app = express()
 # Serve up static files in the public folder
 app.configure ->
 
-  # app.use express.static('/var/www/html/nitro/public')
+  # Parse POST requests
   app.use express.bodyParser()
 
-  # Allow CORS
+  # Allow CORS on alll domains
   app.all '/*', (req, res, next) ->
     res.header 'Access-Control-Allow-Origin', '*'
     res.header 'Access-Control-Allow-Headers', 'X-Requested-With'
     next()
-
 
 # Basic configuration
 config = {}
@@ -38,11 +37,10 @@ api =
   # PayPal integration
   # ------------------
 
+  # Return the pro status of a user
   'get_pro': (req, res) ->
     uid = req.param('uid')
     # code = req.body.code
-    console.log uid
-
     User.get(uid)
       .then (user) ->
         user.changeProStatus(1)

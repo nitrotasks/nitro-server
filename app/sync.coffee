@@ -1,10 +1,26 @@
+###
+           ___  __   __      __            __  
+    |\ | |  |  |__) /  \    /__` \ / |\ | /  ` 
+    | \| |  |  |  \ \__/    .__/  |  | \| \__, 
+
+    ------------------------------------------
+
+    This is the sync code. It's messy.
+
+###
+                                           
+
 Q       = require 'q'
 Auth    = require './auth'
 User    = require './user'
-Log     = require './log'
+Log     = require('./log')('Sync', 'yellow')
+LogEvent = require('./log')('Sync Event', 'cyan')
 
 # Constants
 SUPPORTED_CLASSES = ['List', 'Task', 'Setting']
+
+# Expose io to all functions in this file
+io = null
 
 # Start server
 init = ( sync_server ) ->
@@ -27,11 +43,14 @@ init = ( sync_server ) ->
       uid = handshakeData.query.uid
       token = handshakeData.query.token
       if DebugMode
-        console.log 'Received uid and token', uid
+        Log "Received uid #{uid} and token #{token}"
       if uid? and token?
-        User.checkLoginToken(uid, token).then (exists) ->
-          handshakeData.uid = uid
-          fn(null, exists)
+        User.checkLoginToken(uid, token)
+          .then (exists) ->
+            handshakeData.uid = uid
+            fn(null, exists)
+          .fail ->
+            Log "User could not login"
       else
         fn(null, no)
       return true
@@ -207,18 +226,18 @@ class Sync
 
   # Emit event (goes to everyone)
   emit: (event, data) =>
-    Log "-- Emitting event #{event} --\n"
+    LogEvent "Emitting '#{event}'"
     @socket.emit(event, data)
 
   # Broadcast event (goes to everyone except @user)
   broadcast: (event, data) =>
-    Log "-- Broadcasting event #{event} --\n"
-    @socket.broadcast.to(@user.email).emit(event, data)
+    LogEvent "Broadcasting '#{event}'"
+    @socket.broadcast.to(@user.id).emit(event, data)
 
   # Bind event to function
   on: (event, fn) =>
     @socket.on event, (args...) =>
-      Log "-- Received event #{event} --"
+      LogEvent "Received '#{event}'"
 
       if @userIsLoaded
         fn(args...)
@@ -239,7 +258,7 @@ class Sync
     User.get(uid)
       .then (@user) =>
         # Move user to their own room
-        @socket.join(@user.email)
+        @socket.join(@user.id)
         Log "#{ @user.name } has logged in"
         # Load user
         @userIsLoaded = true
@@ -252,6 +271,11 @@ class Sync
 
   logout: =>
     Log "#{ @user.name } has logged out"
+
+    # If the user is only logged in from one client then remove them from memory
+    if io.sockets.clients(@user.id).length is 1
+      Log "... and has been removed from memory"
+      User.release @user.id
 
   # Return all models in database
   fetch: (className, fn) =>
