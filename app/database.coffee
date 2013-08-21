@@ -94,7 +94,7 @@ write_user = (user) ->
 
 
 # Get user data
-read_user = (uid, fn) ->
+read_user = (uid) ->
   
   Log "Fetching user #{uid}"
 

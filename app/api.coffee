@@ -6,9 +6,8 @@ Mail     = require './mail'
 TodoTxt  = require './todo.txt'
 TodoHtml = require './todo.html'
 
+# Create and configure express app
 app = express()
-
-# Serve up static files in the public folder
 app.configure ->
 
   # Parse POST requests
