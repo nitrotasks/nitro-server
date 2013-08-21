@@ -44,6 +44,7 @@ setup = ->
      `pro`           tinyint(1)     NOT NULL,
      `tasks`         mediumblob     NOT NULL,
      `lists`         mediumblob     NOT NULL,
+     `setting`      mediumblob     NOT NULL,
      `timestamps`    mediumblob     NOT NULL,
      `tasks_index`   int(11)        NOT NULL,
      `lists_index`   int(11)        NOT NULL,
@@ -74,6 +75,7 @@ write_user = (user) ->
     pro:          user.pro
     tasks:        shrink.pack(user.data_Task or {})
     lists:        shrink.pack(user.data_List or {})
+    settings:     shrink.pack(user.data_Setting or {})
     timestamps:   shrink.pack(user.data_Time or {})
     tasks_index:  user.index_Task or 0
     lists_index:  user.index_List or 0
@@ -106,18 +108,19 @@ read_user = (uid) ->
     if result.length > 0
       _user = result[0]
       user =
-        id:          _user.id
-        name:        _user.name
-        email:       _user.email
-        password:    _user.password
-        pro:         _user.pro
-        data_Task:   shrink.unpack(_user.tasks)
-        data_List:   shrink.unpack(_user.lists)
-        data_Time:   shrink.unpack(_user.timestamps)
-        index_Time:  _user.tasks_index
-        index_List:  _user.lists_index
-        created_at:  _user.created_at
-        updated_at:  _user.updated_at
+        id:             _user.id
+        name:           _user.name
+        email:          _user.email
+        password:       _user.password
+        pro:            _user.pro
+        data_Task:      shrink.unpack(_user.tasks)
+        data_List:      shrink.unpack(_user.lists)
+        data_Setting:   shrink.unpack(_user.settings)
+        data_Time:      shrink.unpack(_user.timestamps)
+        index_Time:     _user.tasks_index
+        index_List:     _user.lists_index
+        created_at:     _user.created_at
+        updated_at:     _user.updated_at
 
     deferred.resolve(user)
   return deferred.promise

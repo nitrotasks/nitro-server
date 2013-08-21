@@ -22,7 +22,7 @@ if '-p' in process.argv
 api = require './api'
 server = api.listen port
 
-Log 'Starting server on port #{ port }'
+Log "Starting server on port #{ port }"
 
 # Start sync
 Sync = require "./sync"

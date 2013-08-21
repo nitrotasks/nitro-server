@@ -25,10 +25,6 @@ io = null
 # Start server
 init = ( sync_server ) ->
 
-  # Start server on it's own http server
-  # express = require 'express'
-  # sync_server = express().listen( port or 443 )
-
   # Start SocketIO
   io = require('socket.io').listen(sync_server)
 
@@ -65,6 +61,7 @@ init = ( sync_server ) ->
 
 
 # Return the default task object
+# I don't think we even use this anymore?
 Default = (name) ->
 
   data =
@@ -92,11 +89,8 @@ Default = (name) ->
 # Does all the useful stuff
 class Sync
 
-  # Starts socket.io server
+  # Expose init function
   @init: init
-
-  # Store user data
-  user: null
 
   # Socket.IO events
   events:
@@ -114,9 +108,9 @@ class Sync
     # Bind socket.io events
     for event, fn of @events
       @on event, @[fn]
+    # Start login process
     @login(uid).then (user) ->
       if callback? then callback(user)
-    return
 
 
   # ------------------
@@ -141,6 +135,7 @@ class Sync
 
   # Replace model
   setModel: (className, id, attributes) =>
+    console.log className, id, attributes
     @user.data(className)[id] = attributes
     @user.save(className)
     return attributes
@@ -282,9 +277,9 @@ class Sync
     return unless fn
     fn @exportModel(className)
 
-  # Sometimes events can be sent to the server before we have loaded the user data
-  # from the server. So we store those events and then fire them when the user data
-  # has loaded.
+  # Sometimes events can be sent to the server before we have loaded the user
+  # data from the server. So we store those events and then fire them when the 
+  # user data # has loaded.
 
   userIsLoaded: false
   runOnUserLoad: []
@@ -300,7 +295,9 @@ class Sync
     return unless className in SUPPORTED_CLASSES
 
     # Generate new id
-    if className is "List" and model.id is "inbox"
+    if className is 'Setting'
+      id = 1
+    else if className is "List" and model.id is "inbox"
       id = model.id
       if @hasModel("List", "inbox") then return
     else
