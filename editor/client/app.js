@@ -6,6 +6,7 @@ $(function () {
   var SYNTAX_ERROR = 'Error! Invalid JSON';
 
   var el = {
+    getall: $('.getall'),
     form: $('form'),
     uid: $('.uid'),
     editor: $('.editor'),
@@ -34,6 +35,14 @@ $(function () {
     });
   }
 
+  // Get a list of all the users in the database
+  function users () {
+    return $.ajax({
+      method: 'get',
+      url: '/read/all'
+    });
+  }
+
   function display (obj) {
     var text = JSON.stringify(obj, null, 2);
     el.editor.val(text);
@@ -48,6 +57,15 @@ $(function () {
     }
     return true;
   }
+
+  el.getall.on('click', function (e) {
+    e.preventDefault();
+    users().then(function(data, state) {
+      if (state === 'success') {
+        display(data);
+      }
+    });
+  });
 
   // Bind events
   el.form.on('submit', function (e) {

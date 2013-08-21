@@ -95,7 +95,7 @@ write_user = (user) ->
 
 # Get user data
 read_user = (uid) ->
-  
+
   Log "Fetching user #{uid}"
 
   deferred = Q.defer()
@@ -122,8 +122,15 @@ read_user = (uid) ->
     deferred.resolve(user)
   return deferred.promise
 
+all_users = ->
+  deferred = Q.defer()
+  db.query "SELECT id, name, email FROM users", (err, results) ->
+    if err then return deferred.reject(err)
+    deferred.resolve(results)
+  return deferred.promise
+
 # Delete user data
-del_user = (uid, fn) ->
+del_user = (uid) ->
   deferred = Q.defer()
   db.query "DELETE FROM users WHERE id = ?", uid, (err, results) ->
     if err then return deferred.reject(err)
@@ -134,10 +141,11 @@ del_user = (uid, fn) ->
 # Update user details
 # Set task, list and timestamp data
 
-module.exports = 
+module.exports =
   connect: connect
   close: close
   user:
+    all: all_users
     write: write_user
     read: read_user
     delete: del_user

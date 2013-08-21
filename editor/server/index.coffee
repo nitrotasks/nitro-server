@@ -18,6 +18,13 @@ app.configure ->
   app.use express.static(__dirname + '/../client')
   app.use express.bodyParser()
 
+app.get '/read/all', (req, res) ->
+  database.user.all()
+    .then (users) ->
+      res.send users
+    .fail ->
+      res.send 'error'
+
 # Fetch data from database
 app.get /^\/read\/(\d*)/, (req, res) ->
   [uid] = req.params
