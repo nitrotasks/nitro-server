@@ -44,7 +44,7 @@ setup = ->
      `pro`           tinyint(1)     NOT NULL,
      `tasks`         mediumblob     NOT NULL,
      `lists`         mediumblob     NOT NULL,
-     `setting`      mediumblob     NOT NULL,
+     `settings`      mediumblob     NOT NULL,
      `timestamps`    mediumblob     NOT NULL,
      `tasks_index`   int(11)        NOT NULL,
      `lists_index`   int(11)        NOT NULL,
@@ -81,7 +81,6 @@ write_user = (user) ->
     lists_index:  user.index_List or 0
     created_at:   user.created_at or new Date()
     # updated_at: set automatically by database
-
 
   # Write to database
   db.query "INSERT INTO users SET ? ON DUPLICATE KEY UPDATE ?", [data, data], (err, result) ->

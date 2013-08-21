@@ -10,20 +10,27 @@ if '--debug' in process.argv
   global.DebugMode = on
   Warn 'Running in debug mode!'
 
-# Port 443 should be piped to 8080
-port = 8080
+if module.parent is null
 
-# Override port
-if '-p' in process.argv
-  index = process.argv.indexOf('-p')
-  port = process.argv[index + 1]
+  # Port 443 should be piped to 8080
+  port = 8080
 
-# Start api
-api = require './api'
-server = api.listen port
+  # Override port
+  if '-p' in process.argv
+    index = process.argv.indexOf('-p')
+    port = process.argv[index + 1]
 
-Log "Starting server on port #{ port }"
+  # Start api
+  api = require './api'
+  server = api.listen port
 
-# Start sync
-Sync = require "./sync"
-Sync.init server
+  Log "Starting server on port #{ port }"
+
+  # Start sync
+  Sync = require "./sync"
+  Sync.init server
+
+else
+
+  global.DebugMode = true
+  module.exports = require './api'

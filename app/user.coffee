@@ -34,6 +34,7 @@ dbase.connect()
 
 # Connect to Redis
 redis = nodeRedis.createClient()
+redis.flushdb()
 
 
 #==============================================================================
@@ -84,14 +85,18 @@ class User
         pro: 0
 
       # Add user to database
-      dbase.user.write(user).then (id) =>
+      dbase.user.write(user)
+        .then (id) =>
 
-        # Add ID to lookup table
-        options.service ?= "native"
-        redis.hset "users:#{options.service}", options.email, id
+          # Add ID to lookup table
+          options.service ?= "native"
+          redis.hset "users:#{options.service}", options.email, id
 
-        # Load user into memory and resolve
-        @get(id).then deferred.resolve, console.error
+          # Load user into memory and resolve
+          @get(id).then deferred.resolve, console.error
+
+        .fail ->
+          Log 'Error writing user to database!'
 
     return deferred.promise
 

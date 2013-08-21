@@ -81,8 +81,10 @@ api =
     token = req.params[0]
     Auth.verifyRegistration(token)
       .then (user) ->
+        if DebugMode then return res.send('success')
         res.sendfile('./pages/auth_success.html')
       .fail (err) ->
+        if DebugMode then return res.send('error')
         res.sendfile('./pages/error.html')
 
 
@@ -166,6 +168,7 @@ api =
         res.sendfile('./pages/reset_email.html')
 
       .fail (err) ->
+        if DebugMode then return res.send('error')
         res.status(400).sendfile('./pages/error.html')
 
   'get_forgot/*': (req, res) ->
@@ -173,8 +176,9 @@ api =
     User.checkResetToken(token)
       .then ->
         res.sendfile('./pages/reset_form.html')
-        .fail (err) ->
-          res.sendfile('./pages/error.html')
+      .fail (err) ->
+        if DebugMode then return res.send('error')
+        res.sendfile('./pages/error.html')
 
   'post_forgot/*': (req, res) ->
     password = req.body.password
