@@ -17,13 +17,18 @@ db = mysql.createConnection
 # Connect to the MySQL server
 connect = ->
 
+  deferred = Q.defer()
+
   db.connect (err) ->
     if err
-      Log "Error while connecting!"
-      throw err
+      Log 'Error while connecting!'
+      deferred.reject(err)
     else
-      Log "Connected to MySQL server"
+      Log 'Connected to MySQL server'
       setup()
+      deferred.resolve()
+
+  return deferred.promise
 
 # Initialise Nitro database
 setup = ->
@@ -35,26 +40,24 @@ setup = ->
   db.query "USE #{DATABASE};"
 
   # Create 'users' table
-  db.query """
+  db.query '''
     CREATE TABLE IF NOT EXISTS `users` (
      `id`            int(11)        NOT NULL    AUTO_INCREMENT,
      `name`          varchar(100)   NOT NULL,
      `email`         varchar(100)   NOT NULL,
      `password`      char(60)       NOT NULL,
      `pro`           tinyint(1)     NOT NULL,
-     `tasks`         mediumblob     NOT NULL,
-     `lists`         mediumblob     NOT NULL,
-     `settings`      mediumblob     NOT NULL,
-     `timestamps`    mediumblob     NOT NULL,
-     `tasks_index`   int(11)        NOT NULL,
-     `lists_index`   int(11)        NOT NULL,
-     `created_at`    timestamp      NOT NULL    DEFAULT           '0000-00-00 00:00:00',
-     `updated_at`    timestamp      NOT NULL    DEFAULT           CURRENT_TIMESTAMP       ON UPDATE CURRENT_TIMESTAMP,
+     `data_Task`     mediumblob     NOT NULL,
+     `data_List`     mediumblob     NOT NULL,
+     `data_Setting`  mediumblob     NOT NULL,
+     `data_Time`     mediumblob     NOT NULL,
+     `index_Task`    int(11)        NOT NULL    DEFAULT '0',
+     `index_List`    int(11)        NOT NULL    DEFAULT '0',
+     `created_at`    timestamp      NOT NULL    DEFAULT '0000-00-00 00:00:00',
+     `updated_at`    timestamp      NOT NULL    DEFAULT CURRENT_TIMESTAMP       ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-  """
-
-  Log "Ready..."
+  '''
 
 # Close database connection
 close = ->
@@ -67,23 +70,26 @@ write_user = (user) ->
 
   deferred = Q.defer()
 
-  data =
-    id:           user.id
-    name:         user.name
-    email:        user.email
-    password:     user.password
-    pro:          user.pro
-    tasks:        shrink.pack(user.data_Task or {})
-    lists:        shrink.pack(user.data_List or {})
-    settings:     shrink.pack(user.data_Setting or {})
-    timestamps:   shrink.pack(user.data_Time or {})
-    tasks_index:  user.index_Task or 0
-    lists_index:  user.index_List or 0
-    created_at:   user.created_at or new Date()
-    # updated_at: set automatically by database
+  # Only update the properties set in `user`
+
+  data = {}
+
+  for property in ['id', 'name', 'email', 'password', 'pro', 'created_at', 'updated_at']
+    if user.hasOwnProperty(property)
+      data[property] = user[property]
+
+  for property in ['Task', 'List', 'Setting', 'Time']
+    property = 'data_' + property
+    if user.hasOwnProperty(property)
+      data[property] = shrink.pack(user[property])
+
+  for property in ['Task', 'List']
+    property = 'index_' + property
+    if user.hasOwnProperty(property)
+      data[property] = user[property]
 
   # Write to database
-  db.query "INSERT INTO users SET ? ON DUPLICATE KEY UPDATE ?", [data, data], (err, result) ->
+  db.query 'INSERT INTO users SET ? ON DUPLICATE KEY UPDATE ?', [data, data], (err, result) ->
     if err then return deferred.reject(err)
 
     Log "Wrote user #{result.insertId}"
@@ -101,7 +107,7 @@ read_user = (uid) ->
 
   deferred = Q.defer()
 
-  db.query "SELECT * FROM users WHERE id=?", uid, (err, result) ->
+  db.query 'SELECT * FROM users WHERE id=?', uid, (err, result) ->
     if err then return deferred.reject(err)
 
     if result.length > 0
@@ -112,12 +118,12 @@ read_user = (uid) ->
         email:          _user.email
         password:       _user.password
         pro:            _user.pro
-        data_Task:      shrink.unpack(_user.tasks)
-        data_List:      shrink.unpack(_user.lists)
-        data_Setting:   shrink.unpack(_user.settings)
-        data_Time:      shrink.unpack(_user.timestamps)
-        index_Time:     _user.tasks_index
-        index_List:     _user.lists_index
+        data_Task:      shrink.unpack(_user.data_Task)
+        data_List:      shrink.unpack(_user.data_List)
+        data_Setting:   shrink.unpack(_user.data_Setting)
+        data_Time:      shrink.unpack(_user.data_Time)
+        index_Task:     _user.index_Task
+        index_List:     _user.index_List
         created_at:     _user.created_at
         updated_at:     _user.updated_at
 
@@ -126,7 +132,7 @@ read_user = (uid) ->
 
 all_users = ->
   deferred = Q.defer()
-  db.query "SELECT id, name, email FROM users", (err, results) ->
+  db.query 'SELECT id, name, email FROM users', (err, results) ->
     if err then return deferred.reject(err)
     deferred.resolve(results)
   return deferred.promise
@@ -134,7 +140,7 @@ all_users = ->
 # Delete user data
 del_user = (uid) ->
   deferred = Q.defer()
-  db.query "DELETE FROM users WHERE id = ?", uid, (err, results) ->
+  db.query 'DELETE FROM users WHERE id = ?', uid, (err, results) ->
     if err then return deferred.reject(err)
     deferred.resolve(results)
   return deferred.promise

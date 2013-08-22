@@ -17,6 +17,9 @@
       - pack
       - unpack
 
+    If you don't want to compress using
+    MsgPack, then pass true as the second
+    argument.
 
 ###
 
@@ -26,24 +29,11 @@ msgpack   = require 'msgpack'
 # Lookup table for compressing data
 tableTo =
 
-  # User
-  email:      "@"
-  password:   "X"
-  pro:        "$"
-  created_at: ":"
-  updated_at: "#"
-
-  data_Task: "dT"
-  data_List: "dL"
-  data_Time: "dX"
-
-  index_Task: "iT"
-  index_List: "iL"
-
   # Class names
   Task: "T"
   List: "L"
   Time: "M"
+  Setting: "S"
 
   # Properties
   name:      "n"
@@ -87,11 +77,13 @@ makeObj = (obj) ->
   return obj
 
 Shrink =
-  pack: (obj) ->
-    msgpack.pack replace(makeObj(obj), tableTo)
+  pack: (obj, asJSON) ->
+    data = replace(makeObj(obj), tableTo)
+    if asJSON then return data
+    msgpack.pack(data)
 
-  unpack: (msg) ->
-    obj = msgpack.unpack(msg)
+  unpack: (obj, asJSON) ->
+    if not asJSON then obj = msgpack.unpack(obj)
     replace(makeObj(obj), tableFrom)
 
 module?.exports = Shrink
