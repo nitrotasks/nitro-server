@@ -1,14 +1,14 @@
 ###
-           ___  __   __      __            __  
-    |\ | |  |  |__) /  \    /__` \ / |\ | /  ` 
-    | \| |  |  |  \ \__/    .__/  |  | \| \__, 
+           ___  __   __      __            __
+    |\ | |  |  |__) /  \    /__` \ / |\ | /  `
+    | \| |  |  |  \ \__/    .__/  |  | \| \__,
 
     ------------------------------------------
 
     This is the sync code. It's messy.
 
 ###
-                                           
+
 
 Q       = require 'q'
 Auth    = require './auth'
@@ -135,7 +135,6 @@ class Sync
 
   # Replace model
   setModel: (className, id, attributes) =>
-    console.log className, id, attributes
     @user.data(className)[id] = attributes
     @user.save(className)
     return attributes
@@ -278,7 +277,7 @@ class Sync
     fn @exportModel(className)
 
   # Sometimes events can be sent to the server before we have loaded the user
-  # data from the server. So we store those events and then fire them when the 
+  # data from the server. So we store those events and then fire them when the
   # user data # has loaded.
 
   userIsLoaded: false
@@ -289,6 +288,15 @@ class Sync
   # Realtime Events
   # ---------------
 
+
+  #####################################
+  #    __   __   ___      ___  ___    #
+  #   /  ` |__) |__   /\   |  |__     #
+  #   \__, |  \ |___ /~~\  |  |___    #
+  #                                   #
+  #####################################
+
+
   # Create a new model
   create: (data, fn) =>
     [className, model] = data
@@ -297,9 +305,12 @@ class Sync
     # Generate new id
     if className is 'Setting'
       id = 1
+      model = @settingsValidate(model)
+
     else if className is 'List' and model.id is 'inbox'
       id = model.id
       if @hasModel('List', 'inbox') then return
+    
     else
       id = 's-' + @user.index(className)
       @user.incrIndex className
@@ -324,6 +335,14 @@ class Sync
     if fn? then fn(id)
 
 
+
+  ####################################
+  #         __   __       ___  ___   #
+  #   |  | |__) |  \  /\   |  |__    #
+  #   \__/ |    |__/ /~~\  |  |___   #
+  #                                  #
+  ####################################
+
   # Update existing model
   update: (data) =>
     [className, changes] = data
@@ -331,9 +350,10 @@ class Sync
 
     if className is 'Setting'
       id = 1
+      changes = @settingsValidate(changes)
     else
       id = changes.id
-    
+
     # Check model exists on server
     if not @hasModel(className, id)
       Log "#{className} doesn't exist on server"
@@ -373,6 +393,14 @@ class Sync
     # Broadcast event to connected clients
     @broadcast 'update', [className, model]
 
+
+
+  ########################################
+  #    __   ___  __  ___  __   __        #
+  #   |  \ |__  /__`  |  |__) /  \ \ /   #
+  #   |__/ |___ .__/  |  |  \ \__/  |    #
+  #                                      #
+  ########################################
 
   # Delete existing model
   destroy: ([className, id], timestamp=Date.now()) =>
@@ -511,6 +539,21 @@ class Sync
     if index > -1
       tasks.spice index, 1, newId
       @setModelAttributes 'List', listId, tasks:tasks
+
+
+  # -------------------
+  # Settings Validation
+  # -------------------
+
+  settingsValidate: (settings) ->
+    allowed = ['sort', 'weekStart', 'dateFormat', 'completedDuration',
+               'confirmDelete', 'night', 'language', 'notifications',
+               'notifyEmail', 'notifyTime', 'notifyRegular']
+    out = {}
+    for property in allowed
+      if settings.hasOwnProperty(property)
+        out[property] = settings[property]
+    return out
 
 
   # --------------------
