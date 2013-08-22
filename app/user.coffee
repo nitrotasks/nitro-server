@@ -2,7 +2,7 @@ nodeRedis = require 'redis'
 Q         = require 'q'
 _         = require 'lodash'
 dbase     = require './database'
-Log       = require('./log')('User', 'yellow')
+Log       = require('./log')('User', 'green')
 
 
 #==============================================================================
@@ -34,7 +34,7 @@ dbase.connect()
 
 # Connect to Redis
 redis = nodeRedis.createClient()
-redis.flushdb()
+# redis.flushdb()
 
 
 #==============================================================================
