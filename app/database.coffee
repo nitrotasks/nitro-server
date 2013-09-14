@@ -6,14 +6,12 @@ keychain = require './keychain'
 Q = require 'q'
 Log = require('./log')('Database', 'blue')
 
-# Constants
-DATABASE = 'Nitro'
-
 db = mysql.createConnection
   host:      keychain('sql_host')
   user:      keychain('sql_user')
   password:  keychain('sql_pass')
   port:      keychain('sql_port')
+  database:  'Nitro'
 
 # Connect to the MySQL server
 connect = ->
@@ -35,10 +33,10 @@ connect = ->
 setup = ->
 
   # Create database
-  db.query "CREATE DATABASE IF NOT EXISTS #{DATABASE};"
+  # db.query "CREATE DATABASE IF NOT EXISTS #{DATABASE};"
 
   # Select Nitro database
-  db.query "USE #{DATABASE};"
+  # db.query "USE #{DATABASE};"
 
   # Create 'users' table
   db.query '''
@@ -68,6 +66,8 @@ close = ->
 
 # Add or update user details
 write_user = (user) ->
+
+  console.log 'writing user'
 
   deferred = Q.defer()
 

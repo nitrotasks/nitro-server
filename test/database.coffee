@@ -33,12 +33,9 @@ describe 'Database', ->
 
   it 'should add a user', (done) ->
 
-    DB.user.write(USER)
-      .then (_uid) ->
-        USER.id = _uid
-        done()
-      .fail (err) ->
-        throw err
+    DB.user.write(USER).then (_uid) ->
+      USER.id = _uid
+      done()
 
   it 'should read the data back', (done) ->
     DB.user.read(USER.id).then (user) ->
@@ -56,4 +53,4 @@ describe 'Database', ->
 
   it 'should close the connection to the server', ->
     DB.close()
-    
+
