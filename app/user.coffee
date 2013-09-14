@@ -2,7 +2,7 @@ nodeRedis = require 'redis'
 Q         = require 'q'
 _         = require 'lodash'
 dbase     = require './database'
-Log       = require('./log')('User', 'yellow')
+Log       = require('./log')('User', 'green')
 
 
 #==============================================================================
@@ -34,7 +34,7 @@ dbase.connect()
 
 # Connect to Redis
 redis = nodeRedis.createClient()
-redis.flushdb()
+# redis.flushdb()
 
 
 #==============================================================================
@@ -83,6 +83,7 @@ class User
         password: options.password
         email: options.email
         pro: 0
+        created_at: new Date()
 
       # Add user to database
       dbase.user.write(user)
@@ -216,7 +217,6 @@ class User
 
   # Change a value
   _set: (key, value) =>
-    Log "Updating #{key}"
     # Update local object
     @_update(key, value)
     # Save to disk

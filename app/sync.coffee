@@ -1,20 +1,20 @@
 ###
-           ___  __   __      __            __  
-    |\ | |  |  |__) /  \    /__` \ / |\ | /  ` 
-    | \| |  |  |  \ \__/    .__/  |  | \| \__, 
+           ___  __   __      __            __
+    |\ | |  |  |__) /  \    /__` \ / |\ | /  `
+    | \| |  |  |  \ \__/    .__/  |  | \| \__,
 
     ------------------------------------------
 
     This is the sync code. It's a wee bit crazy.
 
 ###
-                                           
+
 
 Q       = require 'q'
 Auth    = require './auth'
 User    = require './user'
-Log     = require('./log')('Sync', 'yellow')
-LogEvent = require('./log')('Sync Event', 'cyan')
+Log     = require('./log')('Sync', 'cyan')
+LogEvent = require('./log')('Sync Event', 'yellow')
 
 # Constants
 SUPPORTED_CLASSES = ['List', 'Task', 'Setting']
@@ -39,14 +39,14 @@ init = ( sync_server ) ->
       uid = handshakeData.query.uid
       token = handshakeData.query.token
       if DebugMode
-        Log "Received uid #{uid} and token #{token}"
+        Log "Received uid #{ uid } and token #{ token }"
       if uid? and token?
         User.checkLoginToken(uid, token)
           .then (exists) ->
             handshakeData.uid = uid
             fn(null, exists)
           .fail ->
-            Log "User could not login"
+            Log 'User could not login'
       else
         fn(null, no)
       return true
@@ -135,7 +135,6 @@ class Sync
 
   # Replace model
   setModel: (className, id, attributes) =>
-    console.log className, id, attributes
     @user.data(className)[id] = attributes
     @user.save(className)
     return attributes
@@ -188,25 +187,25 @@ class Sync
     @findModel('Time', className)[id] ?= {}
 
     # Update all existing values
-    if attr is "all"
+    if attr is 'all'
       for attr of @findModel(className, id)
-        continue if attr is "id" # Ignore ID
+        continue if attr is 'id' # Ignore ID
         # Can't use @setModelAttributes because it's three layers deep
-        @user.data("Time")[className][id][attr] = time
+        @user.data('Time')[className][id][attr] = time
     else
-      @user.data("Time")[className][id][attr] = time
-    @user.save("Time")
+      @user.data('Time')[className][id][attr] = time
+    @user.save('Time')
 
     return
 
   # Check if the variable `time` is greater than any times stored in the DB
   checkTime: (className, id, time) =>
 
-    return unless @findModel("Time", className)?[id]?
+    return unless @findModel('Time', className)?[id]?
 
     pass = yes
 
-    for attr of @findModel("Time", className)[id]
+    for attr of @findModel('Time', className)[id]
       val = @getTime(className, id, attr)
       if val > time then pass = no
 
@@ -221,24 +220,24 @@ class Sync
 
   # Emit event (goes to everyone)
   emit: (event, data) =>
-    LogEvent "Emitting '#{event}'"
+    LogEvent "Emitting '#{ event }'"
     @socket.emit(event, data)
 
   # Broadcast event (goes to everyone except @user)
   broadcast: (event, data) =>
-    LogEvent "Broadcasting '#{event}'"
+    LogEvent "Broadcasting '#{ event }'"
     @socket.broadcast.to(@user.id).emit(event, data)
 
   # Bind event to function
   on: (event, fn) =>
     @socket.on event, (args...) =>
-      LogEvent "Received '#{event}'"
+      LogEvent "Received '#{ event }'"
 
       if @userIsLoaded
         fn(args...)
 
       else
-        Log "User is not loaded yet. Will run on load."
+        Log 'User is not loaded yet. Will run on load.'
         @runOnUserLoad.push ->
           fn(args...)
 
@@ -269,7 +268,7 @@ class Sync
 
     # If the user is only logged in from one client then remove them from memory
     if io.sockets.clients(@user.id).length is 1
-      Log "... and has been removed from memory"
+      Log '... and has been removed from memory'
       User.release @user.id
 
   # Return all models in database
@@ -278,7 +277,7 @@ class Sync
     fn @exportModel(className)
 
   # Sometimes events can be sent to the server before we have loaded the user
-  # data from the server. So we store those events and then fire them when the 
+  # data from the server. So we store those events and then fire them when the
   # user data # has loaded.
 
   userIsLoaded: false
@@ -289,6 +288,15 @@ class Sync
   # Realtime Events
   # ---------------
 
+
+  #####################################
+  #    __   __   ___      ___  ___    #
+  #   /  ` |__) |__   /\   |  |__     #
+  #   \__, |  \ |___ /~~\  |  |___    #
+  #                                   #
+  #####################################
+
+
   # Create a new model
   create: (data, fn) =>
     [className, model] = data
@@ -297,39 +305,55 @@ class Sync
     # Generate new id
     if className is 'Setting'
       id = 1
-    else if className is "List" and model.id is "inbox"
+      model = @settingsValidate(model)
+
+    else if className is 'List' and model.id is 'inbox'
       id = model.id
-      if @hasModel("List", "inbox") then return
+      if @hasModel('List', 'inbox') then return
+    
     else
-      id = "s-" + @user.index(className)
+      id = 's-' + @user.index(className)
       @user.incrIndex className
       model.id = id
 
     # Add task to list
-    if className is "Task"
+    if className is 'Task'
       listId = model.list
       @taskAdd id, listId
-    else if className is "List"
+    else if className is 'List'
       model.tasks = []
 
     # Add item to server
     @setModel(className, id, model)
     # Set timestamp
     timestamp = data[2] or Date.now()
-    @setTime className, id, "all", timestamp
-    Log "Created #{className}: #{ model.name }"
+    @setTime className, id, 'all', timestamp
+    Log "Created #{ className }: #{ model.name }"
     # Broadcast event to connected clients
     @broadcast 'create', [className, model]
     # Return new ID
     if fn? then fn(id)
 
 
+
+  ####################################
+  #         __   __       ___  ___   #
+  #   |  | |__) |  \  /\   |  |__    #
+  #   \__/ |    |__/ /~~\  |  |___   #
+  #                                  #
+  ####################################
+
   # Update existing model
   update: (data) =>
     [className, changes] = data
     return unless className in SUPPORTED_CLASSES
-    id = changes.id
-    
+
+    if className is 'Setting'
+      id = 1
+      changes = @settingsValidate(changes)
+    else
+      id = changes.id
+
     # Check model exists on server
     if not @hasModel(className, id)
       Log "#{className} doesn't exist on server"
@@ -351,24 +375,32 @@ class Sync
       timestamps = {}
       now = Date.now()
       for k of changes
-        continue if k is "id"
+        continue if k is 'id'
         timestamps[k] = now
 
     @setTime className, id, timestamps
 
     # Update list
-    if className is "Task" and changes.list?
+    if className is 'Task' and changes.list?
       oldTask = @findModel className, id
       if oldTask.list isnt changes.list
         @taskMove id, oldTask.list, changes.list
 
     # Save to server
     model = @setModelAttributes className, id, changes
-    Log "Updated #{className}: #{ model.name }"
+    Log "Updated #{ className }: #{ model.name }"
 
     # Broadcast event to connected clients
     @broadcast 'update', [className, model]
 
+
+
+  ########################################
+  #    __   ___  __  ___  __   __        #
+  #   |  \ |__  /__`  |  |__) /  \ \ /   #
+  #   |__/ |___ .__/  |  |  \ \__/  |    #
+  #                                      #
+  ########################################
 
   # Delete existing model
   destroy: ([className, id], timestamp=Date.now()) =>
@@ -379,9 +411,9 @@ class Sync
     return unless @checkTime className, id, timestamp
 
     # Destroy all tasks within that list
-    if className is "List"
+    if className is 'List'
       for taskId in model.tasks
-        Log "Destroying Task #{taskId}"
+        Log "Destroying Task #{ taskId }"
         # TODO: Prevent server from broadcasting these changes
         #       And make the client delete the tasks
         @destroy ['Task', taskId]
@@ -396,8 +428,8 @@ class Sync
       deleted: yes
 
     # Set timestamp
-    @setTime className, id, "deleted", timestamp
-    Log "Destroyed #{className} #{id}"
+    @setTime className, id, 'deleted', timestamp
+    Log "Destroyed #{ className } #{ id }"
     @broadcast 'destroy', [className, id]
 
 
@@ -407,7 +439,7 @@ class Sync
 
   # Sync
   sync: (queue, fn) =>
-    Log "Running sync"
+    Log 'Running sync'
 
     # Map client IDs to server IDs -- for lists only
     client = {}
@@ -422,19 +454,19 @@ class Sync
 
       ## Handles client list IDs ##
 
-      # Example: You create a task in list "c-10"
-      # The list ID gets changed to "s-5" on the server
+      # Example: You create a task in list 'c-10'
+      # The list ID gets changed to 's-5' on the server
       # This code matches that list back to the task
 
-      if type in ["create", "update"] and
-      className is 'Task' and model.list.slice(0,2) is "c-"
+      if type in ['create', 'update'] and
+      className is 'Task' and model.list.slice(0,2) is 'c-'
 
         # The list hasn't been assigned a server ID yet
         if client[model.list] is undefined
 
           # We have already checked this task
           if model._missing
-            Log "We have a missing task!"
+            Log 'We have a missing task!'
             i++
             continue
 
@@ -447,27 +479,27 @@ class Sync
             continue
 
         else
-          Log "Found List ID #{model.list} has changed to #{client[model.list]}"
+          Log "Found List ID #{ model.list } has changed to #{ client[model.list] }"
           model.list = client[model.list]
           delete model._missing
 
       switch type
-        when "create"
+        when 'create'
           oldId = model.id
           @create [className, model, timestamp], (newId) ->
-            if className is "List"
-              Log "Changing List #{oldId} to #{newId}"
+            if className is 'List'
+              Log "Changing List #{ oldId } to #{ newId }"
               client[oldId] = newId
 
-        when "update"
+        when 'update'
           @update [className, model, timestamp]
 
-        when "destroy"
+        when 'destroy'
           @destroy [className, model, timestamp]
 
       i++
 
-    fn [@exportModel("Task"), @exportModel("List")] if fn
+    fn [@exportModel('Task'), @exportModel('List')] if fn
 
   # Make sure data is in the right format
   parse: (event, data) ->
@@ -480,20 +512,20 @@ class Sync
 
   # Add a task to a list
   taskAdd: (taskId, listId) ->
-    tasks = @findModel("List", listId).tasks
+    tasks = @findModel('List', listId).tasks
     return false unless tasks
     if tasks.indexOf(taskId) < 0
       tasks.push taskId
-      @setModelAttributes "List", listId, tasks:tasks
+      @setModelAttributes 'List', listId, tasks:tasks
 
   # Remove a task from a list
   taskRemove: (taskId, listId) ->
-    tasks = @findModel("List", listId).tasks
+    tasks = @findModel('List', listId).tasks
     return false unless tasks
     index = tasks.indexOf taskId
     if index > -1
       tasks.splice index, 1
-      @setModelAttributes "List", listId, tasks:tasks
+      @setModelAttributes 'List', listId, tasks:tasks
 
   # Move a task from list to another
   taskMove: (taskId, oldListId, newListId) ->
@@ -502,11 +534,26 @@ class Sync
 
   # Replace a task ID
   taskUpdateId: (oldId, newId, listId) ->
-    tasks = @findModel("List", listId).tasks
+    tasks = @findModel('List', listId).tasks
     index = tasks.indexOf oldId
     if index > -1
       tasks.spice index, 1, newId
-      @setModelAttributes "List", listId, tasks:tasks
+      @setModelAttributes 'List', listId, tasks:tasks
+
+
+  # -------------------
+  # Settings Validation
+  # -------------------
+
+  settingsValidate: (settings) ->
+    allowed = ['sort', 'weekStart', 'dateFormat', 'completedDuration',
+               'confirmDelete', 'night', 'language', 'notifications',
+               'notifyEmail', 'notifyTime', 'notifyRegular']
+    out = {}
+    for property in allowed
+      if settings.hasOwnProperty(property)
+        out[property] = settings[property]
+    return out
 
 
   # --------------------
@@ -532,18 +579,18 @@ class Sync
   emailList: (data) ->
     return false unless Array.isArray(data)
     [uid, listId, email] = data
-    require("./todo.html")(uid, listId)
+    require('./todo.html')(uid, listId)
       .then ([data, user]) ->
-        listName = user.data("List")[listId]?.name
+        listName = user.data('List')[listId]?.name
         options =
           to: email
           replyTo: user.email
-          from: "#{user.name} <hello@nitrotasks.com>"
-          subject: "I've sent you my #{listName} list"
+          from: "#{ user.name } <hello@nitrotasks.com>"
+          subject: "I've sent you my #{ listName } list"
           html: data
           generateTextFromHTML: true
         console.log options
-        require("./mail").send(options)
+        require('./mail').send(options)
       .fail (error) ->
         console.warn error
 
