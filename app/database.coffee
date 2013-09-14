@@ -10,9 +10,10 @@ Log = require('./log')('Database', 'blue')
 DATABASE = 'Nitro'
 
 db = mysql.createConnection
-  host: '127.0.0.1'
-  user: keychain('sql_user')
-  password: keychain('sql_pass')
+  host:      keychain('sql_host')
+  user:      keychain('sql_user')
+  password:  keychain('sql_pass')
+  port:      keychain('sql_port')
 
 # Connect to the MySQL server
 connect = ->

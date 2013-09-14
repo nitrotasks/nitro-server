@@ -5,7 +5,7 @@
 
     ------------------------------------------
 
-    This is the sync code. It's messy.
+    This is the sync code. It's a wee bit crazy.
 
 ###
                                            
