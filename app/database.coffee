@@ -11,7 +11,7 @@ db = mysql.createConnection
   user:      keychain('sql_user')
   password:  keychain('sql_pass')
   port:      keychain('sql_port')
-  database:  'Nitro'
+  database:  'nitrosync'
 
 # Connect to the MySQL server
 connect = ->
