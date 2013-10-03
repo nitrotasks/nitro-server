@@ -1,24 +1,39 @@
+###
+
+     __        __                     __  
+    /__` |__| |__) | |\ | |__/     | /__` 
+    .__/ |  | |  \ | | \| |  \ .\__/ .__/ 
+
+    -------------------------------------
+
+    Compacts an object by replacing the
+    property names with letters.
+    And then packing it into a buffer
+    using msgpack.
+
+    Customise the `tableTo` object.
+    
+    It exposes two methods:
+      - pack
+      - unpack
+
+    If you don't want to compress using
+    MsgPack, then pass true as the second
+    argument.
+
+###
+
+# Use MsgPack to compress data
+msgpack   = require 'msgpack'
+
 # Lookup table for compressing data
 tableTo =
-
-  # User
-  email:      "@"
-  password:   "X"
-  pro:        "$"
-  created_at: ":"
-  updated_at: "#"
-
-  data_Task: "dT"
-  data_List: "dL"
-  data_Time: "dX"
-
-  index_Task: "iT"
-  index_List: "iL"
 
   # Class names
   Task: "T"
   List: "L"
   Time: "M"
+  Setting: "S"
 
   # Properties
   name:      "n"
@@ -33,12 +48,13 @@ tableTo =
   permanent: "q"
   inbox:     "b"
 
+# Generate tableFrom object by inverting tableTo
 tableFrom = {}
-
 for k, v of tableTo
   tableFrom[v] = k
 
 # Get a value from the table
+# If value doesn't exist, then use the current value
 get = (name, table) ->
   table[name] or name
 
@@ -51,21 +67,23 @@ replace = (obj, table) ->
         out[get(key, table)] = replace(value, table)
     else
       out[get(key, table)] = value
-  out
+  return out
 
+# Make sure object is an object
 makeObj = (obj) ->
   if typeof obj is "string"
-    try
-      obj = JSON.parse obj
-    catch e
-      return {}
-  obj
+    try obj = JSON.parse obj
+    catch e then return {}
+  return obj
 
 Shrink =
-  compress: (obj) ->
-    replace(makeObj(obj), tableTo)
+  pack: (obj, asJSON) ->
+    data = replace(makeObj(obj), tableTo)
+    if asJSON then return data
+    msgpack.pack(data)
 
-  expand: (obj) ->
+  unpack: (obj, asJSON) ->
+    if not asJSON then obj = msgpack.unpack(obj)
     replace(makeObj(obj), tableFrom)
 
 module?.exports = Shrink

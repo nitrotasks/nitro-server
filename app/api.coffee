@@ -1,26 +1,33 @@
 Q        = require 'q'
 express  = require 'express'
 Auth     = require './auth'
-User     = require './storage'
+User     = require './user'
 Mail     = require './mail'
 TodoTxt  = require './todo.txt'
 TodoHtml = require './todo.html'
 
+# Create and configure express app
 app = express()
-
-# Serve up static files in the public folder
 app.configure ->
-  # app.use express.static('/var/www/html/nitro/public')
+
+  # Parse POST requests
   app.use express.bodyParser()
 
-  # Allow CORS
+  # Allow CORS on alll domains
   app.all '/*', (req, res, next) ->
     res.header 'Access-Control-Allow-Origin', '*'
     res.header 'Access-Control-Allow-Headers', 'X-Requested-With'
     next()
 
-config =
-  url: 'http://sync.nitrotasks.com:443/api'
+# Basic configuration
+config = {}
+
+# Set url
+config.url = if global.DebugMode
+  'http://localhost:8080/api'
+else
+  'http://sync.nitrotasks.com:443/api'
+
 
 # GET and POST requests
 api =
@@ -29,11 +36,10 @@ api =
   # PayPal integration
   # ------------------
 
+  # Return the pro status of a user
   'get_pro': (req, res) ->
     uid = req.param('uid')
     # code = req.body.code
-    console.log uid
-
     User.get(uid)
       .then (user) ->
         user.changeProStatus(1)
@@ -75,8 +81,10 @@ api =
     token = req.params[0]
     Auth.verifyRegistration(token)
       .then (user) ->
+        if DebugMode then return res.send('success')
         res.sendfile('./pages/auth_success.html')
       .fail (err) ->
+        if DebugMode then return res.send('error')
         res.sendfile('./pages/error.html')
 
 
@@ -160,6 +168,7 @@ api =
         res.sendfile('./pages/reset_email.html')
 
       .fail (err) ->
+        if DebugMode then return res.send('error')
         res.status(400).sendfile('./pages/error.html')
 
   'get_forgot/*': (req, res) ->
@@ -167,8 +176,9 @@ api =
     User.checkResetToken(token)
       .then ->
         res.sendfile('./pages/reset_form.html')
-        .fail (err) ->
-          res.sendfile('./pages/error.html')
+      .fail (err) ->
+        if DebugMode then return res.send('error')
+        res.sendfile('./pages/error.html')
 
   'post_forgot/*': (req, res) ->
     password = req.body.password

@@ -1,8 +1,8 @@
-bcrypt  = require "bcrypt"
-User    = require "./storage"
-oauth   = require "./oauth"
-Q       = require "q"
-Keys    = require "./keychain"
+bcrypt  = require 'bcrypt'
+User    = require './user'
+oauth   = require './oauth'
+Q       = require 'q'
+Keys    = require './keychain'
 
 class Auth
 
@@ -32,7 +32,7 @@ class Auth
             User.add({
               name: name
               email: email
-              password: "*"
+              password: '*'
               service: service })
               .then (user) ->
                 deferred.resolve [
@@ -72,8 +72,8 @@ class Auth
 
   # Generate a random string
   @createToken: (len=64) ->
-    token = ""
-    chars = "-_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    token = ''
+    chars = '-_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     for i in [1..len] by 1
       key = Math.floor(Math.random() * chars.length)
       token += chars[key]
@@ -89,10 +89,9 @@ class Auth
   @login: (email, password) =>
     deferred = Q.defer()
     User.getByEmail(email)
-      .fail( -> deferred.reject("err_bad_pass") )
       .then (user) =>
         @compare(password, user.password).then (same) =>
-          if not same then return deferred.reject("err_bad_pass")
+          if not same then return deferred.reject('err_bad_pass')
           # Generate login token for user
           deferred.resolve [
             user.id
@@ -101,6 +100,8 @@ class Auth
             user.name
             user.pro
           ]
+      .fail ->
+        deferred.reject('err_bad_pass')
     return deferred.promise
 
   @register: (name, email, pass) =>
@@ -109,15 +110,15 @@ class Auth
     valid = yes
 
     if name.length is 0
-      deferred.reject("err_bad_name")
+      deferred.reject('err_bad_name')
       valid = no
 
     if email.length is 0
-      deferred.reject("err_bad_email")
+      deferred.reject('err_bad_email')
       valid = no
 
     if pass.length is 0
-      deferred.reject("err_bad_pass")
+      deferred.reject('err_bad_pass')
       valid = no
 
     if valid
@@ -157,7 +158,7 @@ class Auth
         User.addResetToken user.id, token
         deferred.resolve(token)
       .fail ->
-        deferred.reject "err_bad_email"
+        deferred.reject 'err_bad_email'
     deferred.promise
 
 module?.exports = Auth
