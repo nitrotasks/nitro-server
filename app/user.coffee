@@ -1,117 +1,60 @@
-nodeRedis = require "redis"
-Q         = require "q"
-shrink    = require "./shrink"
-msgpack   = require "msgpack"
-fs        = require "fs"
-_         = require "lodash"
-
-#------
-# Redis
-# -----
-
-if process.env.REDISTOGO_URL
-  # Using Redis-To-Go
-  rtg = require("url").parse(process.env.REDISTOGO_URL)
-  redis = nodeRedis.createClient(rtg.port, rtg.hostname)
-  redis.auth(rtg.auth.split(":")[1])
-
-else
-  # Using local Redis server
-  redis = nodeRedis.createClient()
-
-redis.setnx "users:index", "-1"
+nodeRedis = require 'redis'
+Q         = require 'q'
+_         = require 'lodash'
+dbase     = require './database'
+Log       = require('./log')('User', 'green')
 
 
-# ---------------
-# Private Methods
-# ---------------
+#==============================================================================
+# Data structure
+#==============================================================================
 
-File =
-
-  # Write user object to file
-  write: (user) ->
-    deferred = Q.defer()
-    obj =
-      id: parseInt(user.id, 10)
-      name: user.name
-      email: user.email
-      password: user.password
-      pro: user.pro
-      data_Task: user.data_Task or {}
-      data_List: user.data_List or {}
-      data_Time: user.data_Time or {}
-      index_Task: user.index_Task or 0
-      index_List: user.index_List or 0
-      created_at: parseInt(user.created_at, 10)
-      updated_at: Date.now()
-    [path, folder] = User.filename(obj.id)
-    # Compress object
-    data = msgpack.pack shrink.compress(obj)
-    # Make sure folder exists
-    if obj.id % 100 is 0
-      fs.mkdir folder, ->
-        # Save file
-        fs.writeFile(path, data, deferred.resolve)
-    else
-      # Save file
-      fs.writeFile(path, data, deferred.resolve)
-    return deferred.promise
-
-  # Read user file
-  read: (id) ->
-    deferred = Q.defer()
-    [path, folder] = User.filename(id)
-    fs.readFile path, (err, buffer) =>
-      if err then return deferred.reject("err_no_file")
-      data = shrink.expand msgpack.unpack(buffer)
-      deferred.resolve(data)
-    return deferred.promise
-
-  # Delete user file
-  del: (id) ->
-    deferred = Q.defer()
-    path = User.filename(id)[0]
-    fs.unlink path, deferred.resolve
-    return deferred.promise
-
-# Cache filenames
-__cache__filename = {}
+#   user = {
+#     id: int,
+#     name: string,
+#     email: string,
+#     password: string,
+#     pro: boolean,
+#     data_Task: object,/
+#     data_List: object,
+#     data_Time: object,
+#     index_Task: int,
+#     index_List: int,
+#     created_at: date,
+#     updated_at: date
+#   };
 
 
-# ----------
+#==============================================================================
+# Databases
+#==============================================================================
+
+# Connect to MySQL database
+dbase.connect()
+
+# Connect to Redis
+redis = nodeRedis.createClient()
+# redis.flushdb()
+
+
+#==============================================================================
 # User Class
-# ----------
+#==============================================================================
 
 class User
   @records: {}
-
-  # Generate filename for a user ID
-  # 4321 -> ["users/4300-4399/4321.usr", "users/4300-4399", "4321.usr"]
-  @filename: (id) ->
-    if id of __cache__filename
-      return __cache__filename[id]
-    else
-      group  = Math.floor(parseInt(id,10)/100)*100
-      max    = group + 99
-      folder = "users/#{group}-#{max}"
-      file   = "#{id}.usr"
-      path   = "#{folder}/#{file}"
-      array  = [path, folder, file]
-      __cache__filename[id] = array
-      return array
 
   # Register user data in a temporary key until they have verified their account
   @register: (token, name, email, password) ->
     deferred = Q.defer()
     @emailExists(email).then (exists) ->
-      if exists then return deferred.reject("err_old_email")
+      if exists then return deferred.reject('err_old_email')
       key = "register:#{token}"
       redis.hmset key,
         name: name
         email: email
         password: password
-      # Expire this key in 48 hours
-      redis.expire(key, 172800)
+      redis.expire(key, 172800) # 48 hours
       deferred.resolve(token)
     return deferred.promise
 
@@ -129,23 +72,33 @@ class User
   # Add user to database and return user as instance
   @add: (options) =>
     deferred = Q.defer()
+
+    # Make sure email is unique
     @emailExists(options.email).then (exists) =>
+
       if exists then return deferred.reject("err_old_email")
-      redis.incr "users:index", (err, id) =>
-        user =
-          id: id
-          name: options.name
-          password: options.password
-          email: options.email
-          pro: 0
-          created_at: Date.now()
-        # Add to lookup
-        options.service ?= "native"
-        redis.hset "users:#{options.service}", options.email, id
-        # Resolve promise
-        File.write(user).then =>
-          @get(id)
-            .then deferred.resolve, console.error
+
+      user =
+        name: options.name
+        password: options.password
+        email: options.email
+        pro: 0
+        created_at: new Date()
+
+      # Add user to database
+      dbase.user.write(user)
+        .then (id) =>
+
+          # Add ID to lookup table
+          options.service ?= "native"
+          redis.hset "users:#{options.service}", options.email, id
+
+          # Load user into memory and resolve
+          @get(id).then deferred.resolve, console.error
+
+        .fail ->
+          Log 'Error writing user to database!'
+
     return deferred.promise
 
   # Get user from database by ID
@@ -153,7 +106,7 @@ class User
     deferred = Q.defer()
     user = @records[id]
     if not user
-      File.read(id)
+      dbase.user.read(id)
         .then (data) =>
           user = @records[id] = new @(data)
           deferred.resolve user._clone()
@@ -186,17 +139,18 @@ class User
       return unless user
       @release(id)
       redis.hdel "users:native", user.email
-      File.del(id).then deferred.resolve
+      dbase.user.delete(id).then deferred.resolve
       return
     return deferred.promise
 
   # Remove record from JS memory
-  # User is still stored in Redis
+  # User is still stored in Database
   # Instances will still work
   # Should only be used when all users have logged out though
   # Because you can't reconnect the instance to the record
   @release: (id) =>
-    File.write @records[id]
+    Log "Removing record #{ id }"
+    dbase.user.write @records[id]
     @records[id]._released = true
     delete @records[id]
 
@@ -243,8 +197,6 @@ class User
     @_load atts if atts
     # Throttle writes to once per 5 seconds
     @_write = _.throttle @__write, 5000
-    # Save filename
-    @_filename = @.constructor.filename(@id)
 
   _clone: =>
     Object.create(this)
@@ -257,10 +209,11 @@ class User
 
   # Write user data to disk (used with _.throttle in constructor)
   __write: =>
+    Log "Writing data to disk"
     # Don't save to disk if the user has been released
     return if @_released
     # Create user object
-    File.write(@)
+    dbase.user.write(this)
 
   # Change a value
   _set: (key, value) =>
