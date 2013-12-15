@@ -2,88 +2,118 @@ assert = require 'assert'
 User = require '../app/user'
 Q = require 'q'
 
+User._redis.flushdb()
+global.DebugMode = true
+
 users = [
-  ['stayradiated', 'george@czabania.com', 'password']
-  ['consindo', 'jono@jonocooper.com', 'another password']
-  ['teqnoqolor', 'dev@stayradiated.com', 'drowssap']
+  {name: 'stayradiated', email: 'george@czabania.com', password: 'password'}
+  {name: 'consindo', email: 'jono@jonocooper.com', password: 'another password'}
+  {name: 'teqnoqolor', email: 'dev@stayradiated.com', password: 'drowssap'}
 ]
 
 describe 'Storage API', ->
 
   it 'should be able to add users', (done) ->
-    users.forEach (user, i, array) ->
-      User.add(
-        name: user[0]
-        email: user[1]
-        password: user[2]
-      ).then (data) ->
-        assert.equal data.name, user[0]
-        assert.equal data.email, user[1]
-        assert.equal data.password, user[2]
-        if i is array.length - 1
-          done()
 
-  it 'should not allow duplicate email addresses', ->
+    console.log '\n Add Users \n'
+
     users.forEach (user, i, array) ->
-      User.add({name:user[0], email:user[1], password:user[2]}).fail ->
-        done()
+      User.add(user).then (data) ->
+        assert.equal data.name, user.name
+        assert.equal data.email, user.email
+        assert.equal data.password, user.password
+        if i is array.length - 1 then done()
+
+  it 'should not allow duplicate email addresses', (done) ->
+    users.forEach (user, i, array) ->
+      User.add(user).fail (e) ->
+        if i is array.length - 1 then done()
+
+  it 'emailExists should return false if an email doesn\'t exist', (done) ->
+    User.emailExists('joe@smith.com').then (exists) ->
+      assert.equal exists, false
+      done()
+
+  it 'emailExists should return true if an email exists', (done) ->
+    users.forEach (user, i, array) ->
+      User.emailExists(user.email).then (exists) ->
+        assert.equal exists, true
+        if i is array.length - 1 then done()
 
   it 'should get users by email', (done) ->
+
+    console.log '\n Users By Email \n'
+
     users.forEach (user, i, array) ->
-      User.getByEmail(user[1])
-      .then(
-        (data) ->
-          assert.equal user[1], data.email
+      User.getByEmail(user.email)
+        .then (data) ->
+          assert.equal user.email, data.email
           # Save user ID so we can use it future tests
-          array[i][3] = data.id
+          users[i].id = data.id
           if i is array.length - 1 then done()
-        (err) ->
-          console.log err
-      )
+        .fail (err) ->
+          console.log 'ERROR', err
 
   it 'should fail if you try and get a non-existant user by email', (done) ->
-    User.getByEmail('john@example.com').then(
-      (data) ->
+
+    console.log '\n Users By Email \n'
+
+    User.getByEmail('john@example.com')
+      .then (data) ->
         console.log data
-      (err) ->
+      .fail (err) ->
         done()
-    )
 
   it 'should let users change their password', (done) ->
-    Q.spread [
-        User.get(users[0][3])
-        User.get(users[0][3])
-    ], (u1, u2) ->
-      u1.changePassword('my-new-password')
+
+    console.log '\n Change Password \n'
+
+    Q.all([
+      User.get(users[0].id)
+      User.get(users[0].id)
+    ]).then ([u1, u2]) ->
+      u1.setPassword 'my-new-password'
       assert.equal 'my-new-password', u1.password
       assert.equal 'my-new-password', u2.password
       done()
 
   it 'should let users change their email address', (done) ->
-    newEmail = users[1][1] = 'example@mail.com'
-    Q.spread [
-      User.get(users[1][3])
-      User.get(users[1][3])
-    ], (u1, u2) ->
-      u1.changeEmail(newEmail).then( ->
-        assert.equal newEmail, u1.email, u2.email
-      ).then( ->
-        User.getByEmail(newEmail)
-      ).then (u3) ->
-        assert.equal u3.name, users[1][0]
-        done()
+
+    console.log '\n Change Email \n'
+
+    user = users[1]
+    newEmail = user.email = 'example@mail.com'
+
+    Q.all([
+      User.get(user.id)
+      User.get(user.id)
+    ]).then ([u1, u2]) ->
+      u1.setEmail(newEmail)
+        .then ->
+          assert.equal newEmail, u1.email, u2.email
+        .then ->
+          User.getByEmail(newEmail)
+        .then (u3) ->
+          assert.equal u3.name, user.name
+          done()
 
   it 'should let users change their pro status', (done) ->
+
+    console.log '\n Change Pro \n'
+
     hasPro = '1'
-    Q.spread [
-      User.get(users[2][3])
-      User.get(users[2][3])
-    ], (u1, u2) ->
-      u2.changeProStatus(hasPro)
+    user = users[1]
+    Q.all([
+      User.get(user.id)
+      User.get(user.id)
+    ]).then ([u1, u2]) ->
+      u2.setPro hasPro
       assert.equal hasPro, u1.pro, u2.pro
       done()
 
   it 'should save user data', (done) ->
+
+    console.log '\n Save User Data \n'
 
     tasks =
       '1':
@@ -96,72 +126,94 @@ describe 'Storage API', ->
         date: 1355863711407
         priority: '1'
         notes: 'Not many notes'
+
     lists =
       '1':
-        name: 'List 1'
+        name: 'list 1'
       '2':
-        name: 'List 2'
+        name: 'list 2'
 
-    Q.spread [
-      User.get(users[1][3])
-      User.get(users[1][3])
-    ], (u1, u2) ->
-      u1.data('Task', tasks)
-      u1.save('Task')
-      u2.data('List', lists)
-      u2.save('List')
+    user = users[1]
 
-      assert.equal tasks, u1.data('Task'), u2.data('Task')
-      assert.equal lists, u1.data('List'), u2.data('List')
+    Q.all([
+      User.get(user.id)
+      User.get(user.id)
+    ]).then ([u1, u2]) ->
+
+      u1.data('task', tasks)
+      u1.save('task')
+
+      u2.data('list', lists)
+      u2.save('list')
+
+      assert.equal tasks, u1.data('task'), u2.data('task')
+      assert.equal lists, u1.data('list'), u2.data('list')
 
       # Release the user
       # This forces User.get() to fetch the data from disk
-      User.release(users[1][3])
-      User.get(users[1][3]).then (u3) ->
-        assert.deepEqual tasks, u3.data('Task')
-        u3.data('Task')['1'].name = 'Task 1 - Changed'
+      User.release(user.id)
+      User.get(user.id).then (u3) ->
+        assert.deepEqual tasks, u3.data 'task'
+        u3.data('task')[1].name = 'task 1 - Changed'
         u3.save()
         done()
 
   it 'should increment data index', (done) ->
-    User.get(users[1][3]).then (user) ->
+
+    console.log '\n Increment Data Index \n'
+
+    user = users[1]
+    User.get(user.id).then (user) ->
       index = user.index 'Fake'
-      Q.fcall( ->
-        user.incrIndex('Fake')
-      ).then( ->
-        assert.equal ++index, user.index 'Fake'
-        user.incrIndex('Fake')
-      ).then( ->
-        assert.equal ++index, user.index 'Fake'
-        done()
-      )
+      user.incrIndex 'Fake'
+      assert.equal ++index, user.index 'Fake'
+      user.incrIndex 'Fake'
+      assert.equal ++index, user.index 'Fake'
+      done()
 
   it 'should be able to release users from JS memory', (done) ->
-    assert.notEqual User.records[users[2][3]], undefined
-    User.release users[2][3]
-    assert.equal User.records[users[2][3]], undefined
-    done()
+
+    console.log '\n Release Users \n'
+
+    user = users[2]
+    assert.notEqual User.records[user.id], undefined
+    User.release(user.id).then ->
+      assert.equal User.records[user.id], undefined
+      done()
 
   it 'should be able to delete users from disk', (done) ->
+
+    console.log '\n Delete From Disk \n'
+
     users.forEach (user, i, array) ->
-      User.remove(user[3]).then ->
-        User.get(user[3]).fail ->
-          if i is array.length - 1
-            done()
+      User.remove(user.id)
+        .then ->
+          User.get(user.id)
+        .fail ->
+          if i is array.length - 1 then done()
 
   it 'should register users temporarily until verified', (done) ->
+
+    console.log '\n Register User \n'
+
     user =
       name: 'George'
       email: 'mail@example.com'
       password: 'abc123'
 
-    User.register('1234567890', user.name, user.email, user.password)
+    User.register('1234567890', user)
       .then (token) ->
-        User.getRegistration(token).then (data) ->
-          assert.equal user.name, data.name
-          assert.equal user.email, data.email
-          assert.equal user.password, data.password
-          done()
+        User.getRegistration token
+      .then (data) ->
+        assert.equal user.name, data.name
+        assert.equal user.email, data.email
+        assert.equal user.password, data.password
+        done()
+
+  it 'should fail if registration token is not found', (done) ->
+
+    console.log '\n Miss Registration \n'
 
     User.getRegistration('abc').fail (err) ->
-      assert.equal(err, 'err_bad_token')
+      assert.equal err.message, 'err_bad_token'
+      done()

@@ -1,5 +1,5 @@
 nodeRedis = require 'redis'
-Q         = require 'q'
+Q         = require 'kew'
 _         = require 'lodash'
 dbase     = require './database'
 Log       = require('./log')('User', 'green')
@@ -10,20 +10,27 @@ Log       = require('./log')('User', 'green')
 #==============================================================================
 
 #   user = {
-#     id: int,
-#     name: string,
-#     email: string,
-#     password: string,
-#     pro: boolean,
-#     data_Task: object,/
-#     data_List: object,
-#     data_Time: object,
-#     index_Task: int,
-#     index_List: int,
-#     created_at: date,
-#     updated_at: date
+#     id:          int,
+#     name:        string,
+#     email:       string,
+#     password:    string,
+#     pro:         boolean,
+#     data_task:   object,
+#     data_list:   object,
+#     data_time:   object,
+#     index_task:  int,
+#     index_list:  int,
+#     created_at:  date,
+#     updated_at:  date
 #   };
 
+#==============================================================================
+# Errors
+#==============================================================================
+
+ERR_OLD_EMAIL = new Error 'err_old_email'
+ERR_BAD_TOKEN = new Error 'err_bad_token'
+ERR_NO_USER   = new Error 'err_no_user'
 
 #==============================================================================
 # Databases
@@ -34,72 +41,92 @@ dbase.connect()
 
 # Connect to Redis
 redis = nodeRedis.createClient()
-# redis.flushdb()
-
 
 #==============================================================================
 # User Class
 #==============================================================================
 
 class User
+
+  ###
+   * User._redis
+   * Expose the redis connection to make testing easier
+  ###
+
+  @_redis: redis
+
+  ###
+   * User.records
+   * This object holds all of the user instances
+   * that are currently stored in memory.
+  ###
+
   @records: {}
 
-  # Register user data in a temporary key until they have verified their account
-  @register: (token, name, email, password) ->
-    deferred = Q.defer()
-    @emailExists(email).then (exists) ->
-      if exists then return deferred.reject('err_old_email')
-      key = "register:#{token}"
-      redis.hmset key,
-        name: name
-        email: email
-        password: password
-      redis.expire(key, 172800) # 48 hours
-      deferred.resolve(token)
-    return deferred.promise
+  ###
+   * User.register
+   * This will store user data in a temporary key until
+   * they have verified their account.
+   * The email used must not exist in the database.
+   * - token (string) : special id assigned to the data
+   * - user (object) : { name, email, password }
+   * > token
+   * ! err_old_email
+  ###
 
-  # Check if registration token exists
+  @register: (token, info) ->
+    @emailExists(info.email).then (exists) ->
+      if exists then throw ERR_OLD_EMAIL
+      key = "register:#{ token }"
+      redis.hmset key, info
+      redis.expire key, 172800 # 48 hours
+      return token
+
+  ###
+   * User.getRegistration
+   * This will check if registration token exists.
+   * If the token can't be found an error will be thrown.
+   * If it is found then the registration will be deleted
+   * and the user data returned.
+   * - token (string) : the registration token
+   * > return user data
+   * ! err_bad_token
+  ###
+
   @getRegistration: (token) ->
     deferred = Q.defer()
-    redis.hgetall "register:#{token}", (err, data) ->
-      if err or not data?
-        return deferred.reject("err_bad_token")
-      deferred.resolve data
-      # Token is deleted to avoid duplications
-      redis.del "register:#{token}"
-    return deferred.promise
+    redis.hgetall "register:#{ token }", deferred.makeNodeResolver()
+    return deferred.then (data) ->
+      if not data? then throw ERR_BAD_TOKEN
+      redis.del "register:#{ token }"
+      return data
+
+
+  ###
+   * User.add
+   * This will add a user to the database
+   * It will then return a new instance of the user
+   * - user (object) : { name, email, password }
+  ###
 
   # Add user to database and return user as instance
-  @add: (options) =>
-    deferred = Q.defer()
+  @add: (user, service='native') =>
+    @emailExists(user.email).then (exists) =>
+      if exists then throw ERR_OLD_EMAIL
 
-    # Make sure email is unique
-    @emailExists(options.email).then (exists) =>
-
-      if exists then return deferred.reject("err_old_email")
-
-      user =
-        name: options.name
-        password: options.password
-        email: options.email
-        pro: 0
-        created_at: new Date()
+      user.pro = 0
+      user.created_at = new Date()
 
       # Add user to database
       dbase.user.write(user)
-        .then (id) =>
-
-          # Add ID to lookup table
-          options.service ?= "native"
-          redis.hset "users:#{options.service}", options.email, id
-
-          # Load user into memory and resolve
-          @get(id).then deferred.resolve, console.error
-
         .fail ->
           Log 'Error writing user to database!'
-
-    return deferred.promise
+        .then (id) =>
+          Log 'Setting user to redis', id
+          # Add ID to lookup table
+          redis.hset "users:#{ service }", user.email, id
+          # Load user into memory
+          @get(id).fail console.error
 
   # Get user from database by ID
   @get: (id) =>
@@ -107,41 +134,44 @@ class User
     user = @records[id]
     if not user
       dbase.user.read(id)
-        .then (data) =>
-          user = @records[id] = new @(data)
-          deferred.resolve user._clone()
         .fail (err) ->
-          deferred.reject("err_no_user")
+          deferred.reject ERR_NO_USER
+        .then (data) =>
+          user = @records[id] = new User(data)
+          deferred.resolve user
     else
-      deferred.resolve user._clone()
+      deferred.resolve user
     return deferred.promise
 
-  @getByEmail: (email, service="native") ->
+  @getByEmail: (email, service='native') ->
     deferred = Q.defer()
-    redis.hget "users:#{service}", email, (err, id) =>
-      if id is null then return deferred.reject("User not found")
-      @get(id)
-        .then(deferred.resolve, deferred.reject)
-    return deferred.promise
+    redis.hget "users:#{ service }", email, deferred.makeNodeResolver()
+    deferred.then (id) =>
+      if id is null then return deferred.reject ERR_NO_USER
+      return @get(id)
 
-  @emailExists: (email, service="native") ->
+  @emailExists: (email, service='native') ->
     deferred = Q.defer()
-    redis.hexists "users:#{service}", email, (err, exists) ->
-      if exists is 0
-        return deferred.resolve no
-      else
-        return deferred.resolve yes
-    return deferred.promise
+    redis.hexists "users:#{ service }", email, deferred.makeNodeResolver()
+    return deferred.then (exists) ->
+      return exists isnt 0
 
-  @remove: (id, service="native") =>
-    deferred = Q.defer()
+  @remove: (id, service='native') =>
+    Log "Removing record #{ id }"
+
     @get(id).then (user) =>
       return unless user
-      @release(id)
-      redis.hdel "users:native", user.email
-      dbase.user.delete(id).then deferred.resolve
-      return
-    return deferred.promise
+      email = user.email
+
+      # We could use @release(id), but then it would write
+      # it to the database, and then we instantly delete it
+      @records[id]._released = true
+      delete @records[id]
+
+      Q.all [
+        redis.hdel "users:#{ service }", user.email
+        dbase.user.delete id
+      ]
 
   # Remove record from JS memory
   # User is still stored in Database
@@ -149,69 +179,58 @@ class User
   # Should only be used when all users have logged out though
   # Because you can't reconnect the instance to the record
   @release: (id) =>
-    Log "Removing record #{ id }"
-    dbase.user.write @records[id]
+    Log "Releasing record #{ id }"
+    promise = dbase.user.write @records[id]
     @records[id]._released = true
     delete @records[id]
+    return promise
 
   # Login tokens expire after 2 weeks
   @addLoginToken: (id, token) =>
-    redis.setex "token:#{id}:#{token}", 1209600, Date.now()
+    redis.setex "token:#{ id }:#{ token }", 1209600, Date.now()
 
   @checkLoginToken: (id, token) =>
     deferred = Q.defer()
-    redis.exists "token:#{id}:#{token}", (err, exists) ->
-      if err then return deferred.reject(err)
-      if exists is 0 then return deferred.resolve(no)
-      else return deferred.resolve(yes)
-    deferred.promise
+    redis.exists "token:#{ id }:#{ token }", (err, exists) ->
+      if err then return deferred.reject err
+      deferred.resolve exists isnt 0
+    return deferred.promise
 
   # Token will expire in 24 hours (86400 seconds)
   @addResetToken: (id, token) ->
-    redis.setex "forgot:#{token}", 86400, id
+    redis.setex "forgot:#{ token }", 86400, id
 
   @checkResetToken: (token) ->
     deferred = Q.defer()
-    redis.get "forgot:#{token}", (err, id) ->
-      if err then return deferred.reject(err)
-      if id is null then return deferred.reject("err_bad_token")
+    redis.get "forgot:#{ token }", (err, id) ->
+      if err then return deferred.reject err
+      if id is null then return deferred.reject ERR_BAD_TOKEN
       deferred.resolve id
-    deferred.promise
+    return deferred.promise
 
   @removeResetToken: (token) ->
-    redis.del "forgot:#{token}"
+    redis.del "forgot:#{ token }"
 
 
-  # Notifications
-  @addNotification: (uid, time, type) ->
-    # notifications:<time> = {
-    #   <uid> = <type>
-    # }
-
-
-  # ----------------
-  # Instance Methods
-  # ----------------
+#==============================================================================
+# INSTANCE METHODS
+#==============================================================================
 
   constructor: (atts) ->
     @_load atts if atts
     # Throttle writes to once per 5 seconds
     @_write = _.throttle @__write, 5000
 
-  _clone: =>
-    Object.create(this)
-
   # Load attributes
   _load: (atts) =>
-    for key, value of atts
-      @[key] = value
-    return @
+    @[key] = value for key, value of atts
+    return this
 
   # Write user data to disk (used with _.throttle in constructor)
   __write: =>
-    Log "Writing data to disk"
     # Don't save to disk if the user has been released
     return if @_released
+    Log 'Writing data to disk'
     # Create user object
     dbase.user.write(this)
 
@@ -231,7 +250,7 @@ class User
 
   # Just an easy way to get user data
   data: (className, replaceWith) =>
-    key = "data_#{className}"
+    key = "data_#{ className }"
     # Easy way to replace an entire key
     if replaceWith?
       @[key] = replaceWith
@@ -242,43 +261,43 @@ class User
 
   # Get the index for a dataset
   index: (className) =>
-    key = "index_#{className}"
+    key = "index_#{ className }"
     index = @[key]
     return index ? @_set(key, 0)
 
   # Increase the index for a class by one
   incrIndex: (className) =>
-    key = "index_#{className}"
+    key = "index_#{ className }"
     value = @[key] ? 0
     @_set key, ++value
     return value
 
   # Change data
   save: (className) =>
-    @_set("data_#{className}", @["data_#{className}"])
+    @_set "data_#{ className }", @["data_#{ className }"]
     return
 
   # Change Password
-  changePassword: (newPassword) =>
+  setPassword: (newPassword) =>
     deferred = Q.defer()
     # Delete login tokens
-    redis.keys "token:#{@id}:*", (err, data) ->
+    redis.keys "token:#{ @id }:*", (err, data) ->
       for token in data
         redis.del token
       deferred.resolve
     # Save password
-    @_set("password", newPassword)
+    @_set('password', newPassword)
     return deferred.promise
 
   # Change email
-  changeEmail: (newEmail, service="native") =>
+  setEmail: (newEmail, service='native') =>
     deferred = Q.defer()
-    redis.hdel "users:#{service}", @email
-    redis.hset "users:#{service}", newEmail, @id, deferred.resolve
-    @_set("email", newEmail)
-    deferred.promise
+    redis.hdel "users:#{ service }", @email
+    redis.hset "users:#{ service }", newEmail, @id, deferred.makeNodeResolver()
+    @_set 'email', newEmail
+    return deferred.promise
 
-  changeProStatus: (status) =>
-    @_set("pro", status)
+  setPro: (status) =>
+    @_set 'pro', status
 
-module?.exports = User
+module.exports = User
