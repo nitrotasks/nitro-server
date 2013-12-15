@@ -1,4 +1,4 @@
-# Nitro Sync (version 2) #
+# Nitro Sync 2.1 #
 
 ## Requirements ##
 - Node.js and NPM
@@ -7,18 +7,19 @@
 - MySQL Server
 
 ## To install and run ##
-- `npm install .` to install the dependencies
+- `npm install` to install the dependencies
 - `redis-server` to start Redis
-- `coffee app.coffee` to run the app
+- `coffee app/init.coffee` to run the app
 
 ## To start in debug mode ##
 - Enables logging
 - Sends registration tokens directly back to user instead of by email (Check browser console when registering)
-- `coffee app.coffee --debug`
+- `coffee app/init.coffee --debug`
 
 ## To test ##
-- Install Mocha
-- `mocha --compilers coffee:coffee-script test/<filename>.coffee`
+- `npm test` - to test everything
+- `mocha --compilers coffee:coffee-script test/<filename>.coffee` - to test
+  only some things.
 
 # About Nitro Sync
 
@@ -39,7 +40,7 @@ Data stored on MySQL includes
     - ID
     - Name
     - Email
-    - Password hash
+    - Password (bcrypt hash)
     - Task data
     - List data
     - Task and list timestamps (for merging data)
