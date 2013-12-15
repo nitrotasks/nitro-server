@@ -43,7 +43,7 @@ node_modules
 *.sublime-project
 *.sublime-workspace
 .junk
-/keychain
+/keychain*
 /users/*-*
 /bin/index.js
 /bin/app/*
