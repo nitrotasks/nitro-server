@@ -1,20 +1,22 @@
+Q       = require 'kew'
 bcrypt  = require 'bcrypt'
 User    = require './user'
 oauth   = require './oauth'
-Q       = require 'q'
 Keys    = require './keychain'
 
-class Auth
+Auth =
 
-  @oauth:
+  oauth:
 
     request: oauth.request
     verify: oauth.verify
     access: oauth.access
 
     login: (service, access) ->
-      deferred = Q.defer()
+      deferred = Promise.defer()
+
       oauth.userinfo(service, access).then ([email, name]) ->
+
         User.getByEmail(email, service)
 
           # User already exists, so we can sign them in
@@ -28,7 +30,7 @@ class Auth
             ]
 
           # User doesn't exist, so we register them
-          .fail ->
+          .otherwise ->
             User.add({
               name: name
               email: email
@@ -47,7 +49,7 @@ class Auth
 
       return deferred.promise
 
-  @hash: (data, salt) ->
+  hash: (data, salt) ->
     deferred = Q.defer()
 
     hash = (salt) ->
@@ -63,7 +65,7 @@ class Auth
 
     return deferred.promise
 
-  @compare: (data, hash) ->
+  compare: (data, hash) ->
     deferred = Q.defer()
     bcrypt.compare data, hash, (err, same) ->
       if err then return deferred.reject()
@@ -71,7 +73,7 @@ class Auth
     return deferred.promise
 
   # Generate a random string
-  @createToken: (len=64) ->
+  createToken: (len=64) ->
     token = ''
     chars = '-_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     for i in [1..len] by 1
@@ -80,22 +82,22 @@ class Auth
     return token
 
   # Just a wrapper for generating token, saving it and then returning the token
-  @saveToken: (id) =>
-    token = @createToken()
+  saveToken: (id) ->
+    token = Auth.createToken()
     User.addLoginToken(id, token)
     token
 
   # Gives the user a token to use to connect to SocketIO
-  @login: (email, password) =>
+  login: (email, password) ->
     deferred = Q.defer()
     User.getByEmail(email)
-      .then (user) =>
-        @compare(password, user.password).then (same) =>
+      .then (user) ->
+        Auth.compare(password, user.password).then (same) ->
           if not same then return deferred.reject('err_bad_pass')
           # Generate login token for user
           deferred.resolve [
             user.id
-            @saveToken(user.id)
+            Auth.saveToken(user.id)
             user.email
             user.name
             user.pro
@@ -104,7 +106,7 @@ class Auth
         deferred.reject('err_bad_pass')
     return deferred.promise
 
-  @register: (name, email, pass) =>
+  register: (name, email, pass) ->
     deferred = Q.defer()
 
     valid = yes
@@ -122,10 +124,10 @@ class Auth
       valid = no
 
     if valid
-      Q.fcall =>
-        @hash(pass)
-      .then (hash) =>
-        token = @createToken(22)
+      Q.fcall ->
+        Auth.hash(pass)
+      .then (hash) ->
+        token = Auth.createToken(22)
         User.register(token, name, email, hash)
       .then (token) ->
         deferred.resolve(token)
@@ -134,7 +136,7 @@ class Auth
 
     return deferred.promise
 
-  @verifyRegistration: (token) ->
+  verifyRegistration: (token) ->
     deferred = Q.defer()
     Q.fcall ->
       User.getRegistration(token)
@@ -150,9 +152,9 @@ class Auth
     return deferred.promise
 
   # Generate a reset password token for the user
-  @generateResetToken: (email) =>
+  generateResetToken: (email) ->
     deferred = Q.defer()
-    token = @createToken(22)
+    token = Auth.createToken(22)
     User.getByEmail(email)
       .then (user) ->
         User.addResetToken user.id, token

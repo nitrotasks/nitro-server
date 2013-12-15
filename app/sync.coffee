@@ -10,7 +10,7 @@
 ###
 
 
-Q       = require 'q'
+Q       = require 'kew'
 Auth    = require './auth'
 User    = require './user'
 Log     = require('./log')('Sync', 'cyan')

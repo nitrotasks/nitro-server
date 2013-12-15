@@ -1,10 +1,11 @@
-Q        = require 'q'
+Q        = require 'kew'
 express  = require 'express'
 Auth     = require './auth'
 User     = require './user'
 Mail     = require './mail'
 TodoTxt  = require './todo.txt'
 TodoHtml = require './todo.html'
+Log      = require('./log')('Api', 'magenta')
 
 # Create and configure express app
 app = express()
@@ -57,6 +58,9 @@ api =
       name: req.body.name
       email: req.body.email.toLowerCase()
       password: req.body.password
+
+    Log 'registering user', user.name
+
     Auth.register(user.name, user.email, user.password)
       .then (token) ->
         link = "#{ config.url }/register/#{ token }"
