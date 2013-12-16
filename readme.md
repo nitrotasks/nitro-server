@@ -21,7 +21,11 @@
 - `mocha --compilers coffee:coffee-script test/<filename>.coffee` - to test
   only some things.
 
-# About Nitro Sync
+# About Nitro Sync  
+    
+## Module Layout
+
+![Modules](module_layout.jpg)
 
 ## Storage
 
