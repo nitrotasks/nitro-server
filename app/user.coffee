@@ -29,7 +29,7 @@ class User
    *
    * - [attrs] (object) : optional attributes to load in
   ###
- 
+
   constructor: (attrs) ->
     @_load attrs if attrs
     @_write = lodash.throttle @_write, 5000
@@ -68,7 +68,7 @@ class User
    * - value (*)
    * > value
   ###
- 
+
   set: (key, value) ->
     @[key] = value
     @_write(key)
@@ -123,7 +123,7 @@ class User
   ###
    * Change a users password and remove all their login tokens
    *
-   * - password (string) : the hash of the password 
+   * - password (string) : the hash of the password
   ###
 
   setPassword: (password) ->
@@ -140,3 +140,11 @@ class User
     oldEmail = @email
     @set 'email', email
     return Storage.replaceEmail @id, oldEmail, email, @service
+
+
+  ###
+   * Mark the user as released from memory
+  ###
+
+  release: ->
+    @_released = true

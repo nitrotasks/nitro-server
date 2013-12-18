@@ -1,9 +1,4 @@
-###
- * Storage Controller
-###
-
 Q         = require 'kew'
-_         = require 'lodash'
 dbase     = require './database'
 Log       = require('./log')('Storage', 'green')
 
@@ -79,7 +74,7 @@ Storage =
   # Add user to database and return user as instance
   add: (user, service='native') ->
     @emailExists(user.email).then (exists) =>
-      if exists then throw new Error ERR_OLD_EMAIL
+      if exists then throw Error ERR_OLD_EMAIL
 
       user.pro = 0
       user.created_at = new Date()
@@ -112,26 +107,48 @@ Storage =
     if user then return Q.resolve(user)
 
     dbase.user.read(id)
-      .fail (err) ->
+      .fail ->
         throw new Error ERR_NO_USER
       .then (data) =>
         @records[id] = new User(data)
 
+
+  ###
+   * Get a user by their email address
+   *
+   * - email (string)
+   * - [service] (string)
+   * > user
+  ###
+
   getByEmail: (email, service='native') ->
-    deferred = Q.defer()
-    redis.hget "users:#{ service }", email, deferred.makeNodeResolver()
-    deferred.then (id) =>
-      if id is null then return deferred.reject new Error ERR_NO_USER
-      return @get(id)
+    Q.nfcall(redis.hget, 'users:' + service, email).then (id) =>
+      if id is null then throw Error ERR_NO_USER
+      @get id
+
+
+  ###
+   * Check if an email address exists in the system
+   *
+   * - email (string)
+   * - [service] (string)
+   * > boolean
+  ###
 
   emailExists: (email, service='native') ->
-    deferred = Q.defer()
-    redis.hexists "users:#{ service }", email, deferred.makeNodeResolver()
-    return deferred.then (exists) ->
+    Q.nfcall(redis.hexists, 'users:' + service, email).then (exists) ->
       return exists isnt 0
 
+
+  ###
+   * Completely remove a user from the system
+   *
+   * - id (int) : the user id
+   * - [service] (string)
+  ###
+
   remove: (id, service='native') ->
-    Log "Removing record #{ id }"
+    Log "Removing user #{ id }"
 
     @get(id).then (user) =>
       return unless user
@@ -139,69 +156,135 @@ Storage =
 
       # We could use @release(id), but then it would write
       # it to the database, and then we instantly delete it
-      @records[id]._released = true
+      @records[id].release()
       delete @records[id]
 
       Q.all [
-        redis.hdel "users:#{ service }", user.email
+        Q.nfcall redis.hdel, 'users:' + service, user.email
         dbase.user.delete id
       ]
 
-  # Write user to database
+  ###
+   * Write user to database
+   *
+   * - user (user)
+  ###
+
   writeUser: (user) ->
     Log 'Writing user to database'
     dbase.user.write user
 
-  # Remove record from JS memory
-  # User is still stored in Database
-  # Instances will still work
-  # Should only be used when all users have logged out though
-  # Because you can't reconnect the instance to the record
+  ###
+   * Remove a record from Node.js memory.
+   * The user is still stored in the database though.
+   * References to the instance will still be readable, but changes to them
+   * won't be saved.
+   * A user should only be released when they no longed logged in.
+   *
+   * - id (int) : the user id
+  ###
+
   release: (id) ->
-    Log "Releasing record #{ id }"
-    promise = @writeUser @records[id]
-    @records[id]._released = true
+    Log "Releasing user #{ id } from memory"
+    user = @records[id]
+    promise = @writeUser user
+    user.release()
     delete @records[id]
     return promise
 
-  # Login tokens expire after 2 weeks
+  ###
+   * Add a new login token.
+   * It will expire after two weeks.
+   *
+   * - id (int) : the user id
+   * - token (string) : the login token
+  ###
+
   addLoginToken: (id, token) ->
     redis.setex "token:#{ id }:#{ token }", 1209600, Date.now()
 
+  ###
+   * Check that a login token is valid
+   *
+   * - id (int) : the user id
+   * - token (string) : the login token
+   * > boolean
+  ###
+
   checkLoginToken: (id, token) ->
-    deferred = Q.defer()
-    redis.exists "token:#{ id }:#{ token }", (err, exists) ->
-      if err then return deferred.reject err
-      deferred.resolve exists isnt 0
-    return deferred.promise
+    Q.nfcall(redis.exists, "token:#{ id }:#{ token }").then (exists) ->
+      return exists isnt 0
+
+  ###
+   * Remove a specific login token
+   *
+   * - id (int) : the user id
+   * - token (string) : the login token
+  ###
 
   removeLoginToken: (id, token) ->
     Q.nfcall redis.del, "token:#{ id }:#{ token }"
 
-  removeAllLoginTokens: (id) ->
-    deferred = Q.nfcall redis.keys, "token:#{ id }:*"
-    deferred.then (data) ->
-      redis.del token for token in data
 
-  # Token will expire in 24 hours (86400 seconds)
+  ###
+   * Remove all the login tokens for a user
+   *
+   * - id (int) : the user id
+  ###
+
+  removeAllLoginTokens: (id) ->
+    Q.nfcall(redis.keys, "token:#{ id }:*").then (keys) ->
+      redis.del token for token in keys
+
+  ###
+   * Add a new password reset token
+   * Tokens are removed after 12 hours
+   *
+   * - id (int) : the user id
+   * - token (string) : the reset token
+  ###
+
   addResetToken: (id, token) ->
-    redis.setex "forgot:#{ token }", 86400, id
+    redis.setex 'forgot:' + token, 86400, id
+
+
+  ###
+   * Check that a reset token is valid
+   *
+   * - token (string) : the reset token
+   * > int : the user id
+  ###
 
   checkResetToken: (token) ->
-    deferred = Q.defer()
-    redis.get "forgot:#{ token }", (err, id) ->
-      if err then return deferred.reject err
-      if id is null then return deferred.reject new Error ERR_BAD_TOKEN
-      deferred.resolve id
-    return deferred.promise
+    Q.nfcall(redis.get, 'forgot:' + token).then (id) ->
+      if id is null then throw Error ERR_BAD_TOKEN
+      return id
+
+  ###
+   * Remove a reset token
+   *
+   * - token (string) : the reset token
+  ###
 
   removeResetToken: (token) ->
     redis.del "forgot:#{ token }"
+
+
+  ###
+   * Replace an email with another one
+   * Used when a user changes their email address
+   *
+   * - id (int)
+   * - oldEmail (string)
+   * - newEmail (string)
+   * - [service] (string)
+  ###
 
   replaceEmail: (id, oldEmail, newEmail, service='native') ->
     Q.all [
       Q.nfcall redis.hdel, "users:#{ service }", oldEmail
       Q.nfcall redis.hset, "users:#{ service }", newEmail, id
     ]
-  
+
+
 module.exports = Storage
