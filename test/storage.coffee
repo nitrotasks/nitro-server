@@ -1,119 +1,187 @@
-assert = require 'assert'
-User = require '../app/user'
 Q = require 'q'
+assert = require 'assert'
+connect = require '../app/connect'
+database = require '../app/database'
+Storage = require '../app/storage'
 
-User._redis.flushdb()
 global.DebugMode = true
+connect.init 'testing'
 
 users = [
-  {name: 'stayradiated', email: 'george@czabania.com', password: 'password'}
-  {name: 'consindo', email: 'jono@jonocooper.com', password: 'another password'}
-  {name: 'teqnoqolor', email: 'dev@stayradiated.com', password: 'drowssap'}
+  {name: 'stayradiated', email: 'george@czabania.com', password: 'abc'}
+  {name: 'consindo', email: 'jono@jonocooper.com', password: 'xkcd'}
+  {name: 'teqnoqolor', email: 'dev@stayradiated.com', password: 'hunter2'}
 ]
 
-describe 'Storage API', ->
+log = console.log.bind(console)
+
+describe 'Storage API >', ->
+
+
+# -----------------------------------------------------------------------------
+# Setup
+# -----------------------------------------------------------------------------
+
+  before (done) ->
+
+    promise = Q.all [
+      connect.ready
+      database.connected
+    ]
+
+    promise
+      .then ->
+        connect.redis.flushdb()
+        database.truncate 'users'
+      .then ->
+        done()
+
+# -----------------------------------------------------------------------------
+# Adding Users
+# -----------------------------------------------------------------------------
 
   it 'should be able to add users', (done) ->
-
-    console.log '\n Add Users \n'
-
     users.forEach (user, i, array) ->
-      User.add(user).then (data) ->
-        assert.equal data.name, user.name
-        assert.equal data.email, user.email
-        assert.equal data.password, user.password
-        if i is array.length - 1 then done()
+      Storage.add(user)
+        .then (data) ->
+          assert.equal data.name, user.name
+          assert.equal data.email, user.email
+          assert.equal data.password, user.password
+          if i is array.length - 1 then done()
+        .fail(log)
 
   it 'should not allow duplicate email addresses', (done) ->
     users.forEach (user, i, array) ->
-      User.add(user).fail (e) ->
+      Storage.add(user).fail (err) ->
+        assert.equal err, 'err_old_email'
         if i is array.length - 1 then done()
 
+
+# -----------------------------------------------------------------------------
+# Checking Existing Users
+# -----------------------------------------------------------------------------
+
   it 'emailExists should return false if an email doesn\'t exist', (done) ->
-    User.emailExists('joe@smith.com').then (exists) ->
-      assert.equal exists, false
-      done()
+
+    Storage.emailExists('joe@smith.com')
+      .then (exists) ->
+        assert.equal exists, false
+        done()
+      .fail(log)
 
   it 'emailExists should return true if an email exists', (done) ->
+
     users.forEach (user, i, array) ->
-      User.emailExists(user.email).then (exists) ->
+      Storage.emailExists(user.email).then (exists) ->
         assert.equal exists, true
         if i is array.length - 1 then done()
 
+
+# -----------------------------------------------------------------------------
+# Retrieve Users
+# -----------------------------------------------------------------------------
+
   it 'should get users by email', (done) ->
 
-    console.log '\n Users By Email \n'
-
     users.forEach (user, i, array) ->
-      User.getByEmail(user.email)
+      Storage.getByEmail(user.email)
         .then (data) ->
           assert.equal user.email, data.email
           # Save user ID so we can use it future tests
           users[i].id = data.id
           if i is array.length - 1 then done()
-        .fail (err) ->
-          console.log 'ERROR', err
+        .fail(log)
 
   it 'should fail if you try and get a non-existant user by email', (done) ->
 
-    console.log '\n Users By Email \n'
-
-    User.getByEmail('john@example.com')
+    Storage.getByEmail('john@example.com')
       .then (data) ->
         console.log data
       .fail (err) ->
         done()
 
-  it 'should let users change their password', (done) ->
+  it 'should get users by id', (done) ->
 
-    console.log '\n Change Password \n'
+    users.forEach (user, i, array) ->
+      Storage.get(user.id)
+        .then (_user) ->
+          assert.equal user.name, _user.name
+          assert.equal user.email, _user.email
+          assert.equal user.password, _user.password
+          if i is array.length - 1 then done()
+        .fail(log)
 
-    Q.all([
-      User.get(users[0].id)
-      User.get(users[0].id)
-    ]).then ([u1, u2]) ->
-      u1.setPassword 'my-new-password'
-      assert.equal 'my-new-password', u1.password
-      assert.equal 'my-new-password', u2.password
-      done()
 
-  it 'should let users change their email address', (done) ->
+# -----------------------------------------------------------------------------
+# Login Tokens
+# -----------------------------------------------------------------------------
 
-    console.log '\n Change Email \n'
+  do ->
 
-    user = users[1]
-    newEmail = user.email = 'example@mail.com'
+    id = 200
+    token = 'hogwarts'
 
-    Q.all([
-      User.get(user.id)
-      User.get(user.id)
-    ]).then ([u1, u2]) ->
-      u1.setEmail(newEmail)
+    it 'add', (done) ->
+      Storage.addLoginToken(id, token)
         .then ->
-          assert.equal newEmail, u1.email, u2.email
+          done()
+        .fail(log)
+
+    it 'check exists', (done) ->
+      Storage.checkLoginToken(id, token)
+        .then (exists) ->
+          assert.equal exists, true
+          done()
+        .fail(log)
+
+    it 'remove', (done) ->
+      Storage.removeLoginToken(id, token)
         .then ->
-          User.getByEmail(newEmail)
-        .then (u3) ->
-          assert.equal u3.name, user.name
+          Storage.checkLoginToken(id, token)
+        .then (exists) ->
+          assert.equal exists, false
+          done()
+        .fail(log)
+
+
+# -----------------------------------------------------------------------------
+# Change Email Address
+# -----------------------------------------------------------------------------
+
+  do ->
+
+    user = oldEmail = null
+
+    it 'changing', (done) ->
+
+      user = users[1]
+      oldEmail = user.email
+      user.email = 'example@mail.com'
+
+      Storage.replaceEmail(user.id, oldEmail, user.email)
+        .then ->
+          done()
+        .fail(log)
+
+    it 'check old email has been removed', (done) ->
+      Storage.getByEmail(oldEmail)
+        .fail (err) ->
+          assert.equal err, 'err_no_user'
           done()
 
-  it 'should let users change their pro status', (done) ->
+    it 'check new email has been added', (done) ->
+      Storage.getByEmail(user.email)
+        .then (_user) ->
+          assert.equal _user.name, user.name
+          done()
+        .fail(log)
 
-    console.log '\n Change Pro \n'
 
-    hasPro = '1'
-    user = users[1]
-    Q.all([
-      User.get(user.id)
-      User.get(user.id)
-    ]).then ([u1, u2]) ->
-      u2.setPro hasPro
-      assert.equal hasPro, u1.pro, u2.pro
-      done()
+# -----------------------------------------------------------------------------
+# User Data
+# -----------------------------------------------------------------------------
 
-  it 'should save user data', (done) ->
-
-    console.log '\n Save User Data \n'
+  do ->
 
     tasks =
       '1':
@@ -135,85 +203,106 @@ describe 'Storage API', ->
 
     user = users[1]
 
-    Q.all([
-      User.get(user.id)
-      User.get(user.id)
-    ]).then ([u1, u2]) ->
+    it 'should save user data to disk', (done) ->
 
-      u1.data('task', tasks)
-      u1.save('task')
-
-      u2.data('list', lists)
-      u2.save('list')
-
-      assert.equal tasks, u1.data('task'), u2.data('task')
-      assert.equal lists, u1.data('list'), u2.data('list')
-
-      # Release the user
-      # This forces User.get() to fetch the data from disk
-      User.release(user.id)
-      User.get(user.id).then (u3) ->
-        assert.deepEqual tasks, u3.data 'task'
-        u3.data('task')[1].name = 'task 1 - Changed'
-        u3.save()
+      Storage.get(user.id).then (_user) ->
+        _user.data 'task', tasks
+        _user.data 'list', lists
+        assert.equal tasks, _user.data 'task'
+        assert.equal lists, _user.data 'list'
         done()
 
-  it 'should increment data index', (done) ->
+    it 'should release users from memory', (done) ->
 
-    console.log '\n Increment Data Index \n'
+      Storage.release(user.id)
+        .then ->
+          Storage.get(user.id)
+        .then (_user) ->
+          assert.deepEqual tasks, _user.data 'task'
+          _user.data('task')[1].name = 'task 1 - Changed'
+          done()
 
-    user = users[1]
-    User.get(user.id).then (user) ->
-      index = user.index 'Fake'
-      user.incrIndex 'Fake'
-      assert.equal ++index, user.index 'Fake'
-      user.incrIndex 'Fake'
-      assert.equal ++index, user.index 'Fake'
-      done()
+    it 'should handle data indexes properly', (done) ->
+
+      Storage.get(user.id)
+        .then (_user) ->
+          index = _user.index 'tasks'
+          assert.equal index, 0
+          assert.equal ++index, _user.incrIndex 'tasks'
+          assert.equal ++index, _user.incrIndex 'tasks'
+          assert.equal index, _user.index 'tasks'
+          done()
+        .fail(log)
+
+
+# -----------------------------------------------------------------------------
+# Releasing Users
+# -----------------------------------------------------------------------------
 
   it 'should be able to release users from JS memory', (done) ->
 
-    console.log '\n Release Users \n'
-
     user = users[2]
-    assert.notEqual User.records[user.id], undefined
-    User.release(user.id).then ->
-      assert.equal User.records[user.id], undefined
+    length = Object.keys(Storage.records).length
+
+    assert.notEqual Storage.records[user.id], undefined
+
+    Storage.release(user.id).then ->
+      assert.equal Storage.records[user.id], undefined
+      assert.equal length - 1, Object.keys(Storage.records).length
       done()
+
+
+# -----------------------------------------------------------------------------
+# Deleting Users
+# -----------------------------------------------------------------------------
 
   it 'should be able to delete users from disk', (done) ->
 
-    console.log '\n Delete From Disk \n'
+    users.forEach (user, i, array) ->
+      Storage.remove(user.id).then ->
+        if i is array.length - 1 then done()
+
+  it 'should not be able to find deleted users', (done) ->
 
     users.forEach (user, i, array) ->
-      User.remove(user.id)
-        .then ->
-          User.get(user.id)
-        .fail ->
-          if i is array.length - 1 then done()
+      Storage.get(user.id).fail ->
+        if i is array.length - 1 then done()
 
-  it 'should register users temporarily until verified', (done) ->
 
-    console.log '\n Register User \n'
+# -----------------------------------------------------------------------------
+# Registration
+# -----------------------------------------------------------------------------
+
+  do ->
 
     user =
       name: 'George'
       email: 'mail@example.com'
       password: 'abc123'
 
-    User.register('1234567890', user)
-      .then (token) ->
-        User.getRegistration token
-      .then (data) ->
-        assert.equal user.name, data.name
-        assert.equal user.email, data.email
-        assert.equal user.password, data.password
-        done()
+    token = '1234567890'
 
-  it 'should fail if registration token is not found', (done) ->
+    it 'Register User', (done) ->
 
-    console.log '\n Miss Registration \n'
+      Storage.register(token, user)
+        .then (_token) ->
+          assert.equal _token, token
+          done()
+        .fail(log)
 
-    User.getRegistration('abc').fail (err) ->
-      assert.equal err.message, 'err_bad_token'
-      done()
+    it 'Get Registration', (done) ->
+
+      Storage.getRegistration(token)
+        .then (data) ->
+          assert.equal user.name, data.name
+          assert.equal user.email, data.email
+          assert.equal user.password, data.password
+          done()
+        .fail(log)
+
+    it 'Missing Token', (done) ->
+
+      Storage.getRegistration('abc')
+        .fail (err) ->
+          assert.equal err, 'err_bad_token'
+          done()

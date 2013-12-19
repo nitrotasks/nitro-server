@@ -310,7 +310,7 @@ class Sync
     else if className is 'List' and model.id is 'inbox'
       id = model.id
       if @hasModel('List', 'inbox') then return
-    
+
     else
       id = 's-' + @user.index(className)
       @user.incrIndex className

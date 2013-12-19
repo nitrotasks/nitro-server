@@ -58,7 +58,7 @@ class User
 
   _write: ->
     return if @_released
-    Storage.writeUser(this)
+    Storage.writeUser this
 
   ###
    * Set a value on the instance

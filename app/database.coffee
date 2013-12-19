@@ -1,30 +1,26 @@
-mysql    = require 'mysql'
 shrink   = require './shrink'
 keychain = require './keychain'
+connect  = require './connect'
 Q        = require 'kew'
 Log      = require('./log')('Database', 'blue')
 
-db = mysql.createConnection
-  host:      keychain 'sql_host'
-  user:      keychain 'sql_user'
-  password:  keychain 'sql_pass'
-  port:      keychain 'sql_port'
-  database:  keychain 'sql_db'
+db = null
 
-# Connect to the MySQL server
-connect = ->
+connected = connect.ready.then ->
+
+  Log 'Connecting to MySQL'
+
+  db = connect.mysql
 
   deferred = Q.defer()
 
-  db.connect (err) ->
+  db.connect  (err) ->
     if err
       Log 'Error while connecting!'
       deferred.reject err
-
-    else
-      Log 'Connected to MySQL server'
-      setup()
-      deferred.resolve()
+    Log 'Connected to MySQL server'
+    setup()
+    deferred.resolve()
 
   return deferred.promise
 
@@ -54,6 +50,9 @@ setup = ->
 # Close database connection
 close = ->
   db.end()
+
+query = (sql...) ->
+  Q.bindPromise db.query, db, sql
 
 # ---
 
@@ -128,13 +127,20 @@ del_user = (uid) ->
   deferred.then ->
     Log 'Deleted user', uid
 
+
+truncate = (table) ->
+  sql = "TRUNCATE #{ table }"
+  query sql
+
 # Remove user
 # Update user details
 # Set task, list and timestamp data
 
 module.exports =
-  connect: connect
+  connected: connected
   close: close
+  query: query
+  truncate: truncate
   user:
     all: all_users
     write: write_user

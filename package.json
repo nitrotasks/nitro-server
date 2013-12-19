@@ -1,29 +1,24 @@
 {
-  "name": "NitroSync",
+  "name": "Nitro-Sync",
   "version": "2.1.0",
   "scripts": {
     "test": "mocha --compilers coffee:coffee-script test"
   },
   "dependencies": {
-
     "mysql": "2.0.0-rc1",
     "bcrypt": "0.7.x",
-
     "coffee-script": "1.6.x",
-
     "oauth": "0.9.x",
     "express": "3.4.x",
     "lodash": "2.4.x",
     "msgpack": "0.2.x",
     "nodemailer": "0.5.x",
-
     "redis": "0.9.x",
     "socket.io": "0.9.x",
-
     "forever": "0.10.x",
     "http-proxy": "0.10.x",
-
-    "kew": "0.3.x"
+    "kew": "0.3.x",
+    "hiredis": "0.1.x"
   },
   "devDependencies": {
     "supertest": "0.8.x",

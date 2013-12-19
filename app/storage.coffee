@@ -1,6 +1,8 @@
 Q         = require 'kew'
 dbase     = require './database'
+redis     = require './redis'
 Log       = require('./log')('Storage', 'green')
+
 
 # -----------------------------------------------------------------------------
 # Errors
@@ -9,6 +11,17 @@ Log       = require('./log')('Storage', 'green')
 ERR_OLD_EMAIL = 'err_old_email'
 ERR_BAD_TOKEN = 'err_bad_token'
 ERR_NO_USER   = 'err_no_user'
+
+# -----------------------------------------------------------------------------
+# User Factory
+# -----------------------------------------------------------------------------
+
+User = null
+
+createUser = (attrs) ->
+  User ?= require './user'
+  return new User attrs
+
 
 # -----------------------------------------------------------------------------
 # Storage Controller
@@ -36,7 +49,7 @@ Storage =
 
   register: (token, info) ->
     @emailExists(info.email).then (exists) ->
-      if exists then throw new Error ERR_OLD_EMAIL
+      if exists then throw ERR_OLD_EMAIL
       key = "register:#{ token }"
       redis.hmset key, info
       redis.expire key, 172800 # 48 hours
@@ -54,11 +67,10 @@ Storage =
   ###
 
   getRegistration: (token) ->
-    deferred = Q.defer()
-    redis.hgetall "register:#{ token }", deferred.makeNodeResolver()
-    return deferred.then (data) ->
-      if not data? then throw new Error ERR_BAD_TOKEN
-      redis.del "register:#{ token }"
+    key = 'register:' + token
+    redis.hgetall(key).then (data) ->
+      throw ERR_BAD_TOKEN unless data?
+      redis.del key
       return data
 
 
@@ -74,7 +86,7 @@ Storage =
   # Add user to database and return user as instance
   add: (user, service='native') ->
     @emailExists(user.email).then (exists) =>
-      if exists then throw Error ERR_OLD_EMAIL
+      if exists then throw ERR_OLD_EMAIL
 
       user.pro = 0
       user.created_at = new Date()
@@ -84,11 +96,9 @@ Storage =
         .fail ->
           Log 'Error writing user to database!'
         .then (id) =>
-          Log 'Setting user to redis', id
-          # Add ID to lookup table
-          redis.hset "users:#{ service }", user.email, id
-          # Load user into memory
-          @get(id)
+          Log 'Adding email to redis', id
+          redis.hset 'users:' + service, user.email, id
+          @get id
 
   ###
    * This will retrive a user from the database by their ID.
@@ -105,12 +115,11 @@ Storage =
   get: (id) ->
     user = @records[id]
     if user then return Q.resolve(user)
-
     dbase.user.read(id)
       .fail ->
-        throw new Error ERR_NO_USER
+        throw ERR_NO_USER
       .then (data) =>
-        @records[id] = new User(data)
+        @records[id] = createUser(data)
 
 
   ###
@@ -122,9 +131,10 @@ Storage =
   ###
 
   getByEmail: (email, service='native') ->
-    Q.nfcall(redis.hget, 'users:' + service, email).then (id) =>
-      if id is null then throw Error ERR_NO_USER
-      @get id
+    key = 'users:' + service
+    redis.hget(key, email).then (id) =>
+      throw ERR_NO_USER if id is null
+      return @get id
 
 
   ###
@@ -136,12 +146,15 @@ Storage =
   ###
 
   emailExists: (email, service='native') ->
-    Q.nfcall(redis.hexists, 'users:' + service, email).then (exists) ->
+    key = 'users:' + service
+    redis.hexists(key, email).then (exists) ->
       return exists isnt 0
 
 
   ###
    * Completely remove a user from the system
+   * We could integrate it with @release(id), but that would write
+   * it to the database, right before we instantly delete it.
    *
    * - id (int) : the user id
    * - [service] (string)
@@ -149,20 +162,17 @@ Storage =
 
   remove: (id, service='native') ->
     Log "Removing user #{ id }"
-
     @get(id).then (user) =>
       return unless user
       email = user.email
-
-      # We could use @release(id), but then it would write
-      # it to the database, and then we instantly delete it
       @records[id].release()
       delete @records[id]
-
+      key = 'users:' + service
       Q.all [
-        Q.nfcall redis.hdel, 'users:' + service, user.email
+        redis.hdel key, user.email
         dbase.user.delete id
       ]
+
 
   ###
    * Write user to database
@@ -173,6 +183,7 @@ Storage =
   writeUser: (user) ->
     Log 'Writing user to database'
     dbase.user.write user
+
 
   ###
    * Remove a record from Node.js memory.
@@ -192,6 +203,7 @@ Storage =
     delete @records[id]
     return promise
 
+
   ###
    * Add a new login token.
    * It will expire after two weeks.
@@ -203,6 +215,7 @@ Storage =
   addLoginToken: (id, token) ->
     redis.setex "token:#{ id }:#{ token }", 1209600, Date.now()
 
+
   ###
    * Check that a login token is valid
    *
@@ -212,8 +225,10 @@ Storage =
   ###
 
   checkLoginToken: (id, token) ->
-    Q.nfcall(redis.exists, "token:#{ id }:#{ token }").then (exists) ->
+    key = 'token:' + id + ':' + token
+    redis.exists(key).then (exists) ->
       return exists isnt 0
+
 
   ###
    * Remove a specific login token
@@ -223,7 +238,8 @@ Storage =
   ###
 
   removeLoginToken: (id, token) ->
-    Q.nfcall redis.del, "token:#{ id }:#{ token }"
+    key = 'token:' + id + ':' + token
+    redis.del key
 
 
   ###
@@ -233,8 +249,10 @@ Storage =
   ###
 
   removeAllLoginTokens: (id) ->
-    Q.nfcall(redis.keys, "token:#{ id }:*").then (keys) ->
+    key = 'token:' + id + ':*'
+    redis.keys(key).then (keys) ->
       redis.del token for token in keys
+
 
   ###
    * Add a new password reset token
@@ -245,7 +263,8 @@ Storage =
   ###
 
   addResetToken: (id, token) ->
-    redis.setex 'forgot:' + token, 86400, id
+    key = 'forgot:' + token
+    redis.setex key, 86400, id
 
 
   ###
@@ -256,8 +275,9 @@ Storage =
   ###
 
   checkResetToken: (token) ->
-    Q.nfcall(redis.get, 'forgot:' + token).then (id) ->
-      if id is null then throw Error ERR_BAD_TOKEN
+    key = 'forgot:' + token
+    redis.get(key).then (id) ->
+      if id is null then throw ERR_BAD_TOKEN
       return id
 
   ###
@@ -267,7 +287,8 @@ Storage =
   ###
 
   removeResetToken: (token) ->
-    redis.del "forgot:#{ token }"
+    key = 'forgot:' + token
+    redis.del key
 
 
   ###
@@ -281,9 +302,10 @@ Storage =
   ###
 
   replaceEmail: (id, oldEmail, newEmail, service='native') ->
+    key = 'users:' + service
     Q.all [
-      Q.nfcall redis.hdel, "users:#{ service }", oldEmail
-      Q.nfcall redis.hset, "users:#{ service }", newEmail, id
+      redis.hdel key, oldEmail
+      redis.hset key, newEmail, id
     ]
 
 

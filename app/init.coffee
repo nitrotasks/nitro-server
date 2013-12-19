@@ -1,4 +1,3 @@
-
 Warn = require('./log')('Warning', 'red')
 Log  = require('./log')('Info', 'green')
 
@@ -19,6 +18,14 @@ if module.parent is null
   if '-p' in process.argv
     index = process.argv.indexOf('-p')
     port = process.argv[index + 1]
+
+  # Connect to database
+  connect = require './connect'
+
+  if global.DebugMode
+    connect.init 'development'
+  else
+    connect.init 'production'
 
   # Start api
   api = require './api'
