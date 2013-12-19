@@ -39,18 +39,32 @@ describe 'User class', ->
 
   it 'should throttle writes to the db', (done) ->
 
+    @timeout 6000
+
     start = Date.now()
 
     fn = Storage.writeUser
+    count = 0
 
-    Storage.writeUser = ->
-      if Date.now() - start >= 5000
-        Storage.writeUser = fn
-        done()
+    Storage.writeUser = (user, args) ->
+
+      switch count++
+        when 0
+          assert.deepEqual args, ['tasks']
+
+        when 1
+          assert.deepEqual args, ['lists', 'name', 'email']
+          diff = Date.now() - start
+          assert diff >= 5000
+          assert diff <= 5005
+          Storage.writeUser = fn
+          done()
 
     user = new User()
-    user._write()
-    user._write()
+    user._write 'tasks'
+    user._write 'lists'
+    user._write 'name'
+    user._write 'email'
 
   it 'should get and set data', ->
 

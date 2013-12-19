@@ -1,4 +1,4 @@
-lodash = require 'lodash'
+throttle = require './throttle'
 
 ### ---------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ class User
 
   constructor: (attrs) ->
     @_load attrs if attrs
-    @_write = lodash.throttle @_write, 5000
+    @_write = throttle @_write, 5000
 
   # Resolve cyclic dependency with Storage controller
   module.exports = User
@@ -56,9 +56,9 @@ class User
    * Will do nothing if the user has been released from memoru.
   ###
 
-  _write: ->
+  _write: (keys) ->
     return if @_released
-    Storage.writeUser this
+    Storage.writeUser this, keys
 
   ###
    * Set a value on the instance

@@ -10,7 +10,6 @@
     "coffee-script": "1.6.x",
     "oauth": "0.9.x",
     "express": "3.4.x",
-    "lodash": "2.4.x",
     "msgpack": "0.2.x",
     "nodemailer": "0.5.x",
     "redis": "0.9.x",

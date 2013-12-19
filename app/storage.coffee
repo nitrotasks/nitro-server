@@ -180,9 +180,9 @@ Storage =
    * - user (user)
   ###
 
-  writeUser: (user) ->
+  writeUser: (user, attrs) ->
     Log 'Writing user to database'
-    dbase.user.write user
+    dbase.user.write user, attrs
 
 
   ###
