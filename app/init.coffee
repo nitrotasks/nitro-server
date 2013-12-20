@@ -1,5 +1,5 @@
-Warn = require('./log')('Warning', 'red')
-Log  = require('./log')('Info', 'green')
+Warn = require('./utils/log')('Warning', 'red')
+Log  = require('./utils/log')('Info', 'green')
 
 # Handle debug mode
 global.DebugMode = off
@@ -20,7 +20,7 @@ if module.parent is null
     port = process.argv[index + 1]
 
   # Connect to database
-  connect = require './connect'
+  connect = require './controllers/connect'
 
   if global.DebugMode
     connect.init 'development'
@@ -28,16 +28,16 @@ if module.parent is null
     connect.init 'production'
 
   # Start api
-  api = require './api'
+  api = require './controllers/api'
   server = api.listen port
 
   Log "Starting server on port #{ port }"
 
   # Start sync
-  Sync = require "./sync"
+  Sync = require './controllers/sync'
   Sync.init server
 
 else
 
   global.DebugMode = true
-  module.exports = require './api'
+  module.exports = require './controllers/api'

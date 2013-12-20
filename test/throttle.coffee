@@ -1,6 +1,6 @@
-Q = require 'kew'
-throttle = require '../app/throttle'
-assert = require 'assert'
+Q        = require 'kew'
+assert   = require 'assert'
+throttle = require '../app/utils/throttle'
 
 assertNear = (a, b) ->
   assert a >= b

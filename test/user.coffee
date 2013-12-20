@@ -1,6 +1,6 @@
-User = require '../app/user'
-Storage = require '../app/storage'
-assert = require 'assert'
+User    = require '../app/models/user'
+Storage = require '../app/controllers/storage'
+assert  = require 'assert'
 
 global.DebugMode = true
 

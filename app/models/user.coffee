@@ -1,4 +1,4 @@
-throttle = require './throttle'
+throttle = require '../utils/throttle'
 
 ### ---------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ class User
 
   # Resolve cyclic dependency with Storage controller
   module.exports = User
-  Storage = require './storage'
+  Storage = require '../controllers/storage'
 
 
   ###

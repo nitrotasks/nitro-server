@@ -1,7 +1,7 @@
+Q         = require 'kew'
 nodeRedis = require 'redis'
-mysql    = require 'mysql'
-config = require '../config'
-Q = require 'kew'
+mysql     = require 'mysql'
+config    = require '../config'
 
 connect =
 

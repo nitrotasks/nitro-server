@@ -1,9 +1,8 @@
 Q       = require 'kew'
 bcrypt  = require 'bcrypt'
 crypto  = require 'crypto'
-Storage = require './storage'
-oauth   = require './oauth'
-Keys    = require './keychain'
+Storage = require '../controllers/storage'
+Keys    = require '../utils/keychain'
 
 
 # -----------------------------------------------------------------------------

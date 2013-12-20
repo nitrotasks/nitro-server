@@ -1,8 +1,8 @@
 Q = require 'q'
 assert = require 'assert'
-connect = require '../app/connect'
-database = require '../app/database'
-Storage = require '../app/storage'
+connect = require '../app/controllers/connect'
+database = require '../app/controllers/database'
+Storage = require '../app/controllers/storage'
 
 global.DebugMode = true
 connect.init 'testing'

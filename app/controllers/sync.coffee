@@ -11,10 +11,12 @@
 
 
 Q       = require 'kew'
-Auth    = require './auth'
-User    = require './user'
-Log     = require('./log')('Sync', 'cyan')
-LogEvent = require('./log')('Sync Event', 'yellow')
+Auth    = require '../controllers/auth'
+Storage = require '../controllers/storage'
+Log     = require '../utils/log'
+
+log      = Log 'Sync', 'cyan'
+logEvent = Log 'Sync Event', 'yellow'
 
 # Constants
 SUPPORTED_CLASSES = ['List', 'Task', 'Setting']
@@ -39,14 +41,14 @@ init = ( sync_server ) ->
       uid = handshakeData.query.uid
       token = handshakeData.query.token
       if DebugMode
-        Log "Received uid #{ uid } and token #{ token }"
+        log "Received uid #{ uid } and token #{ token }"
       if uid? and token?
         User.checkLoginToken(uid, token)
           .then (exists) ->
             handshakeData.uid = uid
             fn(null, exists)
           .fail ->
-            Log 'User could not login'
+            log 'User could not login'
       else
         fn(null, no)
       return true
@@ -104,7 +106,7 @@ class Sync
     'emailList'  : 'emailList'
 
   constructor: (@socket, uid=@socket.handshake.uid, callback) ->
-    Log 'A user has connected to the server'
+    log 'A user has connected to the server'
     # Bind socket.io events
     for event, fn of @events
       @on event, @[fn]
@@ -220,24 +222,24 @@ class Sync
 
   # Emit event (goes to everyone)
   emit: (event, data) =>
-    LogEvent "Emitting '#{ event }'"
+    logEvent "Emitting '#{ event }'"
     @socket.emit(event, data)
 
   # Broadcast event (goes to everyone except @user)
   broadcast: (event, data) =>
-    LogEvent "Broadcasting '#{ event }'"
+    logEvent "Broadcasting '#{ event }'"
     @socket.broadcast.to(@user.id).emit(event, data)
 
   # Bind event to function
   on: (event, fn) =>
     @socket.on event, (args...) =>
-      LogEvent "Received '#{ event }'"
+      logEvent "Received '#{ event }'"
 
       if @userIsLoaded
         fn(args...)
 
       else
-        Log 'User is not loaded yet. Will run on load.'
+        log 'User is not loaded yet. Will run on load.'
         @runOnUserLoad.push ->
           fn(args...)
 
@@ -248,12 +250,12 @@ class Sync
 
   login: (uid) =>
     deferred = Q.defer()
-    Log "User #{ uid } is logging in"
+    log "User #{ uid } is logging in"
     User.get(uid)
       .then (@user) =>
         # Move user to their own room
         @socket.join(@user.id)
-        Log "#{ @user.name } has logged in"
+        log "#{ @user.name } has logged in"
         # Load user
         @userIsLoaded = true
         fn() for fn in @runOnUserLoad
@@ -264,11 +266,11 @@ class Sync
     return deferred.promise
 
   logout: =>
-    Log "#{ @user.name } has logged out"
+    log "#{ @user.name } has logged out"
 
     # If the user is only logged in from one client then remove them from memory
     if io.sockets.clients(@user.id).length is 1
-      Log '... and has been removed from memory'
+      log '... and has been removed from memory'
       User.release @user.id
 
   # Return all models in database
@@ -328,7 +330,7 @@ class Sync
     # Set timestamp
     timestamp = data[2] or Date.now()
     @setTime className, id, 'all', timestamp
-    Log "Created #{ className }: #{ model.name }"
+    log "Created #{ className }: #{ model.name }"
     # Broadcast event to connected clients
     @broadcast 'create', [className, model]
     # Return new ID
@@ -356,7 +358,7 @@ class Sync
 
     # Check model exists on server
     if not @hasModel(className, id)
-      Log "#{className} doesn't exist on server"
+      log "#{className} doesn't exist on server"
       return
       # model = Default className
       # for k, v of changes
@@ -388,7 +390,7 @@ class Sync
 
     # Save to server
     model = @setModelAttributes className, id, changes
-    Log "Updated #{ className }: #{ model.name }"
+    log "Updated #{ className }: #{ model.name }"
 
     # Broadcast event to connected clients
     @broadcast 'update', [className, model]
@@ -413,7 +415,7 @@ class Sync
     # Destroy all tasks within that list
     if className is 'List'
       for taskId in model.tasks
-        Log "Destroying Task #{ taskId }"
+        log "Destroying Task #{ taskId }"
         # TODO: Prevent server from broadcasting these changes
         #       And make the client delete the tasks
         @destroy ['Task', taskId]
@@ -429,7 +431,7 @@ class Sync
 
     # Set timestamp
     @setTime className, id, 'deleted', timestamp
-    Log "Destroyed #{ className } #{ id }"
+    log "Destroyed #{ className } #{ id }"
     @broadcast 'destroy', [className, id]
 
 
@@ -439,7 +441,7 @@ class Sync
 
   # Sync
   sync: (queue, fn) =>
-    Log 'Running sync'
+    log 'Running sync'
 
     # Map client IDs to server IDs -- for lists only
     client = {}
@@ -466,12 +468,12 @@ class Sync
 
           # We have already checked this task
           if model._missing
-            Log 'We have a missing task!'
+            log 'We have a missing task!'
             i++
             continue
 
           else
-            Log "Moving Task #{model.id} in list #{model.list} to back of queue"
+            log "Moving Task #{model.id} in list #{model.list} to back of queue"
             model._missing = yes
             queue[queue.length] = queue[i]
             queue[i] = []
@@ -479,7 +481,7 @@ class Sync
             continue
 
         else
-          Log "Found List ID #{ model.list } has changed to #{ client[model.list] }"
+          log "Found List ID #{ model.list } has changed to #{ client[model.list] }"
           model.list = client[model.list]
           delete model._missing
 
@@ -488,7 +490,7 @@ class Sync
           oldId = model.id
           @create [className, model, timestamp], (newId) ->
             if className is 'List'
-              Log "Changing List #{ oldId } to #{ newId }"
+              log "Changing List #{ oldId } to #{ newId }"
               client[oldId] = newId
 
         when 'update'

@@ -1,4 +1,4 @@
-keychain = require './app/keychain'
+keychain = require './utils/keychain'
 
 module.exports =
 

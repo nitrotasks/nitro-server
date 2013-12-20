@@ -5,7 +5,7 @@
 ###
 
 Q = require 'kew'
-connect = require './connect'
+connect = require '../controllers/connect'
 
 redis = null
 wrapper = {}

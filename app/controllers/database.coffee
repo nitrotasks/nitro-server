@@ -1,15 +1,17 @@
-shrink   = require './shrink'
-keychain = require './keychain'
-connect  = require './connect'
 Q        = require 'kew'
-Log      = require('./log')('Database', 'blue')
+shrink   = require '../utils/shrink'
+keychain = require '../utils/keychain'
+connect  = require '../controllers/connect'
+Log      = require '../utils/log'
+
+log = Log 'Database', 'blue'
 
 db = null
 query = null
 
 connected = connect.ready.then ->
 
-  Log 'Connecting to MySQL'
+  log 'Connecting to MySQL'
 
   db = connect.mysql
   query = Q.bindPromise db.query, db
@@ -18,9 +20,9 @@ connected = connect.ready.then ->
 
   db.connect  (err) ->
     if err
-      Log 'Error while connecting!'
+      log 'Error while connecting!'
       deferred.reject err
-    Log 'Connected to MySQL server'
+    log 'Connected to MySQL server'
     setup()
     deferred.resolve()
 
@@ -89,14 +91,14 @@ write_user = (user, attrs) ->
   sql = 'INSERT INTO users SET ? ON DUPLICATE KEY UPDATE ?'
   query(sql, [data, data]).then (result) ->
     id = result.insertId
-    Log "Wrote user #{ id }"
+    log "Wrote user #{ id }"
     return id
 
 
 # Get user data
 read_user = (uid) ->
 
-  Log "Fetching user #{uid}"
+  log "Fetching user #{uid}"
 
   query('SELECT * FROM users WHERE id=?', uid).then (result) ->
 
@@ -119,7 +121,7 @@ all_users = ->
 # Delete user data
 del_user = (uid) ->
   query('DELETE FROM users WHERE id = ?', uid).then ->
-    Log 'Deleted user', uid
+    log 'Deleted user', uid
 
 
 truncate = (table) ->

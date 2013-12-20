@@ -1,8 +1,8 @@
-assert = require 'assert'
-Q = require 'kew'
-Auth = require '../app/auth'
-connect = require '../app/connect'
-database = require '../app/database'
+assert   = require 'assert'
+Q        = require 'kew'
+Auth     = require '../app/controllers/auth'
+connect  = require '../app/controllers/connect'
+database = require '../app/controllers/database'
 
 connect.init 'testing'
 

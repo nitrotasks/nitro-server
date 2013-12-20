@@ -1,8 +1,9 @@
 Q         = require 'kew'
-dbase     = require './database'
-redis     = require './redis'
-Log       = require('./log')('Storage', 'green')
+dbase     = require '../controllers/database'
+redis     = require '../controllers/redis'
+Log       = require '../utils/log'
 
+log = Log 'Storage', 'green'
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -20,7 +21,7 @@ ERR_NO_USER   = 'err_no_user'
 User = null
 
 createUser = (attrs) ->
-  User ?= require './user'
+  User ?= require '../models/user'
   return new User attrs
 
 
@@ -99,9 +100,9 @@ Storage =
       # Add user to database
       dbase.user.write(user)
         .fail ->
-          Log 'Error writing user to database!'
+          log 'Error writing user to database!'
         .then (id) =>
-          Log 'Adding email to redis', id
+          log 'Adding email to redis', id
           redis.hset 'users:' + service, user.email, id
           @get id
 
@@ -167,7 +168,7 @@ Storage =
   ###
 
   remove: (id, service='native') ->
-    Log "Removing user #{ id }"
+    log "Removing user #{ id }"
     @get(id).then (user) =>
       return unless user
       email = user.email
@@ -187,7 +188,7 @@ Storage =
   ###
 
   writeUser: (user, attrs) ->
-    Log "Writing user: #{ user.id } with keys:", attrs
+    log "Writing user: #{ user.id } with keys:", attrs
     dbase.user.write user, attrs
 
 
@@ -202,7 +203,7 @@ Storage =
   ###
 
   release: (id) ->
-    Log "Releasing user #{ id } from memory"
+    log "Releasing user #{ id } from memory"
     user = @records[id]
     promise = @writeUser user
     user.release()
