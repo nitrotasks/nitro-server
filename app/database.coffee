@@ -5,12 +5,14 @@ Q        = require 'kew'
 Log      = require('./log')('Database', 'blue')
 
 db = null
+query = null
 
 connected = connect.ready.then ->
 
   Log 'Connecting to MySQL'
 
   db = connect.mysql
+  query = Q.bindPromise db.query, db
 
   deferred = Q.defer()
 
@@ -28,7 +30,7 @@ connected = connect.ready.then ->
 setup = ->
 
   # Create 'users' table
-  db.query '''
+  query """
     CREATE TABLE IF NOT EXISTS `users` (
      `id`            int(11)        NOT NULL    AUTO_INCREMENT,
      `name`          varchar(100)   NOT NULL,
@@ -45,50 +47,50 @@ setup = ->
      `updated_at`    timestamp      NOT NULL    DEFAULT CURRENT_TIMESTAMP       ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-  '''
+  """
 
-# Close database connection
 close = ->
   db.end()
-
-query = (sql...) ->
-  Q.bindPromise db.query, db, sql
 
 # ---
 
 # Add or update user details
-write_user = (user) ->
-
-  deferred = Q.defer()
+write_user = (user, attrs) ->
 
   data = {}
 
-  # Only update the properties set in `user`
+  if attrs
 
-  for property in ['id', 'name', 'email', 'password', 'pro', 'created_at', 'updated_at']
-    if user.hasOwnProperty(property)
-      data[property] = user[property]
+    for attr in attrs
+      data[attr] = user[attr]
 
-  for property in ['task', 'list', 'setting', 'time']
-    property = 'data_' + property
-    if user.hasOwnProperty(property)
-      data[property] = shrink.pack(user[property])
+    # id is required
+    data.id = user.id
 
-  for property in ['task', 'list']
-    property = 'index_' + property
-    if user.hasOwnProperty(property)
-      data[property] = user[property]
+  else
+
+    # Only update the properties set in `user`
+
+    for property in ['id', 'name', 'email', 'password', 'pro', 'created_at', 'updated_at']
+      if user.hasOwnProperty(property)
+        data[property] = user[property]
+
+    for property in ['task', 'list', 'setting', 'time']
+      property = 'data_' + property
+      if user.hasOwnProperty(property)
+        data[property] = shrink.pack(user[property])
+
+    for property in ['task', 'list']
+      property = 'index_' + property
+      if user.hasOwnProperty(property)
+        data[property] = user[property]
 
   # Write to database
-  db.query 'INSERT INTO users SET ? ON DUPLICATE KEY UPDATE ?', [data, data], (err, result) ->
-    if err then return deferred.reject(err)
-
-    Log "Wrote user #{ result.insertId }"
-
-    # Return the user id
-    deferred.resolve result.insertId
-
-  return deferred.promise
+  sql = 'INSERT INTO users SET ? ON DUPLICATE KEY UPDATE ?'
+  query(sql, [data, data]).then (result) ->
+    id = result.insertId
+    Log "Wrote user #{ id }"
+    return id
 
 
 # Get user data
@@ -96,13 +98,10 @@ read_user = (uid) ->
 
   Log "Fetching user #{uid}"
 
-  deferred = Q.defer()
-
-  db.query 'SELECT * FROM users WHERE id=?', uid, (err, result) ->
-    if err then return deferred.reject(err)
+  query('SELECT * FROM users WHERE id=?', uid).then (result) ->
 
     if result.length is 0
-      return deferred.reject()
+      throw Error
 
     user = result[0]
 
@@ -111,26 +110,20 @@ read_user = (uid) ->
     user.data_setting = shrink.unpack user.data_setting
     user.data_time    = shrink.unpack user.data_time
 
-    deferred.resolve(user)
+    return user
 
-  return deferred.promise
-
+# Get all users
 all_users = ->
-  deferred = Q.defer()
-  db.query 'SELECT id, name, email FROM users', deferred.makeNodeResolver()
-  return deferred.promise
+  query 'SELECT id, name, email FROM users'
 
 # Delete user data
 del_user = (uid) ->
-  deferred = Q.defer()
-  db.query 'DELETE FROM users WHERE id = ?', uid, deferred.makeNodeResolver()
-  deferred.then ->
+  query('DELETE FROM users WHERE id = ?', uid).then ->
     Log 'Deleted user', uid
 
 
 truncate = (table) ->
-  sql = "TRUNCATE #{ table }"
-  query sql
+  query "TRUNCATE #{ table }"
 
 # Remove user
 # Update user details

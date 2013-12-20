@@ -181,7 +181,7 @@ Storage =
   ###
 
   writeUser: (user, attrs) ->
-    Log 'Writing user to database'
+    Log "Writing user: #{ user.id } with keys:", attrs
     dbase.user.write user, attrs
 
 

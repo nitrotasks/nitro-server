@@ -1,12 +1,23 @@
 
 # Testing the database storage engine
 
-DB = require '../app/database.coffee'
+DB = require '../app/database'
+connect = require '../app/connect'
 assert = require 'assert'
 
 describe 'Database', ->
 
-  USER =
+  before (done) ->
+    connect.init('testing')
+    DB.connected
+      .then ->
+        DB.truncate 'users'
+      .then ->
+        done()
+      .fail (err) ->
+        console.log err
+
+  user =
     name: 'George Czabania'
     email: 'george@czabania.com'
     password: 'password'
@@ -27,19 +38,15 @@ describe 'Database', ->
     index_List: 100
     created_at: new Date()
 
-  it 'should connect to the server', (done) ->
-    DB.connect().then ->
-      done()
-
   it 'should add a user', (done) ->
 
-    DB.user.write(USER).then (_uid) ->
-      USER.id = _uid
+    DB.user.write(user).then (_uid) ->
+      user.id = _uid
       done()
 
   it 'should read the data back', (done) ->
-    DB.user.read(USER.id).then (user) ->
-      for k, v of USER
+    DB.user.read(user.id).then (user) ->
+      for k, v of user
         if v instanceof Date
           assert.equal(v.toString(), user[k].toString())
         else if typeof v is 'object'
@@ -49,7 +56,7 @@ describe 'Database', ->
       done()
 
   it 'should delete the user data', (done) ->
-    DB.user.delete(USER.id).then -> done()
+    DB.user.delete(user.id).then -> done()
 
   it 'should close the connection to the server', ->
     DB.close()

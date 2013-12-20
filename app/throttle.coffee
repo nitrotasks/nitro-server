@@ -1,31 +1,44 @@
+###
+ * A custom throttle script that handles passing arguments and promises
+###
+
+Q = require 'kew'
 
 throttle = (callback, duration) ->
 
-  args = []
+  attributes = []
   running = no
   trailing = no
   lastRun = 0
 
   fn = ->
-    callback args
+    callback attributes
+    attributes = []
     lastRun = Date.now()
-    args = []
     if not trailing then running = no
 
   trail_fn = ->
     trailing = no
-    callback args
+    callback attributes
+    attributes = []
     lastRun = Date.now()
-    args = []
 
-  return (arg) ->
-    if arg not in args then args.push arg
+  return (args...) ->
+    deferred = Q.defer()
+
+    for arg in args
+      if arg not in attributes then attributes.push arg
+
     if not running
+      deferred.resolve()
       fn()
       running = yes
     else if not trailing
-      timeout = duration - (Date.now() - lastRun)
-      setTimeout trail_fn, timeout
+      timeout = Math.max 0, duration - (Date.now() - lastRun)
+      Q.delay(timeout).then ->
+        deferred.resolve()
+        trail_fn()
       trailing = yes
+    return deferred.promise
 
 module.exports = throttle

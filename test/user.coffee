@@ -61,10 +61,10 @@ describe 'User class', ->
           done()
 
     user = new User()
-    user._write 'tasks'
-    user._write 'lists'
-    user._write 'name'
-    user._write 'email'
+    user.save 'tasks'
+    user.save 'lists'
+    user.save 'name'
+    user.save 'email'
 
   it 'should get and set data', ->
 

@@ -32,7 +32,7 @@ class User
 
   constructor: (attrs) ->
     @_load attrs if attrs
-    @_write = throttle @_write, 5000
+    @save = throttle @_write, 5000
 
   # Resolve cyclic dependency with Storage controller
   module.exports = User
@@ -56,7 +56,7 @@ class User
    * Will do nothing if the user has been released from memoru.
   ###
 
-  _write: (keys) ->
+  _write: (keys) =>
     return if @_released
     Storage.writeUser this, keys
 
@@ -71,7 +71,7 @@ class User
 
   set: (key, value) ->
     @[key] = value
-    @_write(key)
+    @save key
     return value
 
   ###

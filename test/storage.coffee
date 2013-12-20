@@ -208,9 +208,12 @@ describe 'Storage API >', ->
       Storage.get(user.id).then (_user) ->
         _user.data 'task', tasks
         _user.data 'list', lists
+
         assert.equal tasks, _user.data 'task'
         assert.equal lists, _user.data 'list'
-        done()
+
+        _user.save('task', 'list').then ->
+          done()
 
     it 'should release users from memory', (done) ->
 
