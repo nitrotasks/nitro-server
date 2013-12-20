@@ -34,9 +34,11 @@ class User
     @_load attrs if attrs
     @_write = throttle @_write, 5000
 
+
   # Resolve cyclic dependency with Storage controller
   module.exports = User
   Storage = require './storage'
+
 
   ###
    * (private) Load attributes
@@ -50,6 +52,7 @@ class User
     @[key] = value for own key, value of attrs
     return this
 
+
   ###
    * (private) Write to database
    * Writes the user data to disk.
@@ -59,6 +62,7 @@ class User
   _write: (keys) =>
     return if @_released
     Storage.writeUser this, keys
+
 
   ###
    * Set a value on the instance
@@ -73,6 +77,7 @@ class User
     @[key] = value
     @_write key
     return value
+
 
   ###
    * Get or set user data
@@ -93,6 +98,7 @@ class User
       return @[key] = {}
     return @[key]
 
+
   ###
    * Save data to disk
    *
@@ -102,6 +108,7 @@ class User
   save: (key) ->
     key = 'data_' + key
     @_write key
+
 
   ###
    * Get the index for a data set
@@ -115,6 +122,7 @@ class User
     key = 'index_' + key
     index = @[key]
     return index ? @set key, 0
+
 
   ###
    * Increment the index for a data set by one
@@ -130,6 +138,7 @@ class User
     @set key, ++value
     return value
 
+
   ###
    * Change a users password and remove all their login tokens
    *
@@ -139,6 +148,7 @@ class User
   setPassword: (password) ->
     @set 'password', password
     return Storage.removeAllLoginTokens(@id)
+
 
   ###
    * Change a users email and update the email lookup table
@@ -158,3 +168,4 @@ class User
 
   release: ->
     @_released = true
+

@@ -3,7 +3,6 @@ dbase     = require './database'
 redis     = require './redis'
 Log       = require('./log')('Storage', 'green')
 
-
 # -----------------------------------------------------------------------------
 # Errors
 # -----------------------------------------------------------------------------
@@ -21,7 +20,6 @@ User = null
 createUser = (attrs) ->
   User ?= require './user'
   return new User attrs
-
 
 # -----------------------------------------------------------------------------
 # Storage Controller
@@ -54,6 +52,7 @@ Storage =
       redis.hmset key, info
       redis.expire key, 172800 # 48 hours
       return token
+
 
   ###
    * This will check if registration token exists.
@@ -99,6 +98,7 @@ Storage =
           Log 'Adding email to redis', id
           redis.hset 'users:' + service, user.email, id
           @get id
+
 
   ###
    * This will retrive a user from the database by their ID.
@@ -279,6 +279,7 @@ Storage =
     redis.get(key).then (id) ->
       if id is null then throw ERR_BAD_TOKEN
       return id
+
 
   ###
    * Remove a reset token

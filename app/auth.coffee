@@ -1,6 +1,7 @@
 Q       = require 'kew'
 bcrypt  = require 'bcrypt'
-User    = require './user'
+crypto  = require 'crypto'
+Storage = require './storage'
 oauth   = require './oauth'
 Keys    = require './keychain'
 
@@ -17,7 +18,7 @@ Auth =
 
       oauth.userinfo(service, access).then ([email, name]) ->
 
-        User.getByEmail(email, service)
+        Storage.getByEmail(email, service)
 
           # User already exists, so we can sign them in
           .then (user) ->
@@ -31,7 +32,7 @@ Auth =
 
           # User doesn't exist, so we register them
           .otherwise ->
-            User.add({
+            Storage.add({
               name: name
               email: email
               password: '*'
@@ -49,21 +50,16 @@ Auth =
 
       return deferred.promise
 
-  hash: (data, salt) ->
-    deferred = Q.defer()
+  ###
+   * Hash some data using bcrypt
+   * The salt is randomly generated.
+   *
+   * - data (string)
+   * > data
+  ###
 
-    hash = (salt) ->
-      bcrypt.hash data, salt, (err, hash) ->
-        if err then return deferred.reject()
-        deferred.resolve hash
-
-    if not salt
-      bcrypt.genSalt 10, (err, salt) ->
-        if err then return deferred.reject()
-        hash(salt)
-    else hash(salt)
-
-    return deferred.promise
+  hash: (data) ->
+    bcrypt.hash data, 10, (err, hash) ->
 
   compare: (data, hash) ->
     deferred = Q.defer()
@@ -72,25 +68,25 @@ Auth =
       deferred.resolve same
     return deferred.promise
 
+  # Wrap crypto.randomBytes in a promise
+  randomBytes: Q.bindPromise crypto.randomBytes, crypto
+
   # Generate a random string
   createToken: (len=64) ->
-    token = ''
-    chars = '-_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    for i in [1..len] by 1
-      key = Math.floor(Math.random() * chars.length)
-      token += chars[key]
-    return token
+    byteLen = Math.ceil len * 0.75
+    Auth.randomBytes(byteLen).then (bytes) ->
+      return bytes.toString 'base64'
 
   # Just a wrapper for generating token, saving it and then returning the token
   saveToken: (id) ->
-    token = Auth.createToken()
-    User.addLoginToken(id, token)
-    token
+    Auth.createToken().then (token) ->
+      Storage.addLoginToken id, token
+      return token
 
   # Gives the user a token to use to connect to SocketIO
   login: (email, password) ->
     deferred = Q.defer()
-    User.getByEmail(email)
+    Storage.getByEmail(email)
       .then (user) ->
         Auth.compare(password, user.password).then (same) ->
           if not same then return deferred.reject('err_bad_pass')
@@ -128,7 +124,7 @@ Auth =
         Auth.hash(pass)
       .then (hash) ->
         token = Auth.createToken(22)
-        User.register(token, name, email, hash)
+        Storage.register(token, name, email, hash)
       .then (token) ->
         deferred.resolve(token)
       .fail (err) ->
@@ -139,9 +135,9 @@ Auth =
   verifyRegistration: (token) ->
     deferred = Q.defer()
     Q.fcall ->
-      User.getRegistration(token)
+      Storage.getRegistration(token)
     .then (user) ->
-      User.add
+      Storage.add
         name: user.name
         email: user.email
         password: user.password
@@ -155,9 +151,9 @@ Auth =
   generateResetToken: (email) ->
     deferred = Q.defer()
     token = Auth.createToken(22)
-    User.getByEmail(email)
+    Storage.getByEmail(email)
       .then (user) ->
-        User.addResetToken user.id, token
+        Storage.addResetToken user.id, token
         deferred.resolve(token)
       .fail ->
         deferred.reject 'err_bad_email'
