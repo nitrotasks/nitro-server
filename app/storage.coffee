@@ -3,13 +3,15 @@ dbase     = require './database'
 redis     = require './redis'
 Log       = require('./log')('Storage', 'green')
 
+
 # -----------------------------------------------------------------------------
-# Errors
+# Constants
 # -----------------------------------------------------------------------------
 
 ERR_OLD_EMAIL = 'err_old_email'
 ERR_BAD_TOKEN = 'err_bad_token'
 ERR_NO_USER   = 'err_no_user'
+
 
 # -----------------------------------------------------------------------------
 # User Factory
@@ -20,6 +22,7 @@ User = null
 createUser = (attrs) ->
   User ?= require './user'
   return new User attrs
+
 
 # -----------------------------------------------------------------------------
 # Storage Controller

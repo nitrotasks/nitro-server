@@ -36,7 +36,52 @@ describe 'Auth API', ->
         done()
 
 
+# -----------------------------------------------------------------------------
+# Crypto
+# -----------------------------------------------------------------------------
+
+  it 'should hash some data', (done) ->
+
+    string = JSON.stringify data
+
+    Auth.hash(string)
+      .then (hash) ->
+        Auth.compare(string, hash)
+      .then (same) ->
+        assert same
+        done()
+      .fail(log)
+
+
+  it 'should compare correctly', (done) ->
+
+    real = 'hamburger'
+    fake = 'Hamburger'
+
+    Auth.hash(real)
+      .then (hash) ->
+        Auth.compare fake, hash
+      .then (same) ->
+        assert not same
+        done()
+      .fail(log)
+
+  it 'should generate random bytes', (done) ->
+    size = 30
+
+    Auth.randomBytes(size)
+      .then (bytes) ->
+        assert.equal bytes.length, size
+        done()
+      .fail(log)
+
+
+# -----------------------------------------------------------------------------
+# Registration
+# -----------------------------------------------------------------------------
+
   it 'should be able to register a user', (done) ->
+
     Auth.register(data.name, data.email, data.password)
       .then (_token) ->
         token = _token
@@ -45,12 +90,18 @@ describe 'Auth API', ->
         done()
       .fail(log)
 
+
   it 'should verify the registration', (done) ->
     Auth.verifyRegistration(token).then (user) ->
       assert.equal data.name, user.name
       assert.equal data.email, user.email
       assert.notEqual data.password, user.password
       done()
+
+
+# -----------------------------------------------------------------------------
+# Login
+# -----------------------------------------------------------------------------
 
   it 'Login with real password', (done) ->
 
@@ -62,6 +113,11 @@ describe 'Auth API', ->
   it 'Login with wrong password', (done) ->
 
     Auth.login(data.email, 'hunter2').fail -> done()
+
+
+# -----------------------------------------------------------------------------
+# Tokens
+# -----------------------------------------------------------------------------
 
   it 'should generate a random token', (done) ->
 
@@ -89,4 +145,6 @@ describe 'Auth API', ->
       assert.equal token.length, 22
       done()
     .fail(log)
+
+
 
