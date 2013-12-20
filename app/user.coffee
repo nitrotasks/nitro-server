@@ -32,7 +32,7 @@ class User
 
   constructor: (attrs) ->
     @_load attrs if attrs
-    @save = throttle @_write, 5000
+    @_write = throttle @_write, 5000
 
   # Resolve cyclic dependency with Storage controller
   module.exports = User
@@ -71,7 +71,7 @@ class User
 
   set: (key, value) ->
     @[key] = value
-    @save key
+    @_write key
     return value
 
   ###
@@ -92,6 +92,16 @@ class User
     if not this.hasOwnProperty(key)
       return @[key] = {}
     return @[key]
+
+  ###
+   * Save data to disk
+   *
+   * - key (string)
+  ###
+
+  save: (key) ->
+    key = 'data_' + key
+    @_write key
 
   ###
    * Get the index for a data set

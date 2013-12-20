@@ -162,7 +162,7 @@ describe 'throttle', ->
 
       for time in input
         Q.delay(time).then(fn)
-      
+
     for test in tests
       input  = test.input.map(multiply)
       output = test.output.map(multiply)

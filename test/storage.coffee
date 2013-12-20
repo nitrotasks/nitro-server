@@ -212,8 +212,10 @@ describe 'Storage API >', ->
         assert.equal tasks, _user.data 'task'
         assert.equal lists, _user.data 'list'
 
-        _user.save('task', 'list').then ->
-          done()
+        _user.save('task', 'list')
+          .then ->
+            done()
+          .fail(log)
 
     it 'should release users from memory', (done) ->
 

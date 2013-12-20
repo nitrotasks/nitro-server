@@ -11,15 +11,15 @@ throttle = (callback, duration) ->
   trailing = no
   lastRun = 0
 
-  fn = ->
-    callback attributes
+  fn = (deferred) ->
+    deferred.resolve callback attributes
     attributes = []
     lastRun = Date.now()
     if not trailing then running = no
 
-  trail_fn = ->
+  trail_fn = (deferred) ->
     trailing = no
-    callback attributes
+    deferred.resolve callback attributes
     attributes = []
     lastRun = Date.now()
 
@@ -30,15 +30,14 @@ throttle = (callback, duration) ->
       if arg not in attributes then attributes.push arg
 
     if not running
-      deferred.resolve()
-      fn()
+      fn(deferred)
       running = yes
+
     else if not trailing
       timeout = Math.max 0, duration - (Date.now() - lastRun)
-      Q.delay(timeout).then ->
-        deferred.resolve()
-        trail_fn()
+      Q.delay(timeout).then -> trail_fn(deferred)
       trailing = yes
+
     return deferred.promise
 
 module.exports = throttle

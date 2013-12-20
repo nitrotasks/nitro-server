@@ -50,10 +50,10 @@ describe 'User class', ->
 
       switch count++
         when 0
-          assert.deepEqual args, ['tasks']
+          assert.deepEqual args, ['data_tasks']
 
         when 1
-          assert.deepEqual args, ['lists', 'name', 'email']
+          assert.deepEqual args, ['data_lists', 'data_name', 'data_email']
           diff = Date.now() - start
           assert diff >= 5000
           assert diff <= 5005
