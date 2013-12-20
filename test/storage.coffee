@@ -289,7 +289,7 @@ describe 'Storage API >', ->
 
     it 'Register User', (done) ->
 
-      Storage.register(token, user)
+      Storage.register(token, user.name, user.email, user.password)
         .then (_token) ->
           assert.equal _token, token
           done()

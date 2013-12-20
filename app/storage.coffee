@@ -45,11 +45,14 @@ Storage =
    * ! err_old_email
   ###
 
-  register: (token, info) ->
-    @emailExists(info.email).then (exists) ->
+  register: (token, name, email, password) ->
+    @emailExists(email).then (exists) ->
       if exists then throw ERR_OLD_EMAIL
       key = "register:#{ token }"
-      redis.hmset key, info
+      redis.hmset key,
+        name: name
+        email: email
+        password: password
       redis.expire key, 172800 # 48 hours
       return token
 
@@ -210,10 +213,13 @@ Storage =
    *
    * - id (int) : the user id
    * - token (string) : the login token
+   * > token
   ###
 
   addLoginToken: (id, token) ->
-    redis.setex "token:#{ id }:#{ token }", 1209600, Date.now()
+    key = 'token:' + id + ':' + token
+    redis.setex(key, 1209600, Date.now()).then ->
+      return token
 
 
   ###
@@ -260,11 +266,13 @@ Storage =
    *
    * - id (int) : the user id
    * - token (string) : the reset token
+   * > token
   ###
 
   addResetToken: (id, token) ->
     key = 'forgot:' + token
-    redis.setex key, 86400, id
+    redis.setex(key, 86400, id).then ->
+      return token
 
 
   ###

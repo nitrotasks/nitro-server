@@ -5,6 +5,17 @@ Storage = require './storage'
 oauth   = require './oauth'
 Keys    = require './keychain'
 
+# Wrap bcrypt in promises
+bcrypt =
+  compare:  Q.bindPromise bcrypt.compare,  bcrypt
+  hash:     Q.bindPromise bcrypt.hash,     bcrypt
+  salt:     Q.bindPromise bcrypt.genSalt,  bcrypt
+
+
+RESET_TOKEN_LENGTH = 22
+LOGIN_TOKEN_LENGTH = 64
+REGISTRATION_TOKEN_LENGTH = 22
+
 Auth =
 
   oauth:
@@ -55,11 +66,19 @@ Auth =
    * The salt is randomly generated.
    *
    * - data (string)
-   * > data
+   * > encrypted data
   ###
 
   hash: (data) ->
-    bcrypt.hash data, 10, (err, hash) ->
+    bcrypt.salt(10).then (salt) -> bcrypt.hash data, salt
+
+
+  ###
+   * Check a hash against some data
+   *
+   * - data (string)
+   * - hash (buffer?)
+  ###
 
   compare: (data, hash) ->
     deferred = Q.defer()
@@ -71,92 +90,109 @@ Auth =
   # Wrap crypto.randomBytes in a promise
   randomBytes: Q.bindPromise crypto.randomBytes, crypto
 
-  # Generate a random string
-  createToken: (len=64) ->
+  ###
+   * Generate a random string of a certain length
+   *
+   * - len (int) : The length of the string
+  ###
+
+  createToken: (len) ->
     byteLen = Math.ceil len * 0.75
     Auth.randomBytes(byteLen).then (bytes) ->
-      return bytes.toString 'base64'
+      return bytes.toString('base64')[0...len]
 
-  # Just a wrapper for generating token, saving it and then returning the token
-  saveToken: (id) ->
-    Auth.createToken().then (token) ->
+  ###
+   * Create a login token for a user
+   *
+   * - id (int) : The user id
+   * > token
+  ####
+
+  createLoginToken: (id) ->
+    Auth.createToken(LOGIN_TOKEN_LENGTH).then (token) ->
       Storage.addLoginToken id, token
-      return token
+
+
+  ###
+   * Generate a login token for a user
+   * Only works if the email and password match
+   *
+   * - email (string)
+   * - pass (string) : plaintext
+   * > token
+  ###
 
   # Gives the user a token to use to connect to SocketIO
-  login: (email, password) ->
-    deferred = Q.defer()
-    Storage.getByEmail(email)
-      .then (user) ->
-        Auth.compare(password, user.password).then (same) ->
-          if not same then return deferred.reject('err_bad_pass')
-          # Generate login token for user
-          deferred.resolve [
-            user.id
-            Auth.saveToken(user.id)
-            user.email
-            user.name
-            user.pro
-          ]
-      .fail ->
-        deferred.reject('err_bad_pass')
-    return deferred.promise
+  login: (email, pass) ->
+    Storage.getByEmail(email).then (user) ->
+      Auth.compare(pass, user.password).then (same) ->
+        if not same then throw 'err_bad_pass'
+        Auth.createLoginToken user.id
+
+
+  ###
+   * Register a user.
+   * Hashes the users password and stores it in the database
+   *
+   * - name (string)
+   * - email (string)
+   * - pass (string) : plaintext
+   * > registration token
+   * ! invalid details
+  ###
 
   register: (name, email, pass) ->
-    deferred = Q.defer()
 
-    valid = yes
+    # Validation
 
     if name.length is 0
-      deferred.reject('err_bad_name')
-      valid = no
+      return Q.reject 'err_bad_name'
 
     if email.length is 0
-      deferred.reject('err_bad_email')
-      valid = no
+      return Q.reject 'err_bad_email'
 
     if pass.length is 0
-      deferred.reject('err_bad_pass')
-      valid = no
+      return Q.reject 'err_bad_pass'
 
-    if valid
-      Q.fcall ->
-        Auth.hash(pass)
-      .then (hash) ->
-        token = Auth.createToken(22)
-        Storage.register(token, name, email, hash)
-      .then (token) ->
-        deferred.resolve(token)
-      .fail (err) ->
-        deferred.reject(err)
+    # Hash password
 
-    return deferred.promise
+    Q.all([
+      Auth.createToken REGISTRATION_TOKEN_LENGTH
+      Auth.hash pass
+    ]).then ([token, hash]) ->
+      Storage.register token, name, email, hash
+
+
+  ###
+   * Verify a registration using a token.
+   * Should be used to verify that the user owns the email address.
+   *
+   * - token (string) : the registration token
+   * > user info stored at registration
+  ###
 
   verifyRegistration: (token) ->
-    deferred = Q.defer()
-    Q.fcall ->
-      Storage.getRegistration(token)
-    .then (user) ->
+    Storage.getRegistration(token).then (user) ->
       Storage.add
         name: user.name
         email: user.email
         password: user.password
-    .then (user) ->
-      deferred.resolve(user)
-    .fail (err) ->
-      deferred.reject(err)
-    return deferred.promise
+
+
+  ###
+   * Generate a password reset token for a user
+   *
+   * - email (string) : the email of the user
+   * > token
+  ###
 
   # Generate a reset password token for the user
-  generateResetToken: (email) ->
-    deferred = Q.defer()
-    token = Auth.createToken(22)
-    Storage.getByEmail(email)
-      .then (user) ->
-        Storage.addResetToken user.id, token
-        deferred.resolve(token)
-      .fail ->
-        deferred.reject 'err_bad_email'
-    deferred.promise
+  createResetToken: (email) ->
+    Q.all([
+      Auth.createToken RESET_TOKEN_LENGTH
+      Storage.getByEmail email
+    ]).then ([token, user]) ->
+      Storage.addResetToken user.id, token
 
-module?.exports = Auth
+
+module.exports = Auth
