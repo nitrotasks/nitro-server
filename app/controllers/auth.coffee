@@ -184,4 +184,16 @@ Auth =
         password: user.password
 
 
+  ###
+   * Change a users password
+   *
+   * - user (user) : the user instance
+   * - pass (string) : plaintext
+  ###
+ 
+  changePassword: (user, pass) ->
+    Auth.hash(pass).then (hash) ->
+      user.setPassword hash
+
+
 module.exports = Auth

@@ -147,7 +147,7 @@ class User
 
   setPassword: (password) ->
     @set 'password', password
-    return Storage.removeAllLoginTokens(@id)
+    Storage.removeAllLoginTokens(@id)
 
 
   ###
@@ -159,7 +159,7 @@ class User
   setEmail: (email) ->
     oldEmail = @email
     @set 'email', email
-    return Storage.replaceEmail @id, oldEmail, email, @service
+    Storage.replaceEmail @id, oldEmail, email, @service
 
 
   ###

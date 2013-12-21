@@ -11,7 +11,7 @@ redis = null
 wrapper = {}
 methods = [
   'expire', 'setex',
-  'del', 'exists', 'keys',
+  'get', 'del', 'exists', 'keys',
   'hmset', 'hgetall', 'hset', 'hget', 'hdel', 'hexists'
 ]
 
