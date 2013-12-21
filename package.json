@@ -17,7 +17,9 @@
     "forever": "0.10.x",
     "http-proxy": "0.10.x",
     "kew": "0.3.x",
-    "hiredis": "0.1.x"
+    "hiredis": "0.1.x",
+    "sockjs": "~0.3.8",
+    "cors": "~2.1.1"
   },
   "devDependencies": {
     "supertest": "0.8.x",

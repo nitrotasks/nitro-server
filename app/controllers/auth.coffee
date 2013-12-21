@@ -77,9 +77,9 @@ Auth =
   ###
 
   createToken: (len) ->
-    byteLen = Math.ceil len * 0.75
+    byteLen = Math.ceil len / 2
     Auth.randomBytes(byteLen).then (bytes) ->
-      return bytes.toString('base64')[0...len]
+      return bytes.toString('hex')[0...len]
 
 
   ###

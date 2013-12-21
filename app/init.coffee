@@ -2,7 +2,7 @@ config  = require './config'
 Log     = require './utils/log'
 connect = require './controllers/connect'
 api     = require './controllers/api'
-sockets = require './controllers/sockets'
+# sockets = require './controllers/sockets'
 
 ###
  * If this file is required by another, then it will put the app into
@@ -28,10 +28,12 @@ config.use if DebugMode then 'development' else 'production'
 
 connect.init()
 
-log "Starting server on port #{ config.port }"
+port = config.server.port
+
+log "Starting server on port #{ port }"
 
 # Start api
 server = api.listen port
 
 # Start sync
-sockets.init serve
+# sockets.init serve
