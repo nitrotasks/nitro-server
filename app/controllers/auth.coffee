@@ -116,7 +116,7 @@ Auth =
    *
    * - email (string)
    * - pass (string) : plaintext
-   * > token
+   * > user and token info
    * ! err_bad_pass
   ###
 
@@ -129,6 +129,8 @@ Auth =
     .then (same) ->
       if not same then throw ERR_BAD_PASS
       Auth.createLoginToken user.id
+    .then (token) ->
+      return [user.id, token, user.email, user.name, user.pro]
 
 
   ###

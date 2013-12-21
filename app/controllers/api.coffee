@@ -36,7 +36,6 @@ routes = [
 for route in routes
   route = require '../routes/' + route
   for path in route
-    console.log path
     app[path.type] path.url, path.handler
 
 module.exports = app
