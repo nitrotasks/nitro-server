@@ -1,5 +1,20 @@
-Warn = require('./utils/log')('Warning', 'red')
-Log  = require('./utils/log')('Info', 'green')
+config  = require './config'
+Log     = require './utils/log'
+connect = require './controllers/connect'
+api     = require './controllers/api'
+sockets = require './controllers/sockets'
+
+###
+ * If this file is required by another, then it will put the app into
+ * debug mode and just return the api
+###
+
+if module.parent?
+  global.DebugMode = true
+  module.exports = api
+
+log  = Log 'Info', 'green'
+warn = Log 'Warning', 'red'
 
 # Handle debug mode
 global.DebugMode = off
@@ -7,37 +22,16 @@ global.DebugMode = off
 # Enable debug mode if passed as argument
 if '--debug' in process.argv
   global.DebugMode = on
-  Warn 'Running in debug mode!'
+  warn 'Running in debug mode!'
 
-if module.parent is null
+config.use if DebugMode then 'development' else 'production'
 
-  # Port 443 should be piped to 8080
-  port = 8080
+connect.init()
 
-  # Override port
-  if '-p' in process.argv
-    index = process.argv.indexOf('-p')
-    port = process.argv[index + 1]
+log "Starting server on port #{ config.port }"
 
-  # Connect to database
-  connect = require './controllers/connect'
+# Start api
+server = api.listen port
 
-  if global.DebugMode
-    connect.init 'development'
-  else
-    connect.init 'production'
-
-  # Start api
-  api = require './controllers/api'
-  server = api.listen port
-
-  Log "Starting server on port #{ port }"
-
-  # Start sync
-  Sync = require './controllers/sync'
-  Sync.init server
-
-else
-
-  global.DebugMode = true
-  module.exports = require './controllers/api'
+# Start sync
+sockets.init serve

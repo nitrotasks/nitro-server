@@ -11,16 +11,13 @@ connect =
    * - type (string) : 'production', 'development', 'testing'
   ###
 
-  init: (type) ->
-
-    # Load configuration
-    cf = config[type]
+  init: () ->
 
     # Connect to MySQL
-    @mysql = mysql.createConnection cf.mysql
+    @mysql = mysql.createConnection config.mysql
 
     # Connect to Redis
-    @redis = nodeRedis.createClient cf.redis.port, cf.redis.host
+    @redis = nodeRedis.createClient config.redis.port, config.redis.host
 
     @ready.resolve()
 

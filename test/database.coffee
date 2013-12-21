@@ -1,14 +1,17 @@
 
 # Testing the database storage engine
 
-DB = require '../app/database'
-connect = require '../app/connect'
-assert = require 'assert'
+DB      = require '../app/controllers/database'
+config  = require '../app/config'
+connect = require '../app/controllers/connect'
+assert  = require 'assert'
+
+config.use 'testing'
 
 describe 'Database', ->
 
   before (done) ->
-    connect.init('testing')
+    connect.init()
     DB.connected
       .then ->
         DB.truncate 'users'

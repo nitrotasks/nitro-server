@@ -1,11 +1,13 @@
-Q = require 'q'
-assert = require 'assert'
-connect = require '../app/controllers/connect'
+Q        = require 'q'
+assert   = require 'assert'
+connect  = require '../app/controllers/connect'
 database = require '../app/controllers/database'
-Storage = require '../app/controllers/storage'
+Storage  = require '../app/controllers/storage'
+config   = require '../app/config'
 
 global.DebugMode = true
-connect.init 'testing'
+config.use 'testing'
+connect.init()
 
 users = [
   {name: 'stayradiated', email: 'george@czabania.com', password: 'abc'}
