@@ -1,4 +1,7 @@
 Auth = require '../controllers/auth'
+Log = require '../utils/log'
+
+log = Log 'Route -> Login', 'green'
 
 # -----------------------------------------------------------------------------
 # Login
@@ -12,6 +15,7 @@ login = (req, res) ->
 
   Auth.login(user.email, user.password)
     .then (data) ->
+      log 'logging in', data[2]
       res.send data
     .fail (err) ->
       res.status 401

@@ -8,9 +8,8 @@ config =
 
   production:
 
-    server:
-      url: 'http://sync.nitrotasks.com:443'
-      port: 8080
+    url: 'http://sync.nitrotasks.com:443'
+    port: 8080
 
     redis:
       host: '127.0.0.1'
@@ -25,9 +24,8 @@ config =
 
   development:
 
-    server:
-      url: 'http://localhost:8080'
-      port: 8080
+    url: 'http://localhost:8080'
+    port: 8080
 
     redis:
       host: '127.0.0.1'

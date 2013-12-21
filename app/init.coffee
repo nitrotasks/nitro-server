@@ -28,12 +28,10 @@ config.use if DebugMode then 'development' else 'production'
 
 connect.init()
 
-port = config.server.port
-
-log "Starting server on port #{ port }"
+log "Starting server on port #{ config.port }"
 
 # Start api
-server = api.listen port
+server = api.listen config.port
 
 # Start sync
 # sockets.init serve
