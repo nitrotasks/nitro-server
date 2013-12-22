@@ -1,5 +1,5 @@
 nodemailer = require 'nodemailer'
-Q          = require 'q'
+Q          = require 'kew'
 KeyChain   = require '../utils/keychain'
 Log        = require '../utils/log'
 

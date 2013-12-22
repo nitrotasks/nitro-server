@@ -1,42 +1,21 @@
-Q        = require 'q'
-assert   = require 'assert'
-connect  = require '../app/controllers/connect'
-database = require '../app/controllers/database'
+Q        = require 'kew'
+should   = require 'should'
+setup    = require './setup'
 Storage  = require '../app/controllers/storage'
-config   = require '../app/config'
-
-global.DebugMode = true
-config.use 'testing'
-connect.init()
+redis    = require '../app/controllers/redis'
 
 users = [
-  {name: 'stayradiated', email: 'george@czabania.com', password: 'abc'}
-  {name: 'consindo', email: 'jono@jonocooper.com', password: 'xkcd'}
-  {name: 'teqnoqolor', email: 'dev@stayradiated.com', password: 'hunter2'}
+  {name: 'stayradiated',  email: 'george@czabania.com',   password: 'abc'}
+  {name: 'consindo',      email: 'jono@jonocooper.com',   password: 'xkcd'}
+  {name: 'nitroman',      email: 'user@nitrotaks.com',    password: 'hunter2'}
 ]
 
 log = console.log.bind(console)
 
 describe 'Storage API >', ->
 
+  before setup
 
-# -----------------------------------------------------------------------------
-# Setup
-# -----------------------------------------------------------------------------
-
-  before (done) ->
-
-    promise = Q.all [
-      connect.ready
-      database.connected
-    ]
-
-    promise
-      .then ->
-        connect.redis.flushdb()
-        database.truncate 'users'
-      .then ->
-        done()
 
 # -----------------------------------------------------------------------------
 # Adding Users
@@ -46,16 +25,16 @@ describe 'Storage API >', ->
     users.forEach (user, i, array) ->
       Storage.add(user)
         .then (data) ->
-          assert.equal data.name, user.name
-          assert.equal data.email, user.email
-          assert.equal data.password, user.password
+          data.name.should.equal       user.name
+          data.email.should.equal      user.email
+          data.password.should.equal   user.password
           if i is array.length - 1 then done()
         .fail(log)
 
   it 'should not allow duplicate email addresses', (done) ->
     users.forEach (user, i, array) ->
       Storage.add(user).fail (err) ->
-        assert.equal err, 'err_old_email'
+        err.should.equal 'err_old_email'
         if i is array.length - 1 then done()
 
 
@@ -67,7 +46,7 @@ describe 'Storage API >', ->
 
     Storage.emailExists('joe@smith.com')
       .then (exists) ->
-        assert.equal exists, false
+        exists.should.be.false
         done()
       .fail(log)
 
@@ -75,7 +54,7 @@ describe 'Storage API >', ->
 
     users.forEach (user, i, array) ->
       Storage.emailExists(user.email).then (exists) ->
-        assert.equal exists, true
+        exists.should.be.true
         if i is array.length - 1 then done()
 
 
@@ -88,7 +67,7 @@ describe 'Storage API >', ->
     users.forEach (user, i, array) ->
       Storage.getByEmail(user.email)
         .then (data) ->
-          assert.equal user.email, data.email
+          user.email.should.equal data.email
           # Save user ID so we can use it future tests
           users[i].id = data.id
           if i is array.length - 1 then done()
@@ -107,9 +86,9 @@ describe 'Storage API >', ->
     users.forEach (user, i, array) ->
       Storage.get(user.id)
         .then (_user) ->
-          assert.equal user.name, _user.name
-          assert.equal user.email, _user.email
-          assert.equal user.password, _user.password
+          user.name.should.equal          _user.name
+          user.email.should.equal         _user.email
+          user.password.should.equal  _user.password
           if i is array.length - 1 then done()
         .fail(log)
 
@@ -132,7 +111,7 @@ describe 'Storage API >', ->
     it 'check exists', (done) ->
       Storage.checkLoginToken(id, token)
         .then (exists) ->
-          assert.equal exists, true
+          exists.should.be.true
           done()
         .fail(log)
 
@@ -141,7 +120,7 @@ describe 'Storage API >', ->
         .then ->
           Storage.checkLoginToken(id, token)
         .then (exists) ->
-          assert.equal exists, false
+          exists.should.be.false
           done()
         .fail(log)
 
@@ -168,13 +147,13 @@ describe 'Storage API >', ->
     it 'check old email has been removed', (done) ->
       Storage.getByEmail(oldEmail)
         .fail (err) ->
-          assert.equal err, 'err_no_user'
+          err.should.equal 'err_no_user'
           done()
 
     it 'check new email has been added', (done) ->
       Storage.getByEmail(user.email)
         .then (_user) ->
-          assert.equal _user.name, user.name
+          _user.name.should.equal user.name
           done()
         .fail(log)
 
@@ -211,8 +190,8 @@ describe 'Storage API >', ->
         _user.data 'task', tasks
         _user.data 'list', lists
 
-        assert.equal tasks, _user.data 'task'
-        assert.equal lists, _user.data 'list'
+        tasks.should.equal _user.data 'task'
+        lists.should.equal _user.data 'list'
 
         _user.save('task', 'list')
           .then ->
@@ -225,7 +204,7 @@ describe 'Storage API >', ->
         .then ->
           Storage.get(user.id)
         .then (_user) ->
-          assert.deepEqual tasks, _user.data 'task'
+          tasks.should.eql _user.data 'task'
           _user.data('task')[1].name = 'task 1 - Changed'
           done()
 
@@ -234,10 +213,10 @@ describe 'Storage API >', ->
       Storage.get(user.id)
         .then (_user) ->
           index = _user.index 'tasks'
-          assert.equal index, 0
-          assert.equal ++index, _user.incrIndex 'tasks'
-          assert.equal ++index, _user.incrIndex 'tasks'
-          assert.equal index, _user.index 'tasks'
+          index.should.equal 0
+          (++index).should.equal _user.incrIndex 'tasks'
+          (++index).should.equal _user.incrIndex 'tasks'
+          index.should.equal _user.index 'tasks'
           done()
         .fail(log)
 
@@ -251,11 +230,12 @@ describe 'Storage API >', ->
     user = users[2]
     length = Object.keys(Storage.records).length
 
-    assert.notEqual Storage.records[user.id], undefined
+    Storage.records[user.id].should.not.equal undefined
 
     Storage.release(user.id).then ->
-      assert.equal Storage.records[user.id], undefined
-      assert.equal length - 1, Object.keys(Storage.records).length
+
+      should.strictEqual Storage.records[user.id], undefined
+      Object.keys(Storage.records).should.have.length --length
       done()
 
 
@@ -293,7 +273,7 @@ describe 'Storage API >', ->
 
       Storage.register(token, user.name, user.email, user.password)
         .then (_token) ->
-          assert.equal _token, token
+          token.should.equal token
           done()
         .fail(log)
 
@@ -301,9 +281,9 @@ describe 'Storage API >', ->
 
       Storage.getRegistration(token)
         .then (data) ->
-          assert.equal user.name, data.name
-          assert.equal user.email, data.email
-          assert.equal user.password, data.password
+          user.name.should.equal data.name
+          user.email.should.equal data.email
+          user.password.should.equal data.password
           done()
         .fail(log)
 
@@ -311,5 +291,6 @@ describe 'Storage API >', ->
 
       Storage.getRegistration('abc')
         .fail (err) ->
-          assert.equal err, 'err_bad_token'
+          err.should.equal 'err_bad_token'
           done()
+###

@@ -41,7 +41,7 @@ setup = ->
      `pro`           tinyint(1)     NOT NULL,
      `data_task`     mediumblob     NOT NULL,
      `data_list`     mediumblob     NOT NULL,
-     `data_setting`  mediumblob     NOT NULL,
+     `data_pref`     mediumblob     NOT NULL,
      `data_time`     mediumblob     NOT NULL,
      `index_task`    int(11)        NOT NULL    DEFAULT '0',
      `index_list`    int(11)        NOT NULL    DEFAULT '0',
@@ -77,7 +77,7 @@ write_user = (user, attrs) ->
       if user.hasOwnProperty(property)
         data[property] = user[property]
 
-    for property in ['task', 'list', 'setting', 'time']
+    for property in ['task', 'list', 'pref', 'time']
       property = 'data_' + property
       if user.hasOwnProperty(property)
         data[property] = shrink.pack(user[property])
@@ -107,10 +107,10 @@ read_user = (uid) ->
 
     user = result[0]
 
-    user.data_task    = shrink.unpack user.data_task
-    user.data_list    = shrink.unpack user.data_list
-    user.data_setting = shrink.unpack user.data_setting
-    user.data_time    = shrink.unpack user.data_time
+    user.data_task = shrink.unpack user.data_task
+    user.data_list = shrink.unpack user.data_list
+    user.data_pref = shrink.unpack user.data_pref
+    user.data_time = shrink.unpack user.data_time
 
     return user
 

@@ -1,5 +1,5 @@
 # Require dependencies
-app = require '../app/init'
+app = require '../../app/init'
 request = require 'supertest'
 assert = require 'assert'
 

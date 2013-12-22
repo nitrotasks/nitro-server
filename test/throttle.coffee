@@ -1,17 +1,15 @@
 Q        = require 'kew'
-assert   = require 'assert'
+should   = require 'should'
 throttle = require '../app/utils/throttle'
 
-assertNear = (a, b) ->
-  assert a >= b
-  assert b <= b + 7
+log = console.log.bind(console)
 
 describe 'throttle', ->
 
   it 'should throttle', (done) ->
 
-    duration = 80
-    interval = 20
+    duration = 40
+    interval = 10
     last = -Infinity
     count = 0
 
@@ -22,24 +20,24 @@ describe 'throttle', ->
       last = now
 
       if diff isnt Infinity
-        assertNear diff, duration
+        diff.should.be.within duration, duration + 7
 
       switch count++
 
         when 0
-          assert.deepEqual args, [0]
+          args.should.eql [0]
 
         when 1
-          assert.deepEqual args, [1,2,3]
+          args.should.eql [1,2,3]
 
         when 2
-          assert.deepEqual args, [4, 5,6,7]
+          args.should.eql [4, 5,6,7]
 
         when 3
-          assert.deepEqual args, [8, 9,10,11]
+          args.should.eql [8, 9,10,11]
 
         when 4
-          assert.deepEqual args, [12, 13,14]
+          args.should.eql [12, 13,14]
           done()
 
     fn = throttle fn, duration
@@ -47,7 +45,7 @@ describe 'throttle', ->
     i = 0
 
     callFn = ->
-      fn i++
+      fn(i++).fail(log)
       if i < 15
         setTimeout callFn, interval
 
@@ -63,10 +61,10 @@ describe 'throttle', ->
       switch count++
 
         when 0
-          assert.deepEqual args, ['a', 'b', 'c']
+          args.should.eql ['a', 'b', 'c']
 
         when 1
-          assert.deepEqual args, ['d', 'e', 'f']
+          args.should.eql ['d', 'e', 'f']
           done()
 
     fn = throttle fn, 200
@@ -78,7 +76,7 @@ describe 'throttle', ->
 
   it 'should return promises', (done) ->
 
-    duration = 500
+    duration = 100
     start = Date.now()
     count = 0
 
@@ -89,12 +87,12 @@ describe 'throttle', ->
       switch count++
 
         when 0
-          assertNear diff, 0
-          assert.deepEqual args, ['a']
+          diff.should.be.within 0, 7
+          args.should.eql ['a']
 
         when 1
-          assertNear diff, duration
-          assert.deepEqual args, ['b']
+          diff.should.be.within duration, duration + 7
+          args.should.eql ['b']
 
     fn = throttle fn, duration
 
@@ -104,13 +102,14 @@ describe 'throttle', ->
     ]
 
     promise.then ->
-      assertNear Date.now() - start, duration
+      diff = Date.now() - start
+      diff.should.be.within duration, duration + 7
       done()
 
 
   it 'should just work properly', (done) ->
 
-    multiply = (i) -> i * 100
+    multiply = (i) -> i * 20
     duration = multiply 3
 
 
@@ -154,14 +153,14 @@ describe 'throttle', ->
 
       _fn = (args) ->
         diff = Date.now() - start
-        assertNear diff, output[i]
+        diff.should.be.within output[i], output[i] + 7
         if i is output.length - 1 then complete()
         i++
 
       fn = throttle _fn, duration
 
       for time in input
-        Q.delay(time).then(fn)
+        Q.delay(time).then(fn).fail(log)
 
     for test in tests
       input  = test.input.map(multiply)

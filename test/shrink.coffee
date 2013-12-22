@@ -1,5 +1,5 @@
-assert = require 'assert'
-shrink = require '../app/shrink'
+should = require 'should'
+shrink = require '../app/utils/shrink'
 
 # Just some random data we want to compress
 data =
@@ -41,7 +41,7 @@ describe 'shrink ->', ->
     # Check that each key is only one char long
     check = (obj) ->
       for k, v of obj
-        assert.equal k.length, 1
+        k.should.have.length 1
         if isObject v
           check v
 
@@ -54,4 +54,4 @@ describe 'shrink ->', ->
     expanded = shrink.unpack(compressed, true)
 
     # Compare against the original data object
-    assert.equal JSON.stringify(expanded), JSON.stringify(data)
+    expanded.should.eql data

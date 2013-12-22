@@ -15,6 +15,7 @@ resetPage = (req, res) ->
   res.sendfile page 'reset'
 
 sendEmail = (req, res) ->
+  console.dir req.body
   email = req.body.email.toLowerCase()
 
   log 'creating reset token for', email

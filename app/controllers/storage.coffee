@@ -211,6 +211,11 @@ Storage =
     return promise
 
 
+  releaseAll: ->
+    @release id for id of @records
+    @records = {}
+
+
   ###
    * Add a new login token.
    * It will expire after two weeks.

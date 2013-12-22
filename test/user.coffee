@@ -1,12 +1,18 @@
 User    = require '../app/models/user'
 Storage = require '../app/controllers/storage'
-assert  = require 'assert'
+should  = require 'should'
 
 global.DebugMode = true
 
-Storage.writeUser = ->
-
 describe 'User class', ->
+
+  before ->
+    Storage._writeUser = Storage.writeUser
+    Storage.writeUser = ->
+
+  after ->
+    Storage.writeUser = Storage._writeUser
+    delete Storage._writeUser
 
   it 'should create a new user', ->
     user = new User()
@@ -22,10 +28,10 @@ describe 'User class', ->
 
     user = new User(attrs)
 
-    assert.equal attrs.id,          user.id
-    assert.equal attrs.name,        user.name
-    assert.equal attrs.data_task,   user.data_task
-    assert.equal attrs.created_at,  user.created_at
+    attrs.id.should.equal          user.id
+    attrs.name.should.equal        user.name
+    attrs.data_task.should.equal   user.data_task
+    attrs.created_at.should.equal  user.created_at
 
   it 'should allow attributes to be changed', ->
 
@@ -34,12 +40,10 @@ describe 'User class', ->
 
     value = user.set 'name', name
 
-    assert.equal name, user.name
-    assert.equal value, name
+    name.should.equal user.name
+    value.should.equal name
 
   it 'should throttle writes to the db', (done) ->
-
-    @timeout 6000
 
     start = Date.now()
 
@@ -50,17 +54,16 @@ describe 'User class', ->
 
       switch count++
         when 0
-          assert.deepEqual args, ['data_tasks']
+          args.should.eql ['data_tasks']
 
         when 1
-          assert.deepEqual args, ['data_lists', 'data_name', 'data_email']
+          args.should.eql ['data_lists', 'data_name', 'data_email']
           diff = Date.now() - start
-          assert diff >= 5000
-          assert diff <= 5005
+          diff.should.be.within 200, 205
           Storage.writeUser = fn
           done()
 
-    user = new User()
+    user = new User(null, 200)
     user.save 'tasks'
     user.save 'lists'
     user.save 'name'
@@ -71,52 +74,54 @@ describe 'User class', ->
     user = new User()
 
     data = user.data 'animals'
-    assert.deepEqual data, {}
+    data.should.be.empty
 
     data.horses = 1
 
     data = user.data 'animals'
-    assert.equal data.horses, 1
+    data.horses.should.equal 1
 
     user.data 'animals',
       horses: 30
 
     data = user.data 'animals'
-    assert.equal data.horses, 30
+    data.horses.should.equal 30
 
   it 'should get the index value', ->
 
     user = new User()
 
     index = user.index 'cows'
-    assert.equal index, 0
+    index.should.equal 0
 
     user.set 'index_chickens', 30
 
     index = user.index 'chickens'
-    assert.equal index, 30
+    index.should.equal 30
 
   it 'should increment the index value', ->
 
     user = new User()
 
     index = user.index 'pigs'
-    assert.equal index, 0
+    index.should.equal 0
 
     index = user.incrIndex 'pigs'
-    assert.equal index, 1
+    index.should.equal 1
 
     index = user.incrIndex 'pigs'
-    assert.equal index, 2
+    index.should.equal 2
 
   it 'should allow the password to be changed', (done) ->
 
     id = 300
     password = 'battery horse chicken staple'
 
+    fn = Storage.removeAllLoginTokens
     Storage.removeAllLoginTokens = (userId) ->
-      assert.equal userId, id
-      assert.equal password, user.password
+      userId.should.equal id
+      password.should.equal user.password
+      Storage.removeAllLoginTokens = fn
       done()
 
     user = new User
@@ -130,10 +135,12 @@ describe 'User class', ->
     id = 33
     email = 'john@smith.com'
 
+    fn = Storage.replaceEmail
     Storage.replaceEmail = (userId, oldEmail, newEmail) ->
-      assert.equal userId, id
-      assert.equal newEmail, user.email
-      assert.equal email, user.email
+      userId.should.equal id
+      newEmail.should.equal user.email
+      email.should.equal user.email
+      Storage.replaceEmail = fn
       done()
 
     user = new User

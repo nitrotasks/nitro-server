@@ -11,20 +11,22 @@ log = Log 'Route -> Registration', 'green'
 
 register = (req, res) ->
 
-    user =
-      name: req.body.name
-      email: req.body.email.toLowerCase()
-      password: req.body.password
+  user =
+    name: req.body.name or ''
+    email: req.body.email?.toLowerCase() or ''
+    password: req.body.password or ''
 
-    log 'registering user', user.name
+  log 'registering user', user.name
 
-    Auth.register(user.name, user.email, user.password)
-      .then (token) ->
-        link = "#{ config.url }/register/#{ token }"
-        res.send link
-      .fail (err) ->
-        res.status 400
-        res.send err
+  Auth.register(user.name, user.email, user.password)
+    .then (token) ->
+      link = "#{ config.url }/register/#{ token }"
+      res.send link
+      log link
+    .fail (err) ->
+      log err
+      res.status 400
+      res.send err
 
 verifyRegistration = (req, res) ->
   token = req.params.token

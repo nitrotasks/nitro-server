@@ -40,9 +40,12 @@ config =
 
   testing:
 
+    url: 'http://localhost:8080'
+    port: 8080
+
     redis:
       host: '127.0.0.1'
-      port: 9999
+      port: 6379 # 9999
 
     mysql:
       host: '127.0.0.1'

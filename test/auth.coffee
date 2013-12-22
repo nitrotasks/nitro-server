@@ -1,40 +1,20 @@
-assert   = require 'assert'
+should   = require 'should'
 Q        = require 'kew'
+setup    = require './setup'
 Auth     = require '../app/controllers/auth'
-connect  = require '../app/controllers/connect'
-database = require '../app/controllers/database'
-
-connect.init 'testing'
 
 log = console.log.bind(console)
 
 describe 'Auth API', ->
 
+  before setup
+
   data =
-    email: 'george@czabania.com'
-    name: 'George Czabania'
+    email: 'user@nitrotasks.com'
+    name: 'Mr. Nitro'
     password: 'password'
 
   token = null
-
-# -----------------------------------------------------------------------------
-# Setup
-# -----------------------------------------------------------------------------
-
-  before (done) ->
-
-    promise = Q.all [
-      connect.ready
-      database.connected
-    ]
-
-    promise
-      .then ->
-        connect.redis.flushdb()
-        database.truncate 'users'
-      .then ->
-        done()
-
 
 # -----------------------------------------------------------------------------
 # Crypto
@@ -48,7 +28,7 @@ describe 'Auth API', ->
       .then (hash) ->
         Auth.compare(string, hash)
       .then (same) ->
-        assert same
+        same.should.be.true
         done()
       .fail(log)
 
@@ -62,16 +42,17 @@ describe 'Auth API', ->
       .then (hash) ->
         Auth.compare fake, hash
       .then (same) ->
-        assert not same
+        same.should.be.false
         done()
       .fail(log)
 
   it 'should generate random bytes', (done) ->
+
     size = 30
 
     Auth.randomBytes(size)
       .then (bytes) ->
-        assert.equal bytes.length, size
+        bytes.length.should.equal size
         done()
       .fail(log)
 
@@ -85,18 +66,21 @@ describe 'Auth API', ->
     Auth.register(data.name, data.email, data.password)
       .then (_token) ->
         token = _token
-        assert.equal typeof token, 'string'
-        assert.equal token.length, 22
+        token.should.be.type 'string'
+        token.should.have.length 22
         done()
       .fail(log)
 
 
   it 'should verify the registration', (done) ->
-    Auth.verifyRegistration(token).then (user) ->
-      assert.equal data.name, user.name
-      assert.equal data.email, user.email
-      assert.notEqual data.password, user.password
-      done()
+
+    Auth.verifyRegistration(token)
+      .then (user) ->
+        data.name.should.equal user.name
+        data.email.should.equal user.email
+        data.password.should.not.equal user.password
+        done()
+      .fail(log)
 
 
 # -----------------------------------------------------------------------------
@@ -105,8 +89,13 @@ describe 'Auth API', ->
 
   it 'Login with real password', (done) ->
 
-    Auth.login(data.email, data.password).then (token) ->
-      assert.equal token.length, 64
+    Auth.login(data.email, data.password).then (info) ->
+      [uid, token, email, name, pro] = info
+      uid.should.be.type 'number'
+      token.should.have.length 64
+      email.should.be.type 'string'
+      name.should.be.type 'string'
+      pro.should.be.type 'number'
       done()
     .fail (log)
 
@@ -129,11 +118,11 @@ describe 'Auth API', ->
       Auth.createToken 64
     ])
     .then ([t12, t15, t20, t50, t64]) ->
-      assert.equal t12.length, 12
-      assert.equal t15.length, 15
-      assert.equal t20.length, 20
-      assert.equal t50.length, 50
-      assert.equal t64.length, 64
+      t12.should.have.length 12
+      t15.should.have.length 15
+      t20.should.have.length 20
+      t50.should.have.length 50
+      t64.should.have.length 64
       done()
     .fail(log)
 
@@ -142,7 +131,7 @@ describe 'Auth API', ->
 
     Auth.createResetToken(data.email)
     .then (token) ->
-      assert.equal token.length, 22
+      token.should.have.length 22
       done()
     .fail(log)
 

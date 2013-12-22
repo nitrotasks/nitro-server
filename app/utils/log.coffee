@@ -18,6 +18,5 @@ colors =
 module.exports = (name, color='reset') ->
   prefix = "#{colors[color]}[#{name}]#{colors.reset}"
   return (args...) =>
-    return unless global.DebugMode
     args.unshift(prefix)
     console.log(args...)

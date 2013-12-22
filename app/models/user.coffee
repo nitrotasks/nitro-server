@@ -28,11 +28,12 @@ class User
    * Create a new User instance
    *
    * - [attrs] (object) : optional attributes to load in
+   * - [duration] (int) : how long to wait between writes
   ###
 
-  constructor: (attrs) ->
+  constructor: (attrs, duration=5000) ->
     @_load attrs if attrs
-    @_write = throttle @_write, 5000
+    @_write = throttle @_write, duration
 
 
   # Resolve cyclic dependency with Storage controller
