@@ -131,6 +131,8 @@ Auth =
       Auth.createLoginToken user.id
     .then (token) ->
       return [user.id, token, user.email, user.name, user.pro]
+    .fail ->
+      throw ERR_BAD_PASS
 
 
   ###

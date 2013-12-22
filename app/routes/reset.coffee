@@ -15,19 +15,16 @@ resetPage = (req, res) ->
   res.sendfile page 'reset'
 
 sendEmail = (req, res) ->
-  console.dir req.body
   email = req.body.email.toLowerCase()
 
-  log 'creating reset token for', email
+  log email, 'wants to reset their password'
 
   Auth.createResetToken(email)
     .then (token) ->
 
-      log 'token', token
+      log email, 'get a token', token
 
-      link = "<a href=\"#{ config.url }/reset/#{ token }\">Reset Password</a>"
-      if DebugMode then return res.send(link)
-
+      # link = "<a href=\"#{ config.url + '/reset' + token }\">Reset Password</a>"
       # Mail.send
       #   to: email
       #   subject: 'Nitro Password Reset'
@@ -38,12 +35,19 @@ sendEmail = (req, res) ->
       #     <p>- Nitrotasks</p>
       #   """
 
-      res.sendfile page 'reset_email'
+      if global.DebugMode
+        res.send token
+      else
+        res.sendfile page 'reset_email'
 
     .fail (err) ->
       log err
+      log email, 'do not get a token'
       res.status 400
-      res.sendfile page 'error'
+      if global.DebugMode
+        res.send 'error'
+      else
+        res.sendfile page 'error'
 
 confirmToken = (req, res) ->
   token = req.params.token
@@ -52,12 +56,17 @@ confirmToken = (req, res) ->
     .then ->
       res.sendfile page 'reset_form'
     .fail (err) ->
-      res.sendfile page 'error'
+      if global.DebugMode
+        res.send 'error'
+      else
+        res.sendfile page 'error'
 
 resetPassword = (req, res) ->
   password = req.body.password
   confirmation = req.body.passwordConfirmation
   token = req.params.token
+
+  log 'validating passwords for', token
 
   if password isnt confirmation
     log 'password mismatch'
@@ -71,7 +80,9 @@ resetPassword = (req, res) ->
       Storage.removeResetToken token
       Storage.get id
     .then (user) ->
+      log 'changed password for', user.email
       Auth.changePassword user, password
+    .then ->
       res.sendfile page 'reset_success'
     .fail (err) ->
       log err

@@ -37,14 +37,14 @@ verifyRegistration = (req, res) ->
     .then (user) ->
       log 'verified user', user.email
 
-      if DebugMode
+      if global.DebugMode
         res.send 'success'
       else
         res.sendfile page 'auth_success'
 
     .fail (err) ->
       log err
-      if DebugMode
+      if global.DebugMode
         res.send 'error'
       else
         res.sendfile page 'error'

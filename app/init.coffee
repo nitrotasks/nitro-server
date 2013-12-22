@@ -24,7 +24,7 @@ if '--debug' in process.argv
   global.DebugMode = on
   warn 'Running in debug mode!'
 
-config.use if DebugMode then 'development' else 'production'
+config.use if global.DebugMode then 'development' else 'production'
 
 connect.init()
 

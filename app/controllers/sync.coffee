@@ -40,7 +40,7 @@ init = ( sync_server ) ->
     io.set 'authorization', (handshakeData, fn) ->
       uid = handshakeData.query.uid
       token = handshakeData.query.token
-      if DebugMode
+      if global.DebugMode
         log "Received uid #{ uid } and token #{ token }"
       if uid? and token?
         User.checkLoginToken(uid, token)
