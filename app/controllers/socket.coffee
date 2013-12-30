@@ -15,28 +15,31 @@ class Socket
 
   bindEvents: ->
     return unless @events
-    for event, method of @events
-      @socket.on event, @[method]
+    for name, methods of @events
+      ns = @socket.namespace name
+      for event of method
+        ns.on event, @[name + '_' + event]
 
   # Release control over the raw socket
   release: ->
 
   # Disconnect the socket from the server
   disconnect: ->
+    @_socket.end()
 
 
 class GuestSocket extends Socket
 
   # Websocket events
   events:
-    'auth': 'auth'
+    user: ['auth']
 
-  constructor: ->
+  constructor: (socket) ->
     super
     @authenticated = false
 
-  auth: (userId, token) =>
-    User.checkLoginToken(userId, token)
+  user_auth: (@userId, token) =>
+    User.checkLoginToken(@userId, token)
       .then (exists) =>
         if exists
           @login()
@@ -48,20 +51,39 @@ class GuestSocket extends Socket
   login: ->
     socket = @_socket
     @release()
-    new UserSocket(socket)
+    new UserSocket(socket, @userId)
 
 
 class UserSocket extends Socket
 
   # Websocket events
   events:
-    'disconnect' : 'logout'
-    'fetch'      : 'fetch'
-    'sync'       : 'sync'
-    'create'     : 'create'
-    'update'     : 'update'
-    'destroy'    : 'destroy'
-    'info'       : 'info'
-    'emailList'  : 'emailList'
+    user: ['disconnect', 'info']
+    data: ['sync', 'fetch', 'create', 'update', 'destroy']
+    email: ['list']
+
+  constructor: (socket, userId) ->
+    super
+    @authenticated = true
+    @socket.join(userId)
+    @user = new Sync(userId)
+
+  user_disconnect: =>
+    console.log @socket.room(userId).length()
+
+  user_info: =>
+
+  data_sync: =>
+
+  data_fetch: =>
+
+  data_create: =>
+
+  data_update: =>
+
+  data_destroy: =>
+
+  email_list: =>
+
 
 module.exports = init

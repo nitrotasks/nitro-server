@@ -21,47 +21,6 @@ logEvent = Log 'Sync Event', 'yellow'
 # Constants
 SUPPORTED_CLASSES = ['List', 'Task', 'Setting']
 
-# Expose io to all functions in this file
-io = null
-
-# Start server
-init = ( sync_server ) ->
-
-  # Start SocketIO
-  io = require('socket.io').listen(sync_server)
-
-  # Socket.IO settings
-  io.configure ->
-
-    # Hide irrelevant messages
-    io.set 'log level', 1
-
-    # Prevent unauthorised access to server
-    io.set 'authorization', (handshakeData, fn) ->
-      uid = handshakeData.query.uid
-      token = handshakeData.query.token
-      if global.DebugMode
-        log "Received uid #{ uid } and token #{ token }"
-      if uid? and token?
-        User.checkLoginToken(uid, token)
-          .then (exists) ->
-            handshakeData.uid = uid
-            fn(null, exists)
-          .fail ->
-            log 'User could not login'
-      else
-        fn(null, no)
-      return true
-
-  # Fired when user connects to server
-  io.sockets.on 'connection', (socket) ->
-    # Create a new Sync instance
-    new Sync(socket)
-    return true
-
-  return true
-
-
 # Return the default task object
 # I don't think we even use this anymore?
 Default = (name) ->
