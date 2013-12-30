@@ -17,13 +17,14 @@
     "http-proxy": "0.10.x",
     "kew": "0.3.x",
     "hiredis": "0.1.x",
-    "sockjs": "0.3.x",
+    "sockjs": "~0.3.8",
     "cors": "2.1.x",
-    "should": "~2.1.1"
+    "jandal": "0.0.3"
   },
   "devDependencies": {
     "supertest": "0.8.x",
-    "mocha": "1.15.x"
+    "mocha": "1.15.x",
+    "should": "~2.1.1"
   },
   "engines": {
     "node": ">1.0.0",
