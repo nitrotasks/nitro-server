@@ -162,6 +162,39 @@ class User
     @set 'email', email
     Storage.replaceEmail @id, oldEmail, email, @service
 
+  # Return model
+  findModel: (className, id) =>
+    @data(className)[id] ?= {}
+    return @data(className)[id]
+
+  # If a model exists
+  hasModel: (className, id) =>
+    return @data(className)?[id]?
+
+  # Update attributes
+  setModelAttributes: (className, id, attributes) =>
+    model = @findModel className, id
+    for key, value of attributes
+      model[key] = value
+    @save(className)
+    return model
+
+  # Replace model
+  setModel: (className, id, attributes) =>
+    @data(className)[id] = attributes
+    @save(className)
+    return attributes
+
+  # Convert data object into spine array
+  exportModel: (className) =>
+    models = []
+    data = @data(className)
+    return [] unless data
+    # Return all live items
+    for id, model of data
+      if not model.deleted
+        models.push model
+    return models
 
   ###
    * Mark the user as released from memory

@@ -66,12 +66,17 @@ class UserSocket extends Socket
     super
     @authenticated = true
     @socket.join(userId)
-    @user = new Sync(userId)
+    @sync = new Sync(userId)
+    @user = Storage.get(userId)
 
   user_disconnect: =>
     console.log @socket.room(userId).length()
 
-  user_info: =>
+  user_info: (fn) =>
+    fn
+      name: @user.name
+      email: @user.email
+      pro: @user.pro
 
   data_sync: =>
 
