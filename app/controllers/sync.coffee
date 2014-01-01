@@ -100,7 +100,7 @@ class Sync
     @setModel(className, id, model)
     # Set timestamp
     timestamp = data[2] or Date.now()
-    @setTime className, id, 'all', timestamp
+    @time.set className, id, 'all', timestamp
     log "Created #{ className }: #{ model.name }"
     # Broadcast event to connected clients
     @broadcast 'create', [className, model]
@@ -140,7 +140,7 @@ class Sync
     timestamps = data[2]
     if timestamps
       for attr, time of timestamps
-        old = @getTime className, id, attr
+        old = @time.get className, id, attr
         if old > time
           delete timestamps[attr]
           delete changes[attr]
@@ -151,7 +151,7 @@ class Sync
         continue if k is 'id'
         timestamps[k] = now
 
-    @setTime className, id, timestamps
+    @time.set className, id, timestamps
 
     # Update list
     if className is 'Task' and changes.list?
@@ -181,7 +181,7 @@ class Sync
     model = @findModel className, id
 
     # Check that the model hasn't been updated after this event
-    return unless @checkTime className, id, timestamp
+    return unless @time.check className, id, timestamp
 
     # Destroy all tasks within that list
     if className is 'List'
@@ -201,7 +201,7 @@ class Sync
       deleted: yes
 
     # Set timestamp
-    @setTime className, id, 'deleted', timestamp
+    @time.set className, id, 'deleted', timestamp
     log "Destroyed #{ className } #{ id }"
     @broadcast 'destroy', [className, id]
 
