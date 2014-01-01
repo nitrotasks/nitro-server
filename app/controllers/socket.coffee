@@ -5,14 +5,15 @@ Storage = require '../controllers/storage'
 Log = require '../utils/log'
 
 log = Log 'Socket', 'yellow'
+Jandal.handle 'node'
 
 
 # -----------------------------------------------------------------------------
 # Init
 # -----------------------------------------------------------------------------
 
-init = ->
-  websockets = sockjs.createServer()
+init = (server, sjs=sockjs) ->
+  websockets = sjs.createServer()
   websockets.installHandlers server, prefix: '/socket'
   websockets.on 'connection', (socket) ->
     new GuestSocket(socket)
@@ -36,11 +37,11 @@ class Socket
     @socket = new Jandal(@_socket)
     @bindEvents()
 
-  bindEvents: ->
+  bindEvents: =>
     return unless @events
     for name, methods of @events
       ns = @socket.namespace name
-      for event of method
+      for event in methods
         ns.on event, @[name + '_' + event]
 
   # Release control over the raw socket
@@ -72,7 +73,8 @@ class GuestSocket extends Socket
     setTimeout @timeout, TIMEOUT_AUTH
 
   user_auth: (@userId, token, fn) =>
-    User.checkLoginToken(@userId, token)
+    console.log @userId, token, fn
+    Storage.checkLoginToken(@userId, token)
       .then (exists) =>
         if exists
           @login(fn)
@@ -145,4 +147,5 @@ class UserSocket extends Socket
       Storage.release @user.id
 
 
-module.exports = init
+module.exports =
+  init: init
