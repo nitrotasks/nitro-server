@@ -12,6 +12,7 @@
 
 Q       = require 'kew'
 Log     = require '../utils/log'
+Time    = require '../utils/time'
 
 log      = Log 'Sync', 'cyan'
 logEvent = Log 'Sync Event', 'yellow'
@@ -49,67 +50,7 @@ Default = (name) ->
 class Sync
 
   constructor: (@user) ->
-
-  # -------------------
-  # Timestamp functions
-  # -------------------
-
-  # Used to shorten timestamps
-  # Set to the 1st of Jan, 2013
-  baseTime: 1356951600000
-
-  # Return timestamp for an item or attribute
-  getTime: (className, id, attr) =>
-    time = @findModel('Time', className)?[id]?[attr]
-    if time then time += @baseTime
-    return time
-
-  # Remove all timestamps for an object
-  clearTime: (className, id) =>
-    delete @findModel('Time', className)[id]
-    return id
-
-  # Set timestamp for an attribute
-  setTime: (className, id, attr, time) =>
-
-    # If attr is an object, loop through it
-    if typeof attr is 'object'
-      for key, time of attr
-        @setTime className, id, key, time
-      return
-
-    # Compress timestamp to save space
-    time -= @baseTime
-
-    # Makes sure the entry exists
-    # Todo: Make a function that will make this work
-    @findModel('Time', className)[id] ?= {}
-
-    # Update all existing values
-    if attr is 'all'
-      for attr of @findModel(className, id)
-        continue if attr is 'id' # Ignore ID
-        # Can't use @setModelAttributes because it's three layers deep
-        @user.data('Time')[className][id][attr] = time
-    else
-      @user.data('Time')[className][id][attr] = time
-    @user.save('Time')
-
-    return
-
-  # Check if the variable `time` is greater than any times stored in the DB
-  checkTime: (className, id, time) =>
-
-    return unless @findModel('Time', className)?[id]?
-
-    pass = yes
-
-    for attr of @findModel('Time', className)[id]
-      val = @getTime(className, id, attr)
-      if val > time then pass = no
-
-    return pass
-
+    @time = new Time(@user)
 
   # --------------
   # General Events
