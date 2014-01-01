@@ -1,11 +1,34 @@
 sockjs = require 'sockjs'
 Jandal = require 'jandal'
+Sync = require '../controllers/sync'
+Storage = require '../controllers/storage'
+Log = require '../utils/log'
+
+log = Log 'Socket', 'yellow'
+
+
+# -----------------------------------------------------------------------------
+# Init
+# -----------------------------------------------------------------------------
 
 init = ->
   websockets = sockjs.createServer()
   websockets.installHandlers server, prefix: '/socket'
   websockets.on 'connection', (socket) ->
     new GuestSocket(socket)
+
+
+# -----------------------------------------------------------------------------
+# Constants
+# -----------------------------------------------------------------------------
+
+# How long a connection has to authenticate itself before being kicked
+TIMEOUT_AUTH = 5000
+
+
+# -----------------------------------------------------------------------------
+# Socket
+# -----------------------------------------------------------------------------
 
 class Socket
 
@@ -21,12 +44,20 @@ class Socket
         ns.on event, @[name + '_' + event]
 
   # Release control over the raw socket
-  release: ->
+  release: =>
 
   # Disconnect the socket from the server
-  disconnect: ->
+  end: =>
     @_socket.end()
 
+  # Status codes: http://tools.ietf.org/html/rfc6455#section-7.4.1
+  close: (status, message) =>
+    @_socket.close(status, message)
+
+
+# -----------------------------------------------------------------------------
+# GuestSocket
+# -----------------------------------------------------------------------------
 
 class GuestSocket extends Socket
 
@@ -36,23 +67,41 @@ class GuestSocket extends Socket
 
   constructor: (socket) ->
     super
+    log 'A user has connected to the server'
     @authenticated = false
+    setTimeout @timeout, TIMEOUT_AUTH
 
-  user_auth: (@userId, token) =>
+  user_auth: (@userId, token, fn) =>
     User.checkLoginToken(@userId, token)
       .then (exists) =>
         if exists
-          @login()
+          @login(fn)
         else
-          @disconnect()
+          fn(false)
+          @end()
       .fail ->
-        @disconnect()
+        @end()
 
-  login: ->
+  login: (callback) =>
     socket = @_socket
     @release()
-    new UserSocket(socket, @userId)
+    Storage.get(userId)
+      .then (user) =>
+        new UserSocket(socket, user, fn)
+        callback(true)
+      .fail =>
+        @kick()
 
+  kick: =>
+    @close 3002, 'err_bad_token'
+
+  timeout: =>
+    @close 1002, 'err_auth_timeout'
+
+
+# -----------------------------------------------------------------------------
+# UserSocket
+# -----------------------------------------------------------------------------
 
 class UserSocket extends Socket
 
@@ -62,12 +111,11 @@ class UserSocket extends Socket
     data: ['sync', 'fetch', 'create', 'update', 'destroy']
     email: ['list']
 
-  constructor: (socket, userId) ->
+  constructor: (socket, @user) ->
     super
     @authenticated = true
     @socket.join(userId)
-    @sync = new Sync(userId)
-    @user = Storage.get(userId)
+    @sync = new Sync(@user)
 
   user_disconnect: =>
     console.log @socket.room(userId).length()
@@ -78,7 +126,8 @@ class UserSocket extends Socket
       email: @user.email
       pro: @user.pro
 
-  data_sync: =>
+  data_sync: (queue, fn) =>
+    @sync.sync(queue, fn)
 
   data_fetch: =>
 
@@ -89,6 +138,11 @@ class UserSocket extends Socket
   data_destroy: =>
 
   email_list: =>
+
+  logout: =>
+    # If the user is only logged in from one client then remove them from memory
+    if Jandal.all.in(@user.id).length() is 0
+      Storage.release @user.id
 
 
 module.exports = init

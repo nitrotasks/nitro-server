@@ -11,8 +11,6 @@
 
 
 Q       = require 'kew'
-Auth    = require '../controllers/auth'
-Storage = require '../controllers/storage'
 Log     = require '../utils/log'
 
 log      = Log 'Sync', 'cyan'
@@ -50,67 +48,7 @@ Default = (name) ->
 # Does all the useful stuff
 class Sync
 
-  # Expose init function
-  @init: init
-
-  # Socket.IO events
-  events:
-    'disconnect' : 'logout'
-    'fetch'      : 'fetch'
-    'sync'       : 'sync'
-    'create'     : 'create'
-    'update'     : 'update'
-    'destroy'    : 'destroy'
-    'info'       : 'info'
-    'emailList'  : 'emailList'
-
-  constructor: (@socket, uid=@socket.handshake.uid, callback) ->
-    log 'A user has connected to the server'
-    # Bind socket.io events
-    for event, fn of @events
-      @on event, @[fn]
-    # Start login process
-    @login(uid).then (user) ->
-      if callback? then callback(user)
-
-
-  # ------------------
-  # Storage Functions
-  # ------------------
-
-  # Return model
-  findModel: (className, id) =>
-    @user.data(className)[id] ?= {}
-    return @user.data(className)[id]
-
-  hasModel: (className, id) =>
-    return @user.data(className)?[id]?
-
-  # Update attributes
-  setModelAttributes: (className, id, attributes) =>
-    model = @findModel className, id
-    for key, value of attributes
-      model[key] = value
-    @user.save(className)
-    return model
-
-  # Replace model
-  setModel: (className, id, attributes) =>
-    @user.data(className)[id] = attributes
-    @user.save(className)
-    return attributes
-
-  # Convert data object into spine array
-  exportModel: (className) =>
-    models = []
-    data = @user.data(className)
-    return [] unless data
-    # Return all live items
-    for id, model of data
-      if not model.deleted
-        models.push model
-    return models
-
+  constructor: (@user) ->
 
   # -------------------
   # Timestamp functions
@@ -173,81 +111,14 @@ class Sync
     return pass
 
 
-
-
-  # -----------------
-  # Socket.IO Comands
-  # -----------------
-
-  # Emit event (goes to everyone)
-  emit: (event, data) =>
-    logEvent "Emitting '#{ event }'"
-    @socket.emit(event, data)
-
-  # Broadcast event (goes to everyone except @user)
-  broadcast: (event, data) =>
-    logEvent "Broadcasting '#{ event }'"
-    @socket.broadcast.to(@user.id).emit(event, data)
-
-  # Bind event to function
-  on: (event, fn) =>
-    @socket.on event, (args...) =>
-      logEvent "Received '#{ event }'"
-
-      if @userIsLoaded
-        fn(args...)
-
-      else
-        log 'User is not loaded yet. Will run on load.'
-        @runOnUserLoad.push ->
-          fn(args...)
-
-
   # --------------
   # General Events
   # --------------
-
-  login: (uid) =>
-    deferred = Q.defer()
-    log "User #{ uid } is logging in"
-    User.get(uid)
-      .then (@user) =>
-        # Move user to their own room
-        @socket.join(@user.id)
-        log "#{ @user.name } has logged in"
-        # Load user
-        @userIsLoaded = true
-        fn() for fn in @runOnUserLoad
-        @runOnUserLoad = []
-        deferred.resolve user
-      .fail (error) ->
-        deferred.reject(error)
-    return deferred.promise
-
-  logout: =>
-    log "#{ @user.name } has logged out"
-
-    # If the user is only logged in from one client then remove them from memory
-    if io.sockets.clients(@user.id).length is 1
-      log '... and has been removed from memory'
-      User.release @user.id
 
   # Return all models in database
   fetch: (className, fn) =>
     return unless fn
     fn @exportModel(className)
-
-  # Sometimes events can be sent to the server before we have loaded the user
-  # data from the server. So we store those events and then fire them when the
-  # user data # has loaded.
-
-  userIsLoaded: false
-  runOnUserLoad: []
-
-
-  # ---------------
-  # Realtime Events
-  # ---------------
 
 
   #####################################
@@ -520,15 +391,6 @@ class Sync
   # --------------------
   # Miscellaneous events
   # --------------------
-
-  ###*
-   * Send the user info
-  ###
-  info: (id, sendback) =>
-    sendback
-      name: @user.name
-      email: @user.email
-      pro: @user.pro
 
   ###*
    * Send a users list to an email address
