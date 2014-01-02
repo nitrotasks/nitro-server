@@ -130,7 +130,7 @@ Auth =
       if not same then throw ERR_BAD_PASS
       Auth.createLoginToken user.id
     .then (token) ->
-      return [user.id, token, user.email, user.name, user.pro]
+      return [user.id, token]
     .fail ->
       throw ERR_BAD_PASS
 

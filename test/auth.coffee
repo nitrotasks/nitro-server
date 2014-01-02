@@ -90,12 +90,9 @@ describe 'Auth API', ->
   it 'Login with real password', (done) ->
 
     Auth.login(data.email, data.password).then (info) ->
-      [uid, token, email, name, pro] = info
+      [uid, token] = info
       uid.should.be.type 'number'
       token.should.have.length 64
-      email.should.be.type 'string'
-      name.should.be.type 'string'
-      pro.should.be.type 'number'
       done()
     .fail (log)
 
