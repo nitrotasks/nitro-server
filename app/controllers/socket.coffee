@@ -26,6 +26,9 @@ init = (server, sjs=sockjs) ->
 # How long a connection has to authenticate itself before being kicked
 TIMEOUT_AUTH = 3000
 
+# What classnames can be edited
+CLASSES = ['List', 'Task', 'Setting']
+
 
 # -----------------------------------------------------------------------------
 # Socket
@@ -69,7 +72,7 @@ class GuestSocket extends Socket
 
   constructor: (socket) ->
     super
-    log 'A user has connected to the server'
+    log 'A new guest has connected'
     @authenticated = false
     setTimeout @timeout, TIMEOUT_AUTH
 
@@ -115,9 +118,14 @@ class UserSocket extends Socket
 
   constructor: (socket, @user) ->
     super
+    log 'A user has been authenticated'
     @authenticated = true
+    @_socket.on 'close', @logout
     @socket.join(@user.id)
     @sync = new Sync(@user)
+
+  broadcast: (event, arg1, arg2, arg3) =>
+    @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
 
   user_info: (fn) =>
     fn
@@ -130,17 +138,38 @@ class UserSocket extends Socket
 
   data_fetch: =>
 
-  data_create: =>
+  data_create: (classname, model, fn) =>
 
-  data_update: =>
+    if classname not in CLASSES or
+    typeof fn isnt 'function' or
+    typeof model isnt 'object'
+      return
 
-  data_destroy: =>
+    id = @sync.create(classname, model)
+    @broadcast 'data.create', classname, model
+    fn(id)
+
+  data_update: (classname, model) =>
+
+    if classname not in CLASSES or
+    typeof model isnt 'object'
+      return
+
+    @sync.update classname, model
+    @broadcast 'data.update', classname, model
+
+  data_destroy: (classname, id) =>
+
+    @sync.destroy classname, id
+    @broadcast 'data.destroy', classname, id
 
   email_list: =>
 
   logout: =>
+    console.log 'logging out'
     # If the user is only logged in from one client then remove them from memory
     if Jandal.all.in(@user.id).length() is 0
+      console.log 'releasing user'
       Storage.release @user.id
 
 

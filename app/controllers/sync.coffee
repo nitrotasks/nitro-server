@@ -17,9 +17,6 @@ Time    = require '../utils/time'
 log      = Log 'Sync', 'cyan'
 logEvent = Log 'Sync Event', 'yellow'
 
-# Constants
-SUPPORTED_CLASSES = ['List', 'Task', 'Setting']
-
 # Return the default task object
 # I don't think we even use this anymore?
 Default = (name) ->
@@ -57,9 +54,9 @@ class Sync
   # --------------
 
   # Return all models in database
-  fetch: (className, fn) =>
+  fetch: (classname, fn) =>
     return unless fn
-    fn @exportModel(className)
+    fn @exportModel(classname)
 
 
   #####################################
@@ -72,40 +69,40 @@ class Sync
 
   # Create a new model
   create: (data, fn) =>
-    [className, model] = data
-    return unless className in SUPPORTED_CLASSES
 
     # Generate new id
-    if className is 'Setting'
+    if classname is 'Setting'
       id = 1
       model = @settingsValidate(model)
 
-    else if className is 'List' and model.id is 'inbox'
+    else if classname is 'List' and model.id is 'inbox'
       id = model.id
       if @hasModel('List', 'inbox') then return
 
     else
-      id = 's-' + @user.index(className)
-      @user.incrIndex className
+      id = 's-' + @user.index(classname)
+      @user.incrIndex classname
       model.id = id
 
     # Add task to list
-    if className is 'Task'
+    if classname is 'Task'
       listId = model.list
       @taskAdd id, listId
-    else if className is 'List'
+    else if classname is 'List'
       model.tasks = []
 
     # Add item to server
-    @setModel(className, id, model)
+    @setModel(classname, id, model)
+
     # Set timestamp
     timestamp = data[2] or Date.now()
-    @time.set className, id, 'all', timestamp
-    log "Created #{ className }: #{ model.name }"
+    @time.set classname, id, 'all', timestamp
+    log "Created #{ classname }: #{ model.name }"
+
     # Broadcast event to connected clients
-    @broadcast 'create', [className, model]
-    # Return new ID
-    if fn? then fn(id)
+    @broadcast 'create', [classname, model]
+
+    return id
 
 
 
@@ -117,21 +114,19 @@ class Sync
   ####################################
 
   # Update existing model
-  update: (data) =>
-    [className, changes] = data
-    return unless className in SUPPORTED_CLASSES
+  update: (classname, changes) =>
 
-    if className is 'Setting'
+    if classname is 'Setting'
       id = 1
       changes = @settingsValidate(changes)
     else
       id = changes.id
 
     # Check model exists on server
-    if not @hasModel(className, id)
-      log "#{className} doesn't exist on server"
+    if not @hasModel(classname, id)
+      log "#{classname} doesn't exist on server"
       return
-      # model = Default className
+      # model = Default classname
       # for k, v of changes
       #   model[k] = v
       # changes = model
@@ -140,7 +135,7 @@ class Sync
     timestamps = data[2]
     if timestamps
       for attr, time of timestamps
-        old = @time.get className, id, attr
+        old = @time.get classname, id, attr
         if old > time
           delete timestamps[attr]
           delete changes[attr]
@@ -151,20 +146,17 @@ class Sync
         continue if k is 'id'
         timestamps[k] = now
 
-    @time.set className, id, timestamps
+    @time.set classname, id, timestamps
 
     # Update list
-    if className is 'Task' and changes.list?
-      oldTask = @findModel className, id
+    if classname is 'Task' and changes.list?
+      oldTask = @findModel classname, id
       if oldTask.list isnt changes.list
         @taskMove id, oldTask.list, changes.list
 
     # Save to server
-    model = @setModelAttributes className, id, changes
-    log "Updated #{ className }: #{ model.name }"
-
-    # Broadcast event to connected clients
-    @broadcast 'update', [className, model]
+    model = @setModelAttributes classname, id, changes
+    log "Updated #{ classname }: #{ model.name }"
 
 
 
@@ -176,15 +168,15 @@ class Sync
   ########################################
 
   # Delete existing model
-  destroy: ([className, id], timestamp=Date.now()) =>
-    return unless className in SUPPORTED_CLASSES
-    model = @findModel className, id
+  destroy: (classname, id, timestamp) =>
+    model = @findModel classname, id
 
     # Check that the model hasn't been updated after this event
-    return unless @time.check className, id, timestamp
+    timestamp ?= Date.now()
+    return unless @time.check classname, id, timestamp
 
     # Destroy all tasks within that list
-    if className is 'List'
+    if classname is 'List'
       for taskId in model.tasks
         log "Destroying Task #{ taskId }"
         # TODO: Prevent server from broadcasting these changes
@@ -192,18 +184,17 @@ class Sync
         @destroy ['Task', taskId]
 
     # Remove from list
-    else if className is 'Task'
+    else if classname is 'Task'
       @taskRemove id, model.list
 
     # Replace task with deleted template
-    @setModel className, id,
+    @setModel classname, id,
       id: id
       deleted: yes
 
     # Set timestamp
-    @time.set className, id, 'deleted', timestamp
-    log "Destroyed #{ className } #{ id }"
-    @broadcast 'destroy', [className, id]
+    @time.set classname, id, 'deleted', timestamp
+    log "Destroyed #{ classname } #{ id }"
 
 
   # --------------------
@@ -223,7 +214,7 @@ class Sync
       # I think it stops it from infinite looping.
       break if i >= 100
 
-      [type, [className, model], timestamp] = item
+      [type, [classname, model], timestamp] = item
 
       ## Handles client list IDs ##
 
@@ -232,7 +223,7 @@ class Sync
       # This code matches that list back to the task
 
       if type in ['create', 'update'] and
-      className is 'Task' and model.list.slice(0,2) is 'c-'
+      classname is 'Task' and model.list.slice(0,2) is 'c-'
 
         # The list hasn't been assigned a server ID yet
         if client[model.list] is undefined
@@ -259,16 +250,16 @@ class Sync
       switch type
         when 'create'
           oldId = model.id
-          @create [className, model, timestamp], (newId) ->
-            if className is 'List'
+          @create [classname, model, timestamp], (newId) ->
+            if classname is 'List'
               log "Changing List #{ oldId } to #{ newId }"
               client[oldId] = newId
 
         when 'update'
-          @update [className, model, timestamp]
+          @update [classname, model, timestamp]
 
         when 'destroy'
-          @destroy [className, model, timestamp]
+          @destroy [classname, model, timestamp]
 
       i++
 
