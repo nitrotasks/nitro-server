@@ -1,10 +1,17 @@
 {EventEmitter} = require 'events'
 
-class Socket extends EventEmitter
+class Socket
 
   constructor: ->
+    @vent = new EventEmitter()
     @open = true
     @on 'close', => @open = false
+
+  on: (event, fn) =>
+    @vent.on(event, fn)
+
+  emit: (event, args...) =>
+    @vent.emit(event, args...)
 
   write: (data) ->
     @emit 'message', data
@@ -13,10 +20,10 @@ class Socket extends EventEmitter
     @emit 'data', args...
 
   end: ->
-    @emit 'close'
+    if @open then @emit 'close'
 
   close: (status, message) ->
-    @emit 'close', status, message
+    if @open then @emit 'close', status, message
 
 class Server
 

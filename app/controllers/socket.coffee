@@ -24,7 +24,7 @@ init = (server, sjs=sockjs) ->
 # -----------------------------------------------------------------------------
 
 # How long a connection has to authenticate itself before being kicked
-TIMEOUT_AUTH = 5000
+TIMEOUT_AUTH = 3000
 
 
 # -----------------------------------------------------------------------------
@@ -37,15 +37,16 @@ class Socket
     @socket = new Jandal(@_socket)
     @bindEvents()
 
-  bindEvents: =>
+  bindEvents: (action='on') =>
     return unless @events
     for name, methods of @events
       ns = @socket.namespace name
       for event in methods
-        ns.on event, @[name + '_' + event]
+        ns[action] event, @[name + '_' + event]
 
   # Release control over the raw socket
   release: =>
+    @bindEvents('removeListener')
 
   # Disconnect the socket from the server
   end: =>
@@ -73,7 +74,6 @@ class GuestSocket extends Socket
     setTimeout @timeout, TIMEOUT_AUTH
 
   user_auth: (@userId, token, fn) =>
-    console.log @userId, token, fn
     Storage.checkLoginToken(@userId, token)
       .then (exists) =>
         if exists
@@ -81,17 +81,17 @@ class GuestSocket extends Socket
         else
           fn(false)
           @end()
-      .fail ->
+      .fail (err) ->
         @end()
 
   login: (callback) =>
     socket = @_socket
     @release()
-    Storage.get(userId)
+    Storage.get(@userId)
       .then (user) =>
-        new UserSocket(socket, user, fn)
+        new UserSocket(socket, user)
         callback(true)
-      .fail =>
+      .fail (err) =>
         @kick()
 
   kick: =>
@@ -109,18 +109,15 @@ class UserSocket extends Socket
 
   # Websocket events
   events:
-    user: ['disconnect', 'info']
+    user: ['info']
     data: ['sync', 'fetch', 'create', 'update', 'destroy']
     email: ['list']
 
   constructor: (socket, @user) ->
     super
     @authenticated = true
-    @socket.join(userId)
+    @socket.join(@user.id)
     @sync = new Sync(@user)
-
-  user_disconnect: =>
-    console.log @socket.room(userId).length()
 
   user_info: (fn) =>
     fn
