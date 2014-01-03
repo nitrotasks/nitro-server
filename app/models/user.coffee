@@ -174,8 +174,7 @@ class User
   # Update attributes
   setModelAttributes: (className, id, attributes) =>
     model = @findModel className, id
-    for key, value of attributes
-      model[key] = value
+    model[key] = value for key, value of attributes
     @save(className)
     return model
 

@@ -27,7 +27,7 @@ init = (server, sjs=sockjs) ->
 TIMEOUT_AUTH = 3000
 
 # What classnames can be edited
-CLASSES = ['List', 'Task', 'Setting']
+CLASSES = ['list', 'task', 'pref']
 
 
 # -----------------------------------------------------------------------------
@@ -113,7 +113,7 @@ class UserSocket extends Socket
   # Websocket events
   events:
     user: ['info']
-    data: ['sync', 'fetch', 'create', 'update', 'destroy']
+    model: ['sync', 'fetch', 'create', 'update', 'destroy']
     email: ['list']
 
   constructor: (socket, @user) ->
@@ -124,7 +124,8 @@ class UserSocket extends Socket
     @socket.join(@user.id)
     @sync = new Sync(@user)
 
-  broadcast: (event, arg1, arg2, arg3) =>
+  broadcast: (event, classname, arg1, arg2, arg3) =>
+    event = classname + '.' + event
     @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
 
   user_info: (fn) =>
@@ -133,12 +134,18 @@ class UserSocket extends Socket
       email: @user.email
       pro: @user.pro
 
-  data_sync: (queue, fn) =>
+  model_sync: (queue, fn) =>
     @sync.sync(queue, fn)
 
-  data_fetch: =>
+  model_fetch: (classname, fn) =>
 
-  data_create: (classname, model, fn) =>
+    if classname not in CLASSES or
+    typeof fn isnt 'function'
+      return false
+
+    fn @user.exportModel(classname)
+
+  model_create: (classname, model, fn) =>
 
     if classname not in CLASSES or
     typeof fn isnt 'function' or
@@ -146,30 +153,36 @@ class UserSocket extends Socket
       return
 
     id = @sync.create(classname, model)
-    @broadcast 'data.create', classname, model
+    @broadcast 'create', classname, model
     fn(id)
 
-  data_update: (classname, model) =>
+  ###
+   * - classname (string)
+   * - model (object)
+   * - [fn] (function)
+  ###
+  
+  model_update: (classname, model, fn) =>
 
     if classname not in CLASSES or
     typeof model isnt 'object'
       return
 
-    @sync.update classname, model
-    @broadcast 'data.update', classname, model
+    model = @sync.update classname, model
+    @broadcast 'update', classname, model
 
-  data_destroy: (classname, id) =>
+    if typeof fn is 'function' then fn()
+
+  model_destroy: (classname, id) =>
 
     @sync.destroy classname, id
-    @broadcast 'data.destroy', classname, id
+    @broadcast 'destroy', classname, id
 
   email_list: =>
 
   logout: =>
-    console.log 'logging out'
     # If the user is only logged in from one client then remove them from memory
     if Jandal.all.in(@user.id).length() is 0
-      console.log 'releasing user'
       Storage.release @user.id
 
 

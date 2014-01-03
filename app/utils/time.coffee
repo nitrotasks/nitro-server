@@ -4,7 +4,7 @@
 # the timestamp.
 # Set to the 1st of January, 2014
 BASE = 1388487600000
-TIME = 'Time'
+TIME = 'time'
 
 class Time
 
@@ -27,7 +27,7 @@ class Time
     # If attr is an object, loop through it
     if typeof attr is 'object'
       for key, time of attr
-        @setTime className, id, key, time
+        @set className, id, key, time
       return
 
     # Compress timestamp to save space

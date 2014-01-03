@@ -17,30 +17,11 @@ Time    = require '../utils/time'
 log      = Log 'Sync', 'cyan'
 logEvent = Log 'Sync Event', 'yellow'
 
-# Return the default task object
-# I don't think we even use this anymore?
-Default = (name) ->
+# CONSTANTS
 
-  data =
-    Task:
-      completed: false
-      date: ''
-      list: 'inbox'
-      name: 'New Task'
-      notes: ''
-      priority: 1
-    List:
-      name: 'New List'
-      tasks: []
-
-  clone = (obj) ->
-    newObj = {}
-    for key, value of obj
-      newObj[key] = value
-    return newObj
-
-  if data[name]
-    return clone data[name]
+LIST = 'list'
+PREF = 'pref'
+TASK = 'task'
 
 
 # Does all the useful stuff
@@ -48,16 +29,6 @@ class Sync
 
   constructor: (@user) ->
     @time = new Time(@user)
-
-  # --------------
-  # General Events
-  # --------------
-
-  # Return all models in database
-  fetch: (classname, fn) =>
-    return unless fn
-    fn @exportModel(classname)
-
 
   #####################################
   #    __   __   ___      ___  ___    #
@@ -68,16 +39,16 @@ class Sync
 
 
   # Create a new model
-  create: (data, fn) =>
+  create: (classname, model, timestamp) =>
 
     # Generate new id
-    if classname is 'Setting'
+    if classname is PREF
       id = 1
       model = @settingsValidate(model)
 
-    else if classname is 'List' and model.id is 'inbox'
+    else if classname is LIST and model.id is 'inbox'
       id = model.id
-      if @hasModel('List', 'inbox') then return
+      if @hasModel(LIST, 'inbox') then return
 
     else
       id = 's-' + @user.index(classname)
@@ -85,22 +56,19 @@ class Sync
       model.id = id
 
     # Add task to list
-    if classname is 'Task'
+    if classname is TASK
       listId = model.list
       @taskAdd id, listId
-    else if classname is 'List'
+    else if classname is LIST
       model.tasks = []
 
     # Add item to server
-    @setModel(classname, id, model)
+    @user.setModel(classname, id, model)
 
     # Set timestamp
-    timestamp = data[2] or Date.now()
+    timestamp ?= Date.now()
     @time.set classname, id, 'all', timestamp
     log "Created #{ classname }: #{ model.name }"
-
-    # Broadcast event to connected clients
-    @broadcast 'create', [classname, model]
 
     return id
 
@@ -114,25 +82,20 @@ class Sync
   ####################################
 
   # Update existing model
-  update: (classname, changes) =>
+  update: (classname, changes, timestamps) =>
 
-    if classname is 'Setting'
+    if classname is PREF
       id = 1
       changes = @settingsValidate(changes)
     else
       id = changes.id
 
     # Check model exists on server
-    if not @hasModel(classname, id)
+    if not @user.hasModel(classname, id)
       log "#{classname} doesn't exist on server"
       return
-      # model = Default classname
-      # for k, v of changes
-      #   model[k] = v
-      # changes = model
 
     # Set timestamp
-    timestamps = data[2]
     if timestamps
       for attr, time of timestamps
         old = @time.get classname, id, attr
@@ -142,21 +105,22 @@ class Sync
     else
       timestamps = {}
       now = Date.now()
-      for k of changes
-        continue if k is 'id'
-        timestamps[k] = now
+      for key of changes when key isnt 'id'
+        timestamps[key] = now
 
     @time.set classname, id, timestamps
 
     # Update list
-    if classname is 'Task' and changes.list?
-      oldTask = @findModel classname, id
+    if classname is TASK and changes.list?
+      oldTask = @user.findModel classname, id
       if oldTask.list isnt changes.list
         @taskMove id, oldTask.list, changes.list
 
     # Save to server
-    model = @setModelAttributes classname, id, changes
+    model = @user.setModelAttributes classname, id, changes
     log "Updated #{ classname }: #{ model.name }"
+
+    return model
 
 
 
@@ -169,22 +133,22 @@ class Sync
 
   # Delete existing model
   destroy: (classname, id, timestamp) =>
-    model = @findModel classname, id
+    model = @user.findModel classname, id
 
     # Check that the model hasn't been updated after this event
     timestamp ?= Date.now()
     return unless @time.check classname, id, timestamp
 
     # Destroy all tasks within that list
-    if classname is 'List'
+    if classname is LIST
       for taskId in model.tasks
         log "Destroying Task #{ taskId }"
         # TODO: Prevent server from broadcasting these changes
         #       And make the client delete the tasks
-        @destroy ['Task', taskId]
+        @destroy [TASK, taskId]
 
     # Remove from list
-    else if classname is 'Task'
+    else if classname is TASK
       @taskRemove id, model.list
 
     # Replace task with deleted template
@@ -223,7 +187,7 @@ class Sync
       # This code matches that list back to the task
 
       if type in ['create', 'update'] and
-      classname is 'Task' and model.list.slice(0,2) is 'c-'
+      classname is TASK and model.list.slice(0,2) is 'c-'
 
         # The list hasn't been assigned a server ID yet
         if client[model.list] is undefined
@@ -251,7 +215,7 @@ class Sync
         when 'create'
           oldId = model.id
           @create [classname, model, timestamp], (newId) ->
-            if classname is 'List'
+            if classname is LIST
               log "Changing List #{ oldId } to #{ newId }"
               client[oldId] = newId
 
@@ -263,7 +227,7 @@ class Sync
 
       i++
 
-    fn [@exportModel('Task'), @exportModel('List')] if fn
+    fn [@exportModel(TASK), @exportModel(LIST)] if fn
 
   # Make sure data is in the right format
   parse: (event, data) ->
@@ -276,20 +240,20 @@ class Sync
 
   # Add a task to a list
   taskAdd: (taskId, listId) ->
-    tasks = @findModel('List', listId).tasks
+    tasks = @user.findModel(LIST, listId).tasks
     return false unless tasks
     if tasks.indexOf(taskId) < 0
       tasks.push taskId
-      @setModelAttributes 'List', listId, tasks:tasks
+      @setModelAttributes LIST, listId, tasks:tasks
 
   # Remove a task from a list
   taskRemove: (taskId, listId) ->
-    tasks = @findModel('List', listId).tasks
+    tasks = @user.findModel(LIST, listId).tasks
     return false unless tasks
     index = tasks.indexOf taskId
     if index > -1
       tasks.splice index, 1
-      @setModelAttributes 'List', listId, tasks:tasks
+      @setModelAttributes LIST, listId, tasks:tasks
 
   # Move a task from list to another
   taskMove: (taskId, oldListId, newListId) ->
@@ -298,11 +262,11 @@ class Sync
 
   # Replace a task ID
   taskUpdateId: (oldId, newId, listId) ->
-    tasks = @findModel('List', listId).tasks
+    tasks = @user.findModel(LIST, listId).tasks
     index = tasks.indexOf oldId
     if index > -1
       tasks.spice index, 1, newId
-      @setModelAttributes 'List', listId, tasks:tasks
+      @setModelAttributes LIST, listId, tasks:tasks
 
 
   # -------------------
@@ -336,7 +300,7 @@ class Sync
     [uid, listId, email] = data
     require('./todo.html')(uid, listId)
       .then ([data, user]) ->
-        listName = user.data('List')[listId]?.name
+        listName = user.data(LIST)[listId]?.name
         options =
           to: email
           replyTo: user.email
