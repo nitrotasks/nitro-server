@@ -150,6 +150,88 @@ describe 'User class', ->
     user.setEmail email
 
 
+  it 'should be able to find models', ->
+
+    attrs =
+      data_task:
+        's-0':
+          name: 'Task 1'
+      data_list:
+        's-2':
+          name: 'List 3'
+
+    user = new User(attrs)
+
+    # Tasks
+    task = user.findModel 'task', 's-0'
+    task.name.should.equal 'Task 1'
+
+    # Lists
+    list = user.findModel 'list', 's-2'
+    list.name.should.equal 'List 3'
+
+    # Should return an object if it doesn't exist
+    missing = user.findModel 'task', 's-10'
+    missing.should.eql {}
 
 
+  it 'should be able to detect if a model exists', ->
 
+    attrs =
+      data_task:
+        's-0':
+          name: 'Task 1'
+
+    user = new User(attrs)
+
+    # Existing items should return true
+    exists = user.hasModel 'task', 's-0'
+    exists.should.be.ok
+
+    # Missing items should return false
+    no_model = user.hasModel 'task', 's-100'
+    no_model.should.not.be.ok
+    no_class = user.hasModel 'Empty', 's-2'
+    no_class.should.not.be.ok
+
+
+  it 'should export an array', ->
+
+    attrs =
+      data_task:
+        's-0':
+          name: 'Task 1'
+        's-1':
+          deleted: true
+        's-2':
+          name: 'Task 3'
+        's-3':
+          name: 'Task 4'
+      data_list:
+        's-0':
+          name: 'List 1'
+        's-1':
+          deleted: true
+        's-2':
+          deleted: true
+        's-3':
+          name: 'List 4'
+
+    user = new User(attrs)
+
+    tasks = user.exportModel 'task'
+    lists = user.exportModel 'list'
+    empty = user.exportModel 'empty'
+
+    lists.should.be.an.Array
+    tasks.should.be.an.Array
+    lists.should.have.length 2
+    tasks.should.have.length 3
+
+    # Should return our tasks and lists
+    tasks[0].name.should.equal 'Task 1'
+    lists[1].name.should.equal 'List 4'
+
+    # If the class doesn't exist, it should return an empty array
+    empty.should.be.an.Array
+    empty.should.be.empty

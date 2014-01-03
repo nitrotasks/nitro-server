@@ -162,37 +162,74 @@ class User
     @set 'email', email
     Storage.replaceEmail @id, oldEmail, email, @service
 
-  # Return model
-  findModel: (className, id) =>
-    @data(className)[id] ?= {}
-    return @data(className)[id]
+  ###
+   * Get a model by an id for a class.
+   * If the model doesn't exist, it will be created as an empty object
+   *
+   * - classname (string)
+   * - id (int)
+   * > object
+  ###
 
-  # If a model exists
-  hasModel: (className, id) =>
-    return @data(className)?[id]?
+  findModel: (classname, id) =>
+    obj = @data(classname)
+    return obj[id] ?= {}
 
-  # Update attributes
-  setModelAttributes: (className, id, attributes) =>
-    model = @findModel className, id
+
+  ###
+   * Check if a model exists
+   *
+   * - classname (string)
+   * - id (int)
+   * > boolean
+  ###
+
+  hasModel: (classname, id) =>
+    return @data(classname)?[id]?
+
+  ###
+   * Set attributes for a model
+   *
+   * - classname (string)
+   * - id (int)
+   * - attributes (object)
+   * > object
+  ###
+
+  updateModel: (classname, id, attributes) =>
+    model = @findModel(classname, id)
     model[key] = value for key, value of attributes
-    @save(className)
+    @save classname
     return model
 
-  # Replace model
-  setModel: (className, id, attributes) =>
-    @data(className)[id] = attributes
-    @save(className)
+
+  ###
+   * Replace the attributes for a model
+   *
+   * - classname (string)
+   * - id (int)
+   * - attributes (object)
+   > attributes
+  ###
+
+  setModel: (classname, id, attributes) =>
+    @data(classname)[id] = attributes
+    @save classname
     return attributes
 
-  # Convert data object into spine array
-  exportModel: (className) =>
+  ###
+   * Get an array of all the active models in a class
+   *
+   * - classname (string)
+   * > object
+  ###
+
+  exportModel: (classname) =>
     models = []
-    data = @data(className)
-    return [] unless data
-    # Return all live items
-    for id, model of data
-      if not model.deleted
-        models.push model
+    data = @data classname
+    return models unless data
+    for id, model of data when not model.deleted
+      models.push model
     return models
 
   ###
