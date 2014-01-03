@@ -57,7 +57,7 @@ class Time
     pass = yes
 
     for attr of @user.findModel(TIME, className)[id]
-      val = @getTime(className, id, attr)
+      val = @get(className, id, attr)
       if val > time then pass = no
 
     return pass

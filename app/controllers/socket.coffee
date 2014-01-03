@@ -114,7 +114,6 @@ class UserSocket extends Socket
   events:
     user: ['info']
     model: ['sync', 'fetch', 'create', 'update', 'destroy']
-    email: ['list']
 
   constructor: (socket, @user) ->
     super
@@ -128,14 +127,42 @@ class UserSocket extends Socket
     event = classname + '.' + event
     @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
 
+  logout: =>
+    # If the user is only logged in from one client then remove them from memory
+    if Jandal.all.in(@user.id).length() is 0
+      Storage.release @user.id
+
+
+  ###
+   * User Info
+   *
+   * - fn (function)
+  ###
+
   user_info: (fn) =>
     fn
       name: @user.name
       email: @user.email
       pro: @user.pro
 
+
+  ###
+   * Model Sync
+   *
+   * - queue (object)
+   * - fn (function)
+  ###
+
   model_sync: (queue, fn) =>
     @sync.sync(queue, fn)
+
+
+  ###
+   * Model Fetch
+   *
+   * - classname (string)
+   * - fn (function)
+  ###
 
   model_fetch: (classname, fn) =>
 
@@ -144,6 +171,15 @@ class UserSocket extends Socket
       return false
 
     fn @user.exportModel(classname)
+
+
+  ###
+   * Model Create
+   *
+   * - classname (string)
+   * - model (object)
+   * - fn (function)
+  ###
 
   model_create: (classname, model, fn) =>
 
@@ -156,12 +192,15 @@ class UserSocket extends Socket
     @broadcast 'create', classname, model
     fn(id)
 
+
   ###
+   * Model Update
+   *
    * - classname (string)
    * - model (object)
    * - [fn] (function)
   ###
-  
+
   model_update: (classname, model, fn) =>
 
     if classname not in CLASSES or
@@ -173,17 +212,27 @@ class UserSocket extends Socket
 
     if typeof fn is 'function' then fn()
 
-  model_destroy: (classname, id) =>
+
+  ###
+   * Model Destroy
+   *
+   * - classname (string)
+   * - id (string)
+   * - [fn] (function)
+  ###
+
+  model_destroy: (classname, id, fn) =>
+
+    if classname not in CLASSES or
+    typeof id isnt 'string'
+      return
 
     @sync.destroy classname, id
     @broadcast 'destroy', classname, id
 
-  email_list: =>
+    if typeof fn is 'function' then fn()
 
-  logout: =>
-    # If the user is only logged in from one client then remove them from memory
-    if Jandal.all.in(@user.id).length() is 0
-      Storage.release @user.id
+
 
 
 module.exports =

@@ -102,5 +102,20 @@ describe 'Socket', ->
           socket.reply 'model.update("task",{"id":"s-0","name":"Old task with new name"},"__fn__2")'
         else
           message.should.equal 'task.update({"name":"Old task with new name","list":20,"id":"s-0"})'
+          other.end()
+          done()
+
+  it 'should destroy user data', (done) ->
+    socket.reply "user.auth(#{ user.id },\"#{ user.token }\",\"__fn__1\")"
+    socket.on 'message', (message) ->
+      switch message[6]
+        when '1'
+          message.should.equal '__fn__1(true)'
+          socket.reply 'model.destroy("task","s-0","__fn__2")'
+        when '2'
+          message.should.equal '__fn__2()'
+          socket.reply 'model.fetch("task","__fn__3")'
+        when '3'
+          message.should.equal '__fn__3([])'
           done()
 

@@ -152,7 +152,7 @@ class Sync
       @taskRemove id, model.list
 
     # Replace task with deleted template
-    @setModel classname, id,
+    @user.setModel classname, id,
       id: id
       deleted: yes
 
@@ -244,7 +244,7 @@ class Sync
     return false unless tasks
     if tasks.indexOf(taskId) < 0
       tasks.push taskId
-      @setModelAttributes LIST, listId, tasks:tasks
+      @user.setModelAttributes LIST, listId, tasks:tasks
 
   # Remove a task from a list
   taskRemove: (taskId, listId) ->
@@ -253,7 +253,7 @@ class Sync
     index = tasks.indexOf taskId
     if index > -1
       tasks.splice index, 1
-      @setModelAttributes LIST, listId, tasks:tasks
+      @user.setModelAttributes LIST, listId, tasks:tasks
 
   # Move a task from list to another
   taskMove: (taskId, oldListId, newListId) ->
@@ -266,7 +266,7 @@ class Sync
     index = tasks.indexOf oldId
     if index > -1
       tasks.spice index, 1, newId
-      @setModelAttributes LIST, listId, tasks:tasks
+      @user.setModelAttributes LIST, listId, tasks:tasks
 
 
   # -------------------
