@@ -233,7 +233,5 @@ class UserSocket extends Socket
     if typeof fn is 'function' then fn()
 
 
-
-
 module.exports =
   init: init

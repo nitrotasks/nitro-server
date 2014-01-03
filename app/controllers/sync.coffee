@@ -117,7 +117,7 @@ class Sync
         @taskMove id, oldTask.list, changes.list
 
     # Save to server
-    model = @user.setModelAttributes classname, id, changes
+    model = @user.updateModel classname, id, changes
     log "Updated #{ classname }: #{ model.name }"
 
     return model
@@ -161,12 +161,16 @@ class Sync
     log "Destroyed #{ classname } #{ id }"
 
 
-  # --------------------
-  # Offline Sync Merging
-  # --------------------
 
-  # Sync
-  sync: (queue, fn) =>
+  #############################################################
+  #    __   ___  ___              ___     __            __    #
+  #   /  \ |__  |__  |    | |\ | |__     /__` \ / |\ | /  `   #
+  #   \__/ |    |    |___ | | \| |___    .__/  |  | \| \__,   #
+  #                                                           #
+  #############################################################
+
+  # Merge a queue of actions
+  sync: (queue) =>
     log 'Running sync'
 
     # Map client IDs to server IDs -- for lists only
@@ -214,20 +218,20 @@ class Sync
       switch type
         when 'create'
           oldId = model.id
-          @create [classname, model, timestamp], (newId) ->
-            if classname is LIST
-              log "Changing List #{ oldId } to #{ newId }"
-              client[oldId] = newId
+          newId = @create classname, model, timestamp
+          if classname is LIST
+            log "Changing List #{ oldId } to #{ newId }"
+            client[oldId] = newId
 
         when 'update'
-          @update [classname, model, timestamp]
+          @update classname, model, timestamp
 
         when 'destroy'
-          @destroy [classname, model, timestamp]
+          @destroy classname, model, timestamp
 
       i++
 
-    fn [@exportModel(TASK), @exportModel(LIST)] if fn
+    return [@user.exportModel(TASK), @user.exportModel(LIST)]
 
   # Make sure data is in the right format
   parse: (event, data) ->
@@ -244,7 +248,7 @@ class Sync
     return false unless tasks
     if tasks.indexOf(taskId) < 0
       tasks.push taskId
-      @user.setModelAttributes LIST, listId, tasks:tasks
+      @user.updateModel LIST, listId, tasks:tasks
 
   # Remove a task from a list
   taskRemove: (taskId, listId) ->
@@ -253,7 +257,7 @@ class Sync
     index = tasks.indexOf taskId
     if index > -1
       tasks.splice index, 1
-      @user.setModelAttributes LIST, listId, tasks:tasks
+      @user.updateModel LIST, listId, tasks:tasks
 
   # Move a task from list to another
   taskMove: (taskId, oldListId, newListId) ->
@@ -266,7 +270,7 @@ class Sync
     index = tasks.indexOf oldId
     if index > -1
       tasks.spice index, 1, newId
-      @user.setModelAttributes LIST, listId, tasks:tasks
+      @user.updateModel LIST, listId, tasks:tasks
 
 
   # -------------------
