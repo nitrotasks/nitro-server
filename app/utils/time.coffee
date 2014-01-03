@@ -38,7 +38,7 @@ class Time
     @user.findModel(TIME, className)[id] ?= {}
 
     # Update all existing values
-    if attr is 'all'
+    if attr is '*'
       for attr of @user.findModel(className, id)
         continue if attr is 'id' # Ignore ID
         # Can't use @setModelAttributes because it's three layers deep
