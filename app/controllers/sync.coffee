@@ -35,9 +35,8 @@ class Sync
     @time = new Time(@user)
 
   createId: (classname) ->
-    id = SERVER_ID + @user.index classname
-    @user.incrIndex classname
-    return id
+    id = @user.incrIndex classname
+    return SERVER_ID + (id - 1)
 
   #####################################
   #    __   __   ___      ___  ___    #
@@ -50,15 +49,17 @@ class Sync
   # Create a new model
   create: (classname, model, timestamp) =>
 
-    # Generate new id
+    # TODO: Get prefs to sync
     if classname is PREF
       id = 1
       model = @settingsValidate(model)
 
+    # Inbox list is special
     else if classname is LIST and model.id is INBOX
       id = model.id
       if @hasModel(LIST, INBOX) then return
 
+    # Assign server id 
     else
       id = model.id = @createId classname
 
@@ -66,8 +67,10 @@ class Sync
     if classname is TASK
       listId = model.list
       @taskAdd id, listId
+
+    # Make sure model.tasks exists
     else if classname is LIST
-      model.tasks = []
+      model.tasks ?= []
 
     # Add item to server
     @user.setModel(classname, id, model)
