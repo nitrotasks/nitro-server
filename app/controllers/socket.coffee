@@ -77,6 +77,7 @@ class GuestSocket extends Socket
     setTimeout @timeout, TIMEOUT_AUTH
 
   user_auth: (@userId, token, fn) =>
+    console.log 'authing user', @userId, token
     Storage.checkLoginToken(@userId, token)
       .then (exists) =>
         if exists
@@ -84,7 +85,8 @@ class GuestSocket extends Socket
         else
           fn(false)
           @end()
-      .fail (err) ->
+      .fail (err) =>
+        console.log 'error', err
         @end()
 
   login: (callback) =>

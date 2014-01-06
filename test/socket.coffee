@@ -16,6 +16,7 @@ describe 'Socket', ->
   before setup
 
   beforeEach ->
+    console.log '\n\n'
     Socket.init(null, mockjs)
     socket = mockjs.createSocket()
 
@@ -34,12 +35,11 @@ describe 'Socket', ->
       done()
 
   it 'should try to auth', (done) ->
-    socket.reply 'user.auth(20,"token","__fn__20")'
-    socket.on 'message', (message) ->
-      message.should.equal '__fn__20(false)'
     socket.on 'close', ->
       socket.open.should.equal false
       done()
+    socket.reply 'user.auth(20,"token").fn(20)'
+
 
   it 'should be kicked after 3 seconds', (done) ->
     @timeout 3200
@@ -51,43 +51,47 @@ describe 'Socket', ->
       done()
 
   it 'should login via sockets', (done) ->
-    socket.reply "user.auth(#{ user.id },\"#{ user.token }\",\"__fn__1\")"
+    console.log '\n\n\n'
     socket.on 'message', (message) ->
-      message.should.equal '__fn__1(true)'
+      console.log 'got message', message
+      message.should.equal 'Jandal.fn_1(true)'
       socket.end()
       done()
+    socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
 
   it 'should get user info', (done) ->
-    socket.reply "user.auth(#{ user.id },\"#{ user.token }\",\"__fn__1\")"
+    socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
     socket.on 'message', (message) ->
-      switch message[6]
+      switch message[10]
         when '1'
-          message.should.equal '__fn__1(true)'
-          socket.reply 'user.info("__fn__2")'
+          message.should.equal 'Jandal.fn_1(true)'
+          socket.reply 'user.info().fn(2)'
         when '2'
-          message.should.equal '__fn__2({"name":"Fred","email":"fred@gmail.com","pro":0})'
+          message.should.equal 'Jandal.fn_2({"name":"Fred","email":"fred@gmail.com","pro":0})'
           done()
 
   it 'should create user data', (done) ->
-    socket.reply "user.auth(#{ user.id },\"#{ user.token }\",\"__fn__1\")"
+    console.log 'GET USER DATA'
+    socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
     socket.on 'message', (message) ->
-      switch message[6]
+      console.log 'got message', message
+      switch message[10]
         when '1'
-          message.should.equal '__fn__1(true)'
-          socket.reply 'model.create("task",{"name":"something","list":20},"__fn__2")'
+          message.should.equal 'Janda.fn_1(true)'
+          socket.reply 'model.create("task",{"name":"something","list":20}).fn(2)'
         when '2'
-          message.should.equal '__fn__2("s-0")'
+          message.should.equal 'Jandal.fn_2("s-0")'
           done()
 
   it 'should fetch user data', (done) ->
-    socket.reply "user.auth(#{ user.id },\"#{ user.token }\",\"__fn__1\")"
+    socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
     socket.on 'message', (message) ->
-      switch message[6]
+      switch message[10]
         when '1'
-          message.should.equal '__fn__1(true)'
-          socket.reply 'model.fetch("task","__fn__2")'
+          message.should.equal 'Jandal.fn_1(true)'
+          socket.reply 'model.fetch("task").fn(2)'
         when '2'
-          message.should.equal '__fn__2([{"name":"something","list":20,"id":"s-0"}])'
+          message.should.equal 'Jandal.fn_2([{"name":"something","list":20,"id":"s-0"}])'
           done()
 
   it 'should broadcast events to other sockets', (done) ->
@@ -118,4 +122,3 @@ describe 'Socket', ->
         when '3'
           message.should.equal '__fn__3([])'
           done()
-
