@@ -22,6 +22,10 @@ logEvent = Log 'Sync Event', 'yellow'
 LIST = 'list'
 PREF = 'pref'
 TASK = 'task'
+INBOX = 'inbox'
+
+SERVER_ID = 's'
+CLIENT_ID = 'c'
 
 
 # Does all the useful stuff
@@ -29,6 +33,11 @@ class Sync
 
   constructor: (@user) ->
     @time = new Time(@user)
+
+  createId: (classname) ->
+    id = SERVER_ID + @user.index classname
+    @user.incrIndex classname
+    return id
 
   #####################################
   #    __   __   ___      ___  ___    #
@@ -46,14 +55,12 @@ class Sync
       id = 1
       model = @settingsValidate(model)
 
-    else if classname is LIST and model.id is 'inbox'
+    else if classname is LIST and model.id is INBOX
       id = model.id
-      if @hasModel(LIST, 'inbox') then return
+      if @hasModel(LIST, INBOX) then return
 
     else
-      id = 's-' + @user.index(classname)
-      @user.incrIndex classname
-      model.id = id
+      id = model.id = @createId classname
 
     # Add task to list
     if classname is TASK
@@ -187,11 +194,11 @@ class Sync
       ## Handles client list IDs ##
 
       # Example: You create a task in list 'c-10'
-      # The list ID gets changed to 's-5' on the server
+      # The list ID gets changed to 's5' on the server
       # This code matches that list back to the task
 
       if type in ['create', 'update'] and
-      classname is TASK and model.list.slice(0,2) is 'c-'
+      classname is TASK and model.list.slice(0,1) is CLIENT_ID
 
         # The list hasn't been assigned a server ID yet
         if client[model.list] is undefined

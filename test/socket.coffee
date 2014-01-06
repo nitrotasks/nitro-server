@@ -75,7 +75,7 @@ describe 'Socket', ->
           message.should.equal 'Jandal.fn_1(true)'
           socket.reply 'model.create("task",{"name":"something","list":20}).fn(2)'
         when '2'
-          message.should.equal 'Jandal.fn_2("s-0")'
+          message.should.equal 'Jandal.fn_2("s0")'
           done()
 
   it 'should fetch user data', (done) ->
@@ -86,7 +86,11 @@ describe 'Socket', ->
           message.should.equal 'Jandal.fn_1(true)'
           socket.reply 'model.fetch("task").fn(2)'
         when '2'
-          message.should.equal 'Jandal.fn_2([{"name":"something","list":20,"id":"s-0"}])'
+          try
+            message.should.equal 'Jandal.fn_2([{"name":"something","list":20,"id":"s0"}])'
+          catch e
+            console.log e
+
           done()
 
   it 'should broadcast events to other sockets', (done) ->
@@ -98,9 +102,9 @@ describe 'Socket', ->
       switch message[10]
         when '1'
           message.should.equal 'Jandal.fn_1(true)'
-          socket.reply 'model.update("task",{"id":"s-0","name":"Old task with new name"}).fn(2)'
+          socket.reply 'model.update("task",{"id":"s0","name":"Old task with new name"}).fn(2)'
         else
-          message.should.equal 'task.update({"name":"Old task with new name","list":20,"id":"s-0"})'
+          message.should.equal 'task.update({"name":"Old task with new name","list":20,"id":"s0"})'
           other.end()
           done()
 
@@ -110,7 +114,7 @@ describe 'Socket', ->
       switch message[10]
         when '1'
           message.should.equal 'Jandal.fn_1(true)'
-          socket.reply 'model.destroy("task","s-0").fn(2)'
+          socket.reply 'model.destroy("task","s0").fn(2)'
         when '2'
           message.should.equal 'Jandal.fn_2()'
           socket.reply 'model.fetch("task").fn(3)'
