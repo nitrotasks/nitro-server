@@ -34,9 +34,18 @@ class Sync
   constructor: (@user) ->
     @time = new Time(@user)
 
+
+  ###
+   * Create a new ID for a model
+   *
+   * - classname (string)
+   * > int
+  ###
+
   createId: (classname) ->
     id = @user.incrIndex classname
     return SERVER_ID + (id - 1)
+
 
   #####################################
   #    __   __   ___      ___  ___    #
@@ -59,7 +68,7 @@ class Sync
       id = model.id
       if @hasModel(LIST, INBOX) then return
 
-    # Assign server id 
+    # Assign server id
     else
       id = model.id = @createId classname
 
@@ -77,7 +86,7 @@ class Sync
 
     # Set timestamp
     timestamp ?= Date.now()
-    @time.set classname, id, 'all', timestamp
+    @time.set classname, id, '*', timestamp
     log "Created #{ classname }: #{ model.name }"
 
     return id
@@ -94,14 +103,16 @@ class Sync
   # Update existing model
   update: (classname, changes, timestamps) =>
 
+    # TODO: Get prefs to sync
     if classname is PREF
       id = 1
       changes = @settingsValidate(changes)
+
     else
       id = changes.id
 
     # Check model exists on server
-    if not @user.hasModel(classname, id)
+    unless @user.hasModel(classname, id)
       log "#{classname} doesn't exist on server"
       return
 

@@ -86,11 +86,7 @@ describe 'Socket', ->
           message.should.equal 'Jandal.fn_1(true)'
           socket.reply 'model.fetch("task").fn(2)'
         when '2'
-          try
-            message.should.equal 'Jandal.fn_2([{"name":"something","list":20,"id":"s0"}])'
-          catch e
-            console.log e
-
+          message.should.equal 'Jandal.fn_2([{"name":"something","list":20,"id":"s0"}])'
           done()
 
   it 'should broadcast events to other sockets', (done) ->
