@@ -16,7 +16,6 @@ describe 'Socket', ->
   before setup
 
   beforeEach ->
-    console.log '\n\n'
     Socket.init(null, mockjs)
     socket = mockjs.createSocket()
 
@@ -51,9 +50,7 @@ describe 'Socket', ->
       done()
 
   it 'should login via sockets', (done) ->
-    console.log '\n\n\n'
     socket.on 'message', (message) ->
-      console.log 'got message', message
       message.should.equal 'Jandal.fn_1(true)'
       socket.end()
       done()
@@ -71,13 +68,11 @@ describe 'Socket', ->
           done()
 
   it 'should create user data', (done) ->
-    console.log 'GET USER DATA'
     socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
     socket.on 'message', (message) ->
-      console.log 'got message', message
       switch message[10]
         when '1'
-          message.should.equal 'Janda.fn_1(true)'
+          message.should.equal 'Jandal.fn_1(true)'
           socket.reply 'model.create("task",{"name":"something","list":20}).fn(2)'
         when '2'
           message.should.equal 'Jandal.fn_2("s-0")'
@@ -96,29 +91,29 @@ describe 'Socket', ->
 
   it 'should broadcast events to other sockets', (done) ->
     other = mockjs.createSocket()
-    socket.reply "user.auth(#{ user.id },\"#{ user.token }\",\"__fn__1\")"
-    other.reply "user.auth(#{ user.id },\"#{ user.token }\",\"__fn__1\")"
+    socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
+    other.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
 
     other.on 'message', (message) ->
-      switch message[6]
+      switch message[10]
         when '1'
-          message.should.equal '__fn__1(true)'
-          socket.reply 'model.update("task",{"id":"s-0","name":"Old task with new name"},"__fn__2")'
+          message.should.equal 'Jandal.fn_1(true)'
+          socket.reply 'model.update("task",{"id":"s-0","name":"Old task with new name"}).fn(2)'
         else
           message.should.equal 'task.update({"name":"Old task with new name","list":20,"id":"s-0"})'
           other.end()
           done()
 
   it 'should destroy user data', (done) ->
-    socket.reply "user.auth(#{ user.id },\"#{ user.token }\",\"__fn__1\")"
+    socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
     socket.on 'message', (message) ->
-      switch message[6]
+      switch message[10]
         when '1'
-          message.should.equal '__fn__1(true)'
-          socket.reply 'model.destroy("task","s-0","__fn__2")'
+          message.should.equal 'Jandal.fn_1(true)'
+          socket.reply 'model.destroy("task","s-0").fn(2)'
         when '2'
-          message.should.equal '__fn__2()'
-          socket.reply 'model.fetch("task","__fn__3")'
+          message.should.equal 'Jandal.fn_2()'
+          socket.reply 'model.fetch("task").fn(3)'
         when '3'
-          message.should.equal '__fn__3([])'
+          message.should.equal 'Jandal.fn_3([])'
           done()

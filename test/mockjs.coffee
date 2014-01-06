@@ -8,18 +8,15 @@ class Socket
     @on 'close', => @open = false
 
   on: (event, fn) =>
-    console.log 'listening to', event
     @vent.on(event, fn)
 
   emit: (event, args...) =>
-    console.log 'emitting', event, args
     @vent.emit(event, args...)
 
   write: (data) =>
     @emit 'message', data
 
   reply: (args...) =>
-    console.log 'replying', args
     @emit 'data', args...
 
   end: =>
