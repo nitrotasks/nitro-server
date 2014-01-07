@@ -61,7 +61,6 @@ class Sync
     # TODO: Get prefs to sync
     if classname is PREF
       id = 1
-      model = @settingsValidate(model)
 
     # Inbox list is special
     else if classname is LIST and model.id is INBOX
@@ -106,7 +105,6 @@ class Sync
     # TODO: Get prefs to sync
     if classname is PREF
       id = 1
-      changes = @settingsValidate(changes)
 
     else
       id = changes.id
@@ -164,8 +162,6 @@ class Sync
     if classname is LIST
       for taskId in model.tasks
         log "Destroying Task #{ taskId }"
-        # TODO: Prevent server from broadcasting these changes
-        #       And make the client delete the tasks
         @destroy [TASK, taskId]
 
     # Remove from list
@@ -207,7 +203,7 @@ class Sync
 
       ## Handles client list IDs ##
 
-      # Example: You create a task in list 'c-10'
+      # Example: You create a task in list 'c10'
       # The list ID gets changed to 's5' on the server
       # This code matches that list back to the task
 
@@ -254,10 +250,6 @@ class Sync
 
     return [@user.exportModel(TASK), @user.exportModel(LIST)]
 
-  # Make sure data is in the right format
-  parse: (event, data) ->
-    return data
-
 
   # ----------
   # Task Order
@@ -278,7 +270,7 @@ class Sync
     index = tasks.indexOf taskId
     if index > -1
       tasks.splice index, 1
-      @user.updateModel LIST, listId, tasks:tasks
+      @user.save LIST
 
   # Move a task from list to another
   taskMove: (taskId, oldListId, newListId) ->
@@ -291,51 +283,6 @@ class Sync
     index = tasks.indexOf oldId
     if index > -1
       tasks.spice index, 1, newId
-      @user.updateModel LIST, listId, tasks:tasks
-
-
-  # -------------------
-  # Settings Validation
-  # -------------------
-
-  settingsValidate: (settings) ->
-    allowed = ['sort', 'weekStart', 'dateFormat', 'completedDuration',
-               'confirmDelete', 'night', 'language', 'notifications',
-               'notifyEmail', 'notifyTime', 'notifyRegular']
-    out = {}
-    for property in allowed
-      if settings.hasOwnProperty(property)
-        out[property] = settings[property]
-    return out
-
-
-  # --------------------
-  # Miscellaneous events
-  # --------------------
-
-  ###*
-   * Send a users list to an email address
-   * @param {integer} uid: a user ID
-   * @param {string} listId: a list ID
-   * @param {string} email: an email address
-   * @return {boolean} false: if error
-  ###
-  emailList: (data) ->
-    return false unless Array.isArray(data)
-    [uid, listId, email] = data
-    require('./todo.html')(uid, listId)
-      .then ([data, user]) ->
-        listName = user.data(LIST)[listId]?.name
-        options =
-          to: email
-          replyTo: user.email
-          from: "#{ user.name } <hello@nitrotasks.com>"
-          subject: "I've sent you my #{ listName } list"
-          html: data
-          generateTextFromHTML: true
-        console.log options
-        require('./mail').send(options)
-      .fail (error) ->
-        console.warn error
+      @user.save LIST
 
 module.exports = Sync
