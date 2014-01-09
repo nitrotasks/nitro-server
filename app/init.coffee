@@ -2,7 +2,7 @@ config  = require './config'
 Log     = require './utils/log'
 connect = require './controllers/connect'
 router  = require './controllers/router'
-# sockets = require './controllers/sockets'
+socket = require './controllers/socket'
 
 ###
  * If this file is required by another, then it will put the app into
@@ -34,4 +34,4 @@ log "Starting server on port #{ config.port }"
 server = router.listen config.port
 
 # Start sync
-# sockets.init serve
+socket.init server

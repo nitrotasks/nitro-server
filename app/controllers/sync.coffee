@@ -102,17 +102,12 @@ class Sync
   # Update existing model
   update: (classname, changes, timestamps) =>
 
-    # TODO: Get prefs to sync
-    if classname is PREF
-      id = 1
-
-    else
-      id = changes.id
+    id = changes.id
 
     # Check model exists on server
-    unless @user.hasModel(classname, id)
+    unless classname is 'pref' or @user.hasModel(classname, id)
       log "#{classname} doesn't exist on server"
-      return
+      return false
 
     # Set timestamp
     if timestamps
