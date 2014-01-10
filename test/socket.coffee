@@ -119,6 +119,15 @@ describe '[Socket]', ->
       UPDATE = 1
       DESTROY = 2
 
+      test = (input, output) ->
+        socket.on 'message', (message) ->
+          [list, task, pref] = JSON.parse('[' + message[12..-2] + ']')
+          list.should.eql output.list
+          task.should.eql output.task
+          done()
+
+        socket.reply "model.sync(#{ JSON.stringify input }).fn(2)"
+
       it 'should replace list ids', (done) ->
 
         input =
@@ -173,10 +182,35 @@ describe '[Socket]', ->
             listId: 's1'
           ]
 
-        socket.on 'message', (message) ->
-          [list, task, pref] = JSON.parse('[' + message[12..-2] + ']')
-          list.should.eql output.list
-          task.should.eql output.task
-          done()
+        test input, output
 
-        socket.reply "model.sync(#{ JSON.stringify input }).fn(2)"
+      it 'should handle offline sync', ->
+
+        now = Date.now()
+
+        listId = sync.create LIST, {name: 'Just a list', tasks: []}
+
+        tasks = [
+          sync.create TASK, {name: 'Task 1', list: listId}
+          sync.create TASK, {name: 'Task 2', list: listId}
+          sync.create TASK, {name: 'Task 3', list: listId}
+        ]
+
+        queue = [
+          # Destroy tasks
+          [ 'destroy', TASK, tasks[0], now ]
+          [ 'destroy', TASK, tasks[1], now ]
+          [ 'destroy', TASK, tasks[2], now ]
+
+          # Update the list
+          [ 'update', LIST, {id: listId, name: 'Changed'}, now ]
+
+          # Create a new list
+          [ 'create',  LIST, {id: 'c1', name:LIST, tasks:[]}, now ]
+
+          # Create a new task
+          [ 'create', TASK, {id: 'c1', name:TASK, list: 'c1'}, now ]
+        ]
+
+        console.log sync.sync(queue)
+

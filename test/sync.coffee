@@ -38,26 +38,27 @@ describe 'Sync API', ->
 
     # Check lists exist
     lists = sync.user.data(LIST)
-    lists['s0'].name.should.equal 'List 1'
-    lists['s1'].name.should.equal 'List 2'
-    lists['s2'].name.should.equal 'List 3'
+    lists.should.eql
+      s0: name: 'List 1', tasks: [], id: 's0'
+      s1: name: 'List 2', tasks: [], id: 's1'
+      s2: name: 'List 3', tasks: [], id: 's2'
 
     # -----
     # Tasks
     # -----
 
-    sync.create TASK, {name: 'Task 1', list: 's0'}
-    sync.create TASK, {name: 'Task 2', list: 's0'}
-    sync.create TASK, {name: 'Task 3', list: 's0'}
+    sync.create TASK, {name: 'Task 1', listId: 's0'}
+    sync.create TASK, {name: 'Task 2', listId: 's0'}
+    sync.create TASK, {name: 'Task 3', listId: 's0'}
 
     # Check tasks exist
     tasks = sync.user.data(TASK)
-    tasks['s0'].name.should.equal 'Task 1'
-    tasks['s1'].name.should.equal 'Task 2'
-    tasks['s2'].name.should.equal 'Task 3'
+    tasks.should.eql
+      s0: name: 'Task 1', listId: 's0', id: 's0'
+      s1: name: 'Task 2', listId: 's0', id: 's1'
+      s2: name: 'Task 3', listId: 's0', id: 's2'
 
-    lists['s0'].tasks.should.eql ['s0', 's1', 's2']
-
+    lists.s0.tasks.should.eql ['s0', 's1', 's2']
 
   it 'should handle task and list updates', ->
 
@@ -119,36 +120,3 @@ describe 'Sync API', ->
     lists['s0'].should.have.keys 'deleted', 'id'
     lists['s1'].should.have.keys 'deleted', 'id'
     lists['s2'].should.have.keys 'deleted', 'id'
-
-
-  it 'should handle offline sync', ->
-
-    now = Date.now()
-
-    listId = sync.create LIST, {name: 'Just a list', tasks: []}
-
-    tasks = [
-      sync.create TASK, {name: 'Task 1', list: listId}
-      sync.create TASK, {name: 'Task 2', list: listId}
-      sync.create TASK, {name: 'Task 3', list: listId}
-    ]
-
-    queue = [
-      # Destroy tasks
-      [ 'destroy', TASK, tasks[0], now ]
-      [ 'destroy', TASK, tasks[1], now ]
-      [ 'destroy', TASK, tasks[2], now ]
-
-      # Update the list
-      [ 'update', LIST, {id: listId, name: 'Changed'}, now ]
-
-      # Create a new list
-      [ 'create',  LIST, {id: 'c1', name:LIST, tasks:[]}, now ]
-
-      # Create a new task
-      [ 'create', TASK, {id: 'c1', name:TASK, list: 'c1'}, now ]
-    ]
-
-    console.log sync.sync(queue)
-
-###
