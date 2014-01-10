@@ -13,6 +13,8 @@ Jandal.handle 'node'
 # Constants
 # -----------------------------------------------------------------------------
 
+CLIENT_ID = 'c'
+
 SOCKET_URL = '/socket'
 
 CREATE  = 0
@@ -141,7 +143,6 @@ class UserSocket extends Socket
     @sync = new Sync(@user)
 
   broadcast: (event, arg1, arg2, arg3) =>
-    log 'Broadcasting', event, arg1, arg2, arg3
     @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
 
   logout: =>
@@ -255,20 +256,25 @@ class UserSocket extends Socket
 
     if queue.list
       for id, items of queue.list
-        for [event, model, time] in items
+        for [event, list, time] in items
           switch event
 
             when CREATE
-              model.id = id
-              lists[id] = @list_create model, time
+
+              if type.array list.tasks
+                tasks = list.tasks
+                for taskId, i in tasks by -1 when taskId[0] is CLIENT_ID
+                  tasks.splice(i, 1)
+
+              list.id = id
+              lists[id] = @list_create list, time
 
             when UPDATE
-              @list_update model, time
+              list.id = id
+              @list_update list, time
 
             when DESTROY
-              @list_destroy model, time
-
-    console.log 'pre_data', @user.exportModel LIST
+              @list_destroy list, time
 
     # TASKS
 
@@ -278,11 +284,13 @@ class UserSocket extends Socket
           switch event
 
             when CREATE
+              model.id = id
               if lists[model.listId]
                 model.listId = lists[model.listId]
               @task_create model, time
 
             when UPDATE
+              model.id = id
               if model.list and lists[model.listId]
                 model.listId = lists[model.listId]
               @task_update model, time
@@ -304,8 +312,8 @@ class UserSocket extends Socket
     # CALLBACK
 
     if type.function(fn) then fn(
-      @user.exportModel(TASK)
       @user.exportModel(LIST)
+      @user.exportModel(TASK)
       @user.exportModel(PREF)
     )
 

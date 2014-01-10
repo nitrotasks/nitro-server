@@ -121,7 +121,7 @@ describe '[Socket]', ->
 
       it 'should replace list ids', (done) ->
 
-        data =
+        input =
           'list':
             'c20': [
               [CREATE, {name: 'list 1', tasks: ['c12', 'c13']}]
@@ -143,7 +143,40 @@ describe '[Socket]', ->
               [CREATE, {name: 'task 4', listId: 'c33'}]
             ]
 
+        output =
+
+          list: [
+            id: 's0'
+            name: 'list 1',
+            tasks: ['s1', 's2']
+          ,
+            id: 's1'
+            name: 'list 2'
+            tasks: ['s3', 's4']
+          ]
+
+          task: [
+            id: 's1'
+            name: 'task 1'
+            listId: 's0'
+          ,
+            id: 's2'
+            name: 'task 2'
+            listId: 's0'
+          ,
+            id: 's3'
+            name: 'task 3'
+            listId: 's1'
+          ,
+            id: 's4'
+            name: 'task 4'
+            listId: 's1'
+          ]
+
         socket.on 'message', (message) ->
-          console.log JSON.stringify JSON.parse('[' + message[12..-2] + ']'), null, 2
+          [list, task, pref] = JSON.parse('[' + message[12..-2] + ']')
+          list.should.eql output.list
+          task.should.eql output.task
           done()
-        socket.reply "model.sync(#{ JSON.stringify data }).fn(2)"
+
+        socket.reply "model.sync(#{ JSON.stringify input }).fn(2)"
