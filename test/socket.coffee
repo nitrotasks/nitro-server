@@ -133,10 +133,10 @@ describe '[Socket]', ->
           list.should.eql output.list
           task.should.eql output.task
           done()
-
         socket.reply "model.sync(#{ JSON.stringify input }).fn(2)"
 
-      it 'should replace list ids', (done) ->
+
+      it 'create lists and tasks simultaneously', (done) ->
 
         input =
           list:
@@ -192,7 +192,57 @@ describe '[Socket]', ->
 
         test input, output, done
 
-      it 'should handle offline sync', (done) ->
+
+
+      it 'update existing items', (done) ->
+
+        socket.reply 'list.create({"id":"c0","name":"List 1","tasks":[]})'
+        socket.reply 'task.create({"id":"c1","name":"Task 1","listId":"s0"})'
+        socket.reply 'task.create({"id":"c2","name":"Task 2","listId":"s0"})'
+        socket.reply 'task.create({"id":"c3","name":"Task 3","listId":"s0"})'
+
+        input =
+
+          task:
+            s0: [[UPDATE, {name: 'Task 1 - Updated', listId: 'c1'}]]
+            s1: [[UPDATE, {name: 'Task 2 - Updated'}]]
+            s2: [[UPDATE, {name: 'Task 3 - Updated', listId: 'c1'}]]
+
+          list:
+            s0: [[UPDATE, {name: 'List 1 - Updated'}]]
+            c1: [[CREATE, {name: 'List 2'}]]
+
+
+        output =
+
+          list: [
+            id: 's0'
+            name: 'List 1 - Updated'
+            tasks: ['s1']
+          ,
+            id: 's1'
+            name: 'List 2'
+            tasks: ['s0', 's2']
+          ]
+
+          task: [
+            id: 's0'
+            name: 'Task 1 - Updated'
+            listId: 's1'
+          ,
+            id: 's1'
+            name: 'Task 2 - Updated'
+            listId: 's0'
+          ,
+            id: 's2'
+            name: 'Task 3 - Updated'
+            listId: 's1'
+          ]
+
+        test input, output, done
+
+
+      it 'destroy existing tasks', (done) ->
 
         socket.reply 'list.create({"id":"c0","name":"List 1","tasks":[]})'
         socket.reply 'task.create({"id":"c1","name":"Task 1","listId":"s0"})'

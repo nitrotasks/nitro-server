@@ -291,7 +291,7 @@ class UserSocket extends Socket
 
             when UPDATE
               task.id = id
-              if task.list and lists[task.listId]
+              if task.listId? and lists[task.listId]
                 task.listId = lists[task.listId]
               @task_update task, time
 

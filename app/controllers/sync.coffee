@@ -125,10 +125,10 @@ class Sync
     @time.set classname, id, timestamps
 
     # Update list
-    if classname is TASK and changes.list?
+    if classname is TASK and changes.listId?
       oldTask = @user.findModel classname, id
-      if oldTask.list isnt changes.list
-        @taskMove id, oldTask.list, changes.list
+      if oldTask.listId isnt changes.listId
+        @taskMove id, oldTask.listId, changes.listId
 
     # Save to server
     model = @user.updateModel classname, id, changes
