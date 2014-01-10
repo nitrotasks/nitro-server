@@ -73,7 +73,7 @@ class Sync
 
     # Add task to list
     if classname is TASK
-      listId = model.list
+      listId = model.listId
       @taskAdd id, listId
 
     # Make sure model.tasks exists
@@ -161,7 +161,7 @@ class Sync
 
     # Remove from list
     else if classname is TASK
-      @taskRemove id, model.list
+      @taskRemove id, model.listId
 
     # Replace task with deleted template
     @user.setModel classname, id,
@@ -174,98 +174,10 @@ class Sync
 
 
 
-  #############################################################
-  #    __   ___  ___              ___     __            __    #
-  #   /  \ |__  |__  |    | |\ | |__     /__` \ / |\ | /  `   #
-  #   \__/ |    |    |___ | | \| |___    .__/  |  | \| \__,   #
-  #                                                           #
-  #############################################################
+# -----------------------------------------------------------------------------
+# Useful Task Management Methods
+# -----------------------------------------------------------------------------
 
-  # Merge a queue of actions
-  sync: (queue) =>
-
-    CREATE = 0
-    UPDATE = 1
-    DESTROY = 2
-
-    ###
-      Queue Format
-
-      <classname>:{
-        <id>: [
-          <event>
-          <model>
-          <time>
-        ]
-      }
-
-      Legend
-
-      classname: 'task', 'list', or 'pref'
-      id: 'c10', 's10'
-      event: 0, 1, 2
-      model: model or id
-      time: object[int] or int
-
-    ###
-
-    # Map client IDs to server IDs -- for lists only
-    lists = {}
-
-    # LISTS
-
-    if queue.list
-      for id, items of queue.list
-        for [event, model, time] in items
-          switch event
-
-            when CREATE
-              model.id = id
-              lists[id] = @create 'list', model, time
-
-            when UPDATE
-              @update 'list', model, time
-
-            when DESTROY
-              @destroy 'list', model, time
-
-    # TASKS
-
-    if queue.task
-      for id, items of queue.task
-        for [event, model, time] in items
-          switch event
-
-            when CREATE
-              if lists[model.list]
-                model.list = lists[model.list]
-              @create 'task', model, time
-
-            when UPDATE
-              if model.list and lists[model.list]
-                model.list = lists[model.list]
-                @update 'task', model, time
-
-            when DESTROY
-              @destroy 'task', model, time
-    
-    # PREFS
-    
-    if queue.pref
-      for id, items of queue.task
-        for [event, model, time] in items
-          switch event
-
-            when UPDATE
-              @update 'pref', model, time
-
-
-    return [@user.exportModel(TASK), @user.exportModel(LIST)]
-
-
-  # ----------
-  # Task Order
-  # ----------
 
   # Add a task to a list
   taskAdd: (taskId, listId) ->
@@ -273,7 +185,7 @@ class Sync
     return false unless tasks
     if tasks.indexOf(taskId) < 0
       tasks.push taskId
-      @user.updateModel LIST, listId, tasks:tasks
+      @user.save LIST
 
   # Remove a task from a list
   taskRemove: (taskId, listId) ->

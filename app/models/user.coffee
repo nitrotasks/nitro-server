@@ -227,6 +227,7 @@ class User
   exportModel: (classname) =>
     models = []
     data = @data classname
+    console.log 'data', classname, data
     return models unless data
     for id, model of data when not model.deleted
       models.push model

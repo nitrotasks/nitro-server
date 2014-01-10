@@ -169,7 +169,7 @@ class UserSocket extends Socket
    * - classname (string)
    * - fn (function)
   ###
-  
+
   task_fetch: (fn) => fn @user.exportModel TASK
   list_fetch: (fn) => fn @user.exportModel LIST
   pref_fetch: (fn) => fn @user.exportModel PREF
@@ -182,16 +182,18 @@ class UserSocket extends Socket
    * - model (object)
    * - fn (function)
   ###
-  
+
   task_create: (model, fn) =>
     id = @sync.create(TASK, model)
     @broadcast 'task.create', model
     if type.function(fn) then fn(id)
+    return id
 
   list_create: (model, fn) =>
     id = @sync.create(LIST, model)
     @broadcast 'list.create', model
     if type.function(fn) then fn(id)
+    return id
 
 
   ###
@@ -225,7 +227,7 @@ class UserSocket extends Socket
    * - id (string)
    * - [fn] (function)
   ###
-  
+
   task_destroy: (id, fn) =>
     @sync.destroy TASK, id
     @broadcast 'task.destroy', id
@@ -266,6 +268,8 @@ class UserSocket extends Socket
             when DESTROY
               @list_destroy model, time
 
+    console.log 'pre_data', @user.exportModel LIST
+
     # TASKS
 
     if queue.task
@@ -275,19 +279,19 @@ class UserSocket extends Socket
 
             when CREATE
               if lists[model.listId]
-                model.list = lists[model.listId]
+                model.listId = lists[model.listId]
               @task_create model, time
 
             when UPDATE
               if model.list and lists[model.listId]
-                model.list = lists[model.listId]
+                model.listId = lists[model.listId]
               @task_update model, time
 
             when DESTROY
               @task_destroy model, time
-    
+
     # PREFS
-    
+
     if queue.pref
       for id, items of queue.task
         for [event, model, time] in items

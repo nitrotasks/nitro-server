@@ -115,20 +115,35 @@ describe '[Socket]', ->
 
     describe '[queue]', ->
 
-      it 'should handle queues', (done) ->
+      CREATE = 0
+      UPDATE = 1
+      DESTROY = 2
+
+      it 'should replace list ids', (done) ->
 
         data =
           'list':
             'c20': [
-              [0, {name: 'list'}]
+              [CREATE, {name: 'list 1', tasks: ['c12', 'c13']}]
+            ]
+            'c33': [
+              [CREATE, {name: 'list 2', tasks: ['c14', 'c15']}]
             ]
           'task':
             'c12': [
-              [0, {name: 'task', listId: 'c20'}]
+              [CREATE, {name: 'task 1', listId: 'c20'}]
+            ]
+            'c13': [
+              [CREATE, {name: 'task 2', listId: 'c20'}]
+            ]
+            'c14': [
+              [CREATE, {name: 'task 3', listId: 'c33'}]
+            ]
+            'c15': [
+              [CREATE, {name: 'task 4', listId: 'c33'}]
             ]
 
-
         socket.on 'message', (message) ->
-          console.log message
+          console.log JSON.stringify JSON.parse('[' + message[12..-2] + ']'), null, 2
           done()
         socket.reply "model.sync(#{ JSON.stringify data }).fn(2)"
