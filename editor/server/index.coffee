@@ -1,22 +1,31 @@
 # Dependencies
 global.DebugMode = true
-Log = require('../../app/log')('Editor', 'white')
-database = require('../../app/database')
-express = require('express')
+
+folder = '../../app/'
+
+express  = require 'express'
+config   = require folder + 'config'
+Log      = require folder + 'utils/log'
+database = require folder + 'controllers/database'
+connect  = require folder + 'controllers/connect'
+
+log = Log 'Editor', 'white'
 
 # Config
 PORT = 8001
+config.use 'testing'
 
 # Create a new express web server
 app = express()
 
 # Connect to database
-database.connect()
+connect.init()
 
 # Serve up static files in the client folder
 app.configure ->
   app.use express.static(__dirname + '/../client')
-  app.use express.bodyParser()
+  app.use express.urlencoded()
+  app.use express.json()
 
 app.get '/read/all', (req, res) ->
   database.user.all()
