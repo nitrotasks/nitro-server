@@ -139,9 +139,11 @@ describe '[Socket]', ->
       it 'create lists and tasks simultaneously', (done) ->
 
         input =
+
           list:
             c20: [CREATE, {name: 'list 1', tasks: ['c12', 'c13']}]
             c33: [CREATE, {name: 'list 2', tasks: ['c14', 'c15']}]
+
           task:
             c12: [CREATE, {name: 'task 1', listId: 'c20'}]
             c13: [CREATE, {name: 'task 2', listId: 'c20'}]
