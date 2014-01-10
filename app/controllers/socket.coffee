@@ -280,33 +280,33 @@ class UserSocket extends Socket
 
     if queue.task
       for id, items of queue.task
-        for [event, model, time] in items
+        for [event, task, time] in items
           switch event
 
             when CREATE
-              model.id = id
-              if lists[model.listId]
-                model.listId = lists[model.listId]
-              @task_create model, time
+              task.id = id
+              if lists[task.listId]
+                task.listId = lists[task.listId]
+              @task_create task, time
 
             when UPDATE
-              model.id = id
-              if model.list and lists[model.listId]
-                model.listId = lists[model.listId]
-              @task_update model, time
+              task.id = id
+              if task.list and lists[task.listId]
+                task.listId = lists[task.listId]
+              @task_update task, time
 
             when DESTROY
-              @task_destroy model, time
+              @task_destroy task, time
 
     # PREFS
 
     if queue.pref
       for id, items of queue.task
-        for [event, model, time] in items
+        for [event, pref, time] in items
           switch event
 
             when UPDATE
-              @pref_update model, time
+              @pref_update pref, time
 
 
     # CALLBACK

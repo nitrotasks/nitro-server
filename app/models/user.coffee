@@ -239,3 +239,15 @@ class User
   release: ->
     @_released = true
 
+
+  ###
+   * Wipe the data contained in a user
+  ###
+  
+  wipe: ->
+    @data 'task', {}
+    @data 'list', {}
+    @data 'pref', {}
+    @data 'time', {}
+    @set 'index_task', 0
+    @set 'index_list', 0

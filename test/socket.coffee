@@ -1,14 +1,17 @@
-Socket = require '../app/controllers/socket'
-Auth   = require '../app/controllers/auth'
-should = require 'should'
-setup  = require './setup'
-mockjs = require './mockjs'
+Socket  = require '../app/controllers/socket'
+Storage = require '../app/controllers/storage'
+Auth    = require '../app/controllers/auth'
+should  = require 'should'
+setup   = require './setup'
+mockjs  = require './mockjs'
 
 describe '[Socket]', ->
 
   socket = null
 
   user =
+    id: null
+    token: null
     name: 'Fred'
     email: 'fred@gmail.com'
     pass: 'xkcd'
@@ -119,7 +122,12 @@ describe '[Socket]', ->
       UPDATE = 1
       DESTROY = 2
 
-      test = (input, output) ->
+      beforeEach (done) ->
+        Storage.get(user.id).then (user) ->
+          user.wipe()
+          done()
+
+      test = (input, output, done) ->
         socket.on 'message', (message) ->
           [list, task, pref] = JSON.parse('[' + message[12..-2] + ']')
           list.should.eql output.list
@@ -131,24 +139,24 @@ describe '[Socket]', ->
       it 'should replace list ids', (done) ->
 
         input =
-          'list':
-            'c20': [
+          list:
+            c20: [
               [CREATE, {name: 'list 1', tasks: ['c12', 'c13']}]
             ]
-            'c33': [
+            c33: [
               [CREATE, {name: 'list 2', tasks: ['c14', 'c15']}]
             ]
-          'task':
-            'c12': [
+          task:
+            c12: [
               [CREATE, {name: 'task 1', listId: 'c20'}]
             ]
-            'c13': [
+            c13: [
               [CREATE, {name: 'task 2', listId: 'c20'}]
             ]
-            'c14': [
+            c14: [
               [CREATE, {name: 'task 3', listId: 'c33'}]
             ]
-            'c15': [
+            c15: [
               [CREATE, {name: 'task 4', listId: 'c33'}]
             ]
 
@@ -157,60 +165,68 @@ describe '[Socket]', ->
           list: [
             id: 's0'
             name: 'list 1',
-            tasks: ['s1', 's2']
+            tasks: ['s0', 's1']
           ,
             id: 's1'
             name: 'list 2'
-            tasks: ['s3', 's4']
+            tasks: ['s2', 's3']
           ]
 
           task: [
-            id: 's1'
+            id: 's0'
             name: 'task 1'
             listId: 's0'
           ,
-            id: 's2'
+            id: 's1'
             name: 'task 2'
             listId: 's0'
           ,
-            id: 's3'
+            id: 's2'
             name: 'task 3'
             listId: 's1'
           ,
-            id: 's4'
+            id: 's3'
             name: 'task 4'
             listId: 's1'
           ]
 
-        test input, output
+        test input, output, done
 
-      it 'should handle offline sync', ->
+      it 'should handle offline sync', (done) ->
 
-        now = Date.now()
+        socket.reply 'list.create({"id":"c0","name":"List 1","tasks":[]})'
+        socket.reply 'task.create({"id":"c1","name":"Task 1","listId":"s0"})'
+        socket.reply 'task.create({"id":"c2","name":"Task 2","listId":"s0"})'
+        socket.reply 'task.create({"id":"c3","name":"Task 3","listId":"s0"})'
 
-        listId = sync.create LIST, {name: 'Just a list', tasks: []}
+        input =
 
-        tasks = [
-          sync.create TASK, {name: 'Task 1', list: listId}
-          sync.create TASK, {name: 'Task 2', list: listId}
-          sync.create TASK, {name: 'Task 3', list: listId}
-        ]
+          task:
+            s0: [[DESTROY, 's0']]
+            s1: [[DESTROY, 's1']]
+            s2: [[DESTROY, 's2']]
+            c1: [[CREATE, {name: 'Task 4', listId: 'c1'}]]
 
-        queue = [
-          # Destroy tasks
-          [ 'destroy', TASK, tasks[0], now ]
-          [ 'destroy', TASK, tasks[1], now ]
-          [ 'destroy', TASK, tasks[2], now ]
+          list:
+            s0: [[UPDATE, {name: 'List 1 - Updated'}]]
+            c1: [[CREATE, {name: 'List 2', tasks: []}]]
 
-          # Update the list
-          [ 'update', LIST, {id: listId, name: 'Changed'}, now ]
+        output =
 
-          # Create a new list
-          [ 'create',  LIST, {id: 'c1', name:LIST, tasks:[]}, now ]
+          list: [
+            id: 's0'
+            name: 'List 1 - Updated'
+            tasks: []
+          ,
+            id: 's1'
+            name: 'List 2'
+            tasks: [ 's3' ]
+          ]
 
-          # Create a new task
-          [ 'create', TASK, {id: 'c1', name:TASK, list: 'c1'}, now ]
-        ]
+          task: [
+            id: "s3"
+            name: "Task 4"
+            listId: "s1"
+          ]
 
-        console.log sync.sync(queue)
-
+        test input, output, done
