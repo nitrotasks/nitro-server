@@ -3,9 +3,31 @@ Jandal = require 'jandal'
 Sync = require '../controllers/sync'
 Storage = require '../controllers/storage'
 Log = require '../utils/log'
+type = require '../utils/type'
 
 log = Log 'Socket', 'yellow'
 Jandal.handle 'node'
+
+
+# -----------------------------------------------------------------------------
+# Constants
+# -----------------------------------------------------------------------------
+
+SOCKET_URL = '/socket'
+
+CREATE  = 0
+UPDATE  = 1
+DESTROY = 2
+
+TASK = 'task'
+LIST = 'list'
+PREF = 'pref'
+
+# How long a connection has to authenticate itself before being kicked
+TIMEOUT_AUTH = 3000
+
+# What classnames can be edited
+CLASSES = [TASK, LIST, PREF]
 
 
 # -----------------------------------------------------------------------------
@@ -14,20 +36,9 @@ Jandal.handle 'node'
 
 init = (server, sjs=sockjs) ->
   websockets = sjs.createServer()
-  websockets.installHandlers server, prefix: '/socket'
+  websockets.installHandlers server, prefix: SOCKET_URL
   websockets.on 'connection', (socket) ->
     new GuestSocket(socket)
-
-
-# -----------------------------------------------------------------------------
-# Constants
-# -----------------------------------------------------------------------------
-
-# How long a connection has to authenticate itself before being kicked
-TIMEOUT_AUTH = 3000
-
-# What classnames can be edited
-CLASSES = ['list', 'task', 'pref']
 
 
 # -----------------------------------------------------------------------------
@@ -153,26 +164,16 @@ class UserSocket extends Socket
 
 
   ###
-   * Model Sync
-   *
-   * - queue (object)
-   * - fn (function)
-  ###
-
-  model_sync: (queue, fn) =>
-    @sync.sync(queue, fn)
-
-
-  ###
    * Model Fetch
    *
    * - classname (string)
    * - fn (function)
   ###
   
-  task_fetch: (fn) => fn @user.exportModel 'task'
-  list_fetch: (fn) => fn @user.exportModel 'list'
-  pref_fetch: (fn) => fn @user.exportModel 'pref'
+  task_fetch: (fn) => fn @user.exportModel TASK
+  list_fetch: (fn) => fn @user.exportModel LIST
+  pref_fetch: (fn) => fn @user.exportModel PREF
+
 
   ###
    * Model Create
@@ -183,14 +184,15 @@ class UserSocket extends Socket
   ###
   
   task_create: (model, fn) =>
-    id = @sync.create('task', model)
+    id = @sync.create(TASK, model)
     @broadcast 'task.create', model
-    fn(id)
+    if type.function(fn) then fn(id)
 
   list_create: (model, fn) =>
-    id = @sync.create('list', model)
+    id = @sync.create(LIST, model)
     @broadcast 'list.create', model
-    fn(id)
+    if type.function(fn) then fn(id)
+
 
   ###
    * Model Update
@@ -201,19 +203,19 @@ class UserSocket extends Socket
   ###
 
   task_update: (model, time, fn) =>
-    model = @sync.update 'task', model, time
+    model = @sync.update TASK, model, time
     if model then @broadcast 'task.update', model
-    if typeof fn is 'function' then fn()
+    if type.function(fn) then fn()
 
   list_update: (model, time, fn) =>
-    model = @sync.update 'list', model, time
+    model = @sync.update LIST, model, time
     if model then @broadcast 'list.update', model
-    if typeof fn is 'function' then fn()
+    if type.function(fn) then fn()
 
   pref_update: (model, time, fn) =>
-    model = @sync.update 'pref', model, time
+    model = @sync.update PREF, model, time
     if model then @broadcast 'pref.update', model
-    if typeof fn is 'function' then fn()
+    if type.function(fn) then fn()
 
 
   ###
@@ -225,15 +227,83 @@ class UserSocket extends Socket
   ###
   
   task_destroy: (id, fn) =>
-    @sync.destroy 'task', id
+    @sync.destroy TASK, id
     @broadcast 'task.destroy', id
-    if typeof fn is 'function' then fn()
+    if type.function(fn) then fn()
 
   list_destroy: (id, fn) =>
-    @sync.destroy 'list', id
+    @sync.destroy LIST, id
     @broadcast 'list.destroy', id
-    if typeof fn is 'function' then fn()
+    if type.function(fn) then fn()
 
+
+  ###
+   * Model Sync
+   *
+   * - queue (object)
+   * - fn (function)
+  ###
+
+  model_sync: (queue, fn) =>
+
+    # Map client IDs to server IDs -- for lists only
+    lists = {}
+
+    # LISTS
+
+    if queue.list
+      for id, items of queue.list
+        for [event, model, time] in items
+          switch event
+
+            when CREATE
+              model.id = id
+              lists[id] = @list_create model, time
+
+            when UPDATE
+              @list_update model, time
+
+            when DESTROY
+              @list_destroy model, time
+
+    # TASKS
+
+    if queue.task
+      for id, items of queue.task
+        for [event, model, time] in items
+          switch event
+
+            when CREATE
+              if lists[model.listId]
+                model.list = lists[model.listId]
+              @task_create model, time
+
+            when UPDATE
+              if model.list and lists[model.listId]
+                model.list = lists[model.listId]
+              @task_update model, time
+
+            when DESTROY
+              @task_destroy model, time
+    
+    # PREFS
+    
+    if queue.pref
+      for id, items of queue.task
+        for [event, model, time] in items
+          switch event
+
+            when UPDATE
+              @pref_update model, time
+
+
+    # CALLBACK
+
+    if type.function(fn) then fn(
+      @user.exportModel(TASK)
+      @user.exportModel(LIST)
+      @user.exportModel(PREF)
+    )
 
 module.exports =
   init: init

@@ -20,7 +20,7 @@ describe 'throttle', ->
       last = now
 
       if diff isnt Infinity
-        diff.should.be.within duration, duration + 7
+        diff.should.be.within duration, duration + 10
 
       switch count++
 

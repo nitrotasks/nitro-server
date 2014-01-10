@@ -183,65 +183,82 @@ class Sync
 
   # Merge a queue of actions
   sync: (queue) =>
-    log 'Running sync'
+
+    CREATE = 0
+    UPDATE = 1
+    DESTROY = 2
+
+    ###
+      Queue Format
+
+      <classname>:{
+        <id>: [
+          <event>
+          <model>
+          <time>
+        ]
+      }
+
+      Legend
+
+      classname: 'task', 'list', or 'pref'
+      id: 'c10', 's10'
+      event: 0, 1, 2
+      model: model or id
+      time: object[int] or int
+
+    ###
 
     # Map client IDs to server IDs -- for lists only
-    client = {}
+    lists = {}
 
-    for item, i in queue
+    # LISTS
 
-      # TODO: Can't remember what this does.
-      # I think it stops it from infinite looping.
-      break if i >= 100
+    if queue.list
+      for id, items of queue.list
+        for [event, model, time] in items
+          switch event
 
-      [type, [classname, model], timestamp] = item
+            when CREATE
+              model.id = id
+              lists[id] = @create 'list', model, time
 
-      ## Handles client list IDs ##
+            when UPDATE
+              @update 'list', model, time
 
-      # Example: You create a task in list 'c10'
-      # The list ID gets changed to 's5' on the server
-      # This code matches that list back to the task
+            when DESTROY
+              @destroy 'list', model, time
 
-      if type in ['create', 'update'] and
-      classname is TASK and model.list.slice(0,1) is CLIENT_ID
+    # TASKS
 
-        # The list hasn't been assigned a server ID yet
-        if client[model.list] is undefined
+    if queue.task
+      for id, items of queue.task
+        for [event, model, time] in items
+          switch event
 
-          # We have already checked this task
-          if model._missing
-            log 'We have a missing task!'
-            i++
-            continue
+            when CREATE
+              if lists[model.list]
+                model.list = lists[model.list]
+              @create 'task', model, time
 
-          else
-            log "Moving Task #{model.id} in list #{model.list} to back of queue"
-            model._missing = yes
-            queue[queue.length] = queue[i]
-            queue[i] = []
-            i++
-            continue
+            when UPDATE
+              if model.list and lists[model.list]
+                model.list = lists[model.list]
+                @update 'task', model, time
 
-        else
-          log "Found List ID #{ model.list } has changed to #{ client[model.list] }"
-          model.list = client[model.list]
-          delete model._missing
+            when DESTROY
+              @destroy 'task', model, time
+    
+    # PREFS
+    
+    if queue.pref
+      for id, items of queue.task
+        for [event, model, time] in items
+          switch event
 
-      switch type
-        when 'create'
-          oldId = model.id
-          newId = @create classname, model, timestamp
-          if classname is LIST
-            log "Changing List #{ oldId } to #{ newId }"
-            client[oldId] = newId
+            when UPDATE
+              @update 'pref', model, time
 
-        when 'update'
-          @update classname, model, timestamp
-
-        when 'destroy'
-          @destroy classname, model, timestamp
-
-      i++
 
     return [@user.exportModel(TASK), @user.exportModel(LIST)]
 
