@@ -255,58 +255,55 @@ class UserSocket extends Socket
     # LISTS
 
     if queue.list
-      for id, items of queue.list
-        for [event, list, time] in items
-          switch event
+      for id, [event, list, time] of queue.list
+        switch event
 
-            when CREATE
+          when CREATE
 
-              if type.array list.tasks
-                tasks = list.tasks
-                for taskId, i in tasks by -1 when taskId[0] is CLIENT_ID
-                  tasks.splice(i, 1)
+            if type.array list.tasks
+              tasks = list.tasks
+              for taskId, i in tasks by -1 when taskId[0] is CLIENT_ID
+                tasks.splice(i, 1)
 
-              list.id = id
-              lists[id] = @list_create list, time
+            list.id = id
+            lists[id] = @list_create list, time
 
-            when UPDATE
-              list.id = id
-              @list_update list, time
+          when UPDATE
+            list.id = id
+            @list_update list, time
 
-            when DESTROY
-              @list_destroy list, time
+          when DESTROY
+            @list_destroy list, time
 
     # TASKS
 
     if queue.task
-      for id, items of queue.task
-        for [event, task, time] in items
-          switch event
+      for id, [event, task, time] of queue.task
+        switch event
 
-            when CREATE
-              task.id = id
-              if lists[task.listId]
-                task.listId = lists[task.listId]
-              @task_create task, time
+          when CREATE
+            task.id = id
+            if lists[task.listId]
+              task.listId = lists[task.listId]
+            @task_create task, time
 
-            when UPDATE
-              task.id = id
-              if task.listId? and lists[task.listId]
-                task.listId = lists[task.listId]
-              @task_update task, time
+          when UPDATE
+            task.id = id
+            if task.listId? and lists[task.listId]
+              task.listId = lists[task.listId]
+            @task_update task, time
 
-            when DESTROY
-              @task_destroy task, time
+          when DESTROY
+            @task_destroy task, time
 
     # PREFS
 
     if queue.pref
-      for id, items of queue.task
-        for [event, pref, time] in items
-          switch event
+      for id, [event, pref, time] of queue.task
+        switch event
 
-            when UPDATE
-              @pref_update pref, time
+          when UPDATE
+            @pref_update pref, time
 
 
     # CALLBACK

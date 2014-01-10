@@ -140,25 +140,13 @@ describe '[Socket]', ->
 
         input =
           list:
-            c20: [
-              [CREATE, {name: 'list 1', tasks: ['c12', 'c13']}]
-            ]
-            c33: [
-              [CREATE, {name: 'list 2', tasks: ['c14', 'c15']}]
-            ]
+            c20: [CREATE, {name: 'list 1', tasks: ['c12', 'c13']}]
+            c33: [CREATE, {name: 'list 2', tasks: ['c14', 'c15']}]
           task:
-            c12: [
-              [CREATE, {name: 'task 1', listId: 'c20'}]
-            ]
-            c13: [
-              [CREATE, {name: 'task 2', listId: 'c20'}]
-            ]
-            c14: [
-              [CREATE, {name: 'task 3', listId: 'c33'}]
-            ]
-            c15: [
-              [CREATE, {name: 'task 4', listId: 'c33'}]
-            ]
+            c12: [CREATE, {name: 'task 1', listId: 'c20'}]
+            c13: [CREATE, {name: 'task 2', listId: 'c20'}]
+            c14: [CREATE, {name: 'task 3', listId: 'c33'}]
+            c15: [CREATE, {name: 'task 4', listId: 'c33'}]
 
         output =
 
@@ -204,13 +192,13 @@ describe '[Socket]', ->
         input =
 
           task:
-            s0: [[UPDATE, {name: 'Task 1 - Updated', listId: 'c1'}]]
-            s1: [[UPDATE, {name: 'Task 2 - Updated'}]]
-            s2: [[UPDATE, {name: 'Task 3 - Updated', listId: 'c1'}]]
+            s0: [UPDATE, {name: 'Task 1 - Updated', listId: 'c1'}]
+            s1: [UPDATE, {name: 'Task 2 - Updated'}]
+            s2: [UPDATE, {name: 'Task 3 - Updated', listId: 'c1'}]
 
           list:
-            s0: [[UPDATE, {name: 'List 1 - Updated'}]]
-            c1: [[CREATE, {name: 'List 2'}]]
+            s0: [UPDATE, {name: 'List 1 - Updated'}]
+            c1: [CREATE, {name: 'List 2'}]
 
 
         output =
@@ -252,14 +240,14 @@ describe '[Socket]', ->
         input =
 
           task:
-            s0: [[DESTROY, 's0']]
-            s1: [[DESTROY, 's1']]
-            s2: [[DESTROY, 's2']]
-            c1: [[CREATE, {name: 'Task 4', listId: 'c1'}]]
+            s0: [DESTROY, 's0']
+            s1: [DESTROY, 's1']
+            s2: [DESTROY, 's2']
+            c1: [CREATE, {name: 'Task 4', listId: 'c1'}]
 
           list:
-            s0: [[UPDATE, {name: 'List 1 - Updated'}]]
-            c1: [[CREATE, {name: 'List 2', tasks: []}]]
+            s0: [UPDATE, {name: 'List 1 - Updated'}]
+            c1: [CREATE, {name: 'List 2', tasks: []}]
 
         output =
 
