@@ -1,6 +1,22 @@
 # Hold all the definitions
 definitions = {}
 
+# Recursively inherit defintions
+mergeKeys = (a, b) ->
+
+  details = keys: {}
+
+  if a.keys
+    details.keys[k] = v for k, v of a.keys
+
+  if b.keys
+    details.keys[k] = v for k, v of b.keys when not a.keys[k]?
+
+  if b.inherit
+    details.keys = mergeKeys details, definitions[b.inherit].details
+
+  return details.keys
+
 # Get a definition
 getDef = (name) ->
   def = definitions[name]
@@ -18,57 +34,59 @@ checkType = (type) ->
 # Create a new type definition
 define = (name, type, details) ->
 
-  def = definitions[name]
-
-  if def then throw new Error('Definition already defined: ' + name)
+  if definitions[name]
+    throw new Error('Definition already defined: ' + name)
 
   # Create definition
-  def.name = name
-  def.type = type
-  def.details = details
+  def = definitions[name] =
+    name: name
+    type: type
+    details: details
 
   # Get function to check type of object
   typeCheck = getDef(type)
 
   # Simplest definition
   if not details
-    def.fn = getDef(type)
-    return def
+    return def.fn = getDef(type)
 
   # Checking function
   if check details, 'function'
-    def.fn = details
-    return def
-
-  # Inheriting properties from other definitions
-  inherit = details.inherit
-  if typeof inherit is 'function'
-    inherit = (obj) ->
-      return definitions[details.inherit(obj)](obj)
-  else if typeof inherit is 'string'
-    inherit = definitions[inherit]
+    return def.fn = (obj) ->
+      return false unless typeCheck(obj)
+      return details(obj)
 
   # Check object/array props
   prop = details.prop
   if prop then prop = getDef(prop)
 
   # Checking object/array keys
-  keys = {}
   if details.keys
     for key, value of details.keys
-      keys[key] = getDef(value)
+      details.keys[key] = getDef(value)
+
+  keys = details.keys
+
+  # Inheriting properties from other definitions
+  inherit = null
+  # if typeof details.inherit is 'function'
+  #   inherit = (obj) ->
+  #     return definitions[details.inherit(obj)](obj)
+  if typeof details.inherit is 'string'
+    keys = mergeKeys def.details, definitions[details.inherit].details
 
   # Creating definition
-  return definitions[name] = (obj) ->
+  return def.fn = (obj) ->
     return false unless typeCheck obj
 
     if inherit then return false unless inherit(obj)
 
-    for key, value of obj
+    for own key, value of obj
+
       if prop
         return false unless prop(value)
       else if keys
-        return false unless keys[key]
+        return false unless details.other or keys[key]
         return false unless keys[key](value)
 
     return true
@@ -91,7 +109,7 @@ define '*object', 'object'
 define 'array', 'object', Array.isArray
 
 # Override the native object type to exclude arrays
-define 'object', 'object', (obj) -> not Array.isArray(obj)
+define 'object', '*object', (obj) -> not Array.isArray(obj)
 
 
 # -----------------------------------------------------------------------------
