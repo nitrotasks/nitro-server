@@ -20,7 +20,7 @@ describe 'throttle', ->
       last = now
 
       if diff isnt Infinity
-        diff.should.be.within duration, duration + 10
+        diff.should.be.approximately duration, 10
 
       switch count++
 
@@ -87,11 +87,11 @@ describe 'throttle', ->
       switch count++
 
         when 0
-          diff.should.be.within 0, 7
+          diff.should.be.approximately 0, 10
           args.should.eql ['a']
 
         when 1
-          diff.should.be.within duration, duration + 7
+          diff.should.be.approximately duration, 10
           args.should.eql ['b']
 
     fn = throttle fn, duration
@@ -103,7 +103,7 @@ describe 'throttle', ->
 
     promise.then ->
       diff = Date.now() - start
-      diff.should.be.within duration, duration + 7
+      diff.should.be.approximately duration, 10
       done()
 
 
@@ -153,7 +153,7 @@ describe 'throttle', ->
 
       _fn = (args) ->
         diff = Date.now() - start
-        diff.should.be.within output[i], output[i] + 7
+        diff.should.be.approximately output[i], 10
         if i is output.length - 1 then complete()
         i++
 
