@@ -1,59 +1,4 @@
-definitions = {}
-
-getDef = (name) ->
-  def = definitons[nmea]
-  if not def then throw new Error 'Could not find', name
-  return def
-
-checkType = (obj, type) ->
-  return typeof obj is type
-
-define = (name, type, details) ->
-  if definitions[name]
-    throw new Error('Definition already defined: ' + name)
-
-  if not details
-    fn = (obj) -> checkType(obj, type)
-
-  inherit = details.inherit
-  if typeof inherit is 'function'
-    inherit = (obj) ->
-      return definitions[details.inherit(obj)](obj)
-  else if typeof inherit is 'string'
-    inherit = definitions[inherit]
-
-  keys = {}
-  if details.keys
-    for key, type of details.keys
-      keys[key] = getDef(type)
-
-  definitions[name] = (obj) ->
-    return false unless checkType obj, type
-
-    if inherit then return false unless inherit(obj)
-
-    return true
-
-defineFn = (name, args...) ->
-  return (input) ->
-    for arg, i in input
-      return false unless checkType arg, args[i]
-    return true
-
-
-# ----------------------------------------------------------------------------
-# Native
-# ----------------------------------------------------------------------------
-
-define 'function', 'function'
-define 'string', 'string'
-define 'number', 'number'
-define 'boolean', 'boolean'
-
-define 'bool', 'boolean'
-define 'int', 'number'
-define 'fn', 'function'
-
+{define, defineFn} = require '../utils/validation'
 
 # ----------------------------------------------------------------------------
 # Models
@@ -91,23 +36,22 @@ define 'Pref', 'object',
 # Queue
 # ----------------------------------------------------------------------------
 
-define 'Queue', 'object',
-  keys:
-    task: 'TaskQueue'
-    list: 'ListQueue'
-    pref: 'PrefQueue'
+define 'Timestamps', 'object',
+  all: 'number'
 
-define 'TaskQueue', 'object',
+define 'CreateEvent', 'array',
   keys:
-    '*': 'TaskEvent'
+    2: 'number'
 
-define 'ListQueue', 'object',
+define 'UpdateEvent', 'array',
   keys:
-    '*': 'ListEvent'
+    2: 'Timestamps'
 
-define 'PrefQueue', 'object',
+define 'DestroyEvent', 'array',
   keys:
-    '*': 'PrefEvent'
+    2: 'number'
+
+
 
 define 'QueueEvent', 'array',
   keys:
@@ -121,36 +65,41 @@ define 'QueueEvent', 'array',
       when 2
         return 'DestroyEvent'
 
-define 'CreateEvent', 'array',
-  keys:
-    2: 'number'
 
-define 'UpdateEvent', 'array',
-  keys:
-    2: 'Timestamps'
-
-define 'DestroyEvent', 'array',
-  keys:
-    2: 'number'
-  inherit: 'QueueEvent'
 
 define 'TaskEvent', 'array',
+  inherit: 'QueueEvent'
   keys:
     1: 'Task'
-  inherit: 'QueueEvent'
 
 define 'ListEvent', 'array',
+  inherit: 'QueueEvent'
   keys:
     1: 'List'
 
-define 'Pref', 'array',
+define 'PrefEvent', 'array',
+  inherit: 'QueueEvent'
   keys:
     1: 'Pref'
-  inherit: 'QueueEvent'
 
-define 'Timestamps', 'object',
+
+
+define 'TaskQueue', 'object',
+  all: 'TaskEvent'
+
+define 'ListQueue', 'object',
+  all: 'ListEvent'
+
+define 'PrefQueue', 'object',
+  all: 'PrefEvent'
+
+
+
+define 'Queue', 'object',
   keys:
-    '*': 'number'
+    task: 'TaskQueue'
+    list: 'ListQueue'
+    pref: 'PrefQueue'
 
 
 # ----------------------------------------------------------------------------
