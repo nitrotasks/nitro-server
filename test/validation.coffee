@@ -69,6 +69,29 @@ describe 'Validation', ->
     }).should.be.false
 
 
+  it 'should allow excess keys', ->
+
+    test = define 'other_object', 'object',
+      keys:
+        id: 'number'
+        name: 'string'
+      other: true
+
+    test({
+      id: 20
+      name: 'name'
+    }).should.be.true
+
+    test({
+      id: 20
+      name: 'name'
+      random: true
+    }).should.be.true
+
+    test({
+      notevenclose: 'amazing'
+    }).should.be.true
+
   it 'should inherit properties from other definitions', ->
 
     define 'model', 'object',
@@ -132,3 +155,23 @@ describe 'Validation', ->
 
     test(['a string', 20]).should.be.true
     test([20, 'string']).should.be.false
+
+
+  it 'should inherit with arrays and details.other', ->
+
+    define 'array_1', 'array',
+      keys:
+        0: 'number'
+
+    define 'array_2', 'array',
+      inherit: 'array_1'
+      keys:
+        1: 'string'
+
+    test = define 'array_3', 'array',
+      inherit: 'array_2'
+      keys:
+        2: 'object'
+
+    test([20, 'word', {}]).should.be.true
+

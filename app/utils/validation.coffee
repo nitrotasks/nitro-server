@@ -86,8 +86,10 @@ define = (name, type, details) ->
       if prop
         return false unless prop(value)
       else if keys
-        return false unless details.other or keys[key]
-        return false unless keys[key](value)
+        if keys[key]
+          return false unless keys[key](value)
+        else if not details.other
+          return false
 
     return true
 
