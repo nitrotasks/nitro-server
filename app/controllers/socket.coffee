@@ -36,6 +36,15 @@ CLASSES = [TASK, LIST, PREF]
 # Init
 # -----------------------------------------------------------------------------
 
+###
+ * Init
+ *
+ * Start the SockJS server and attach it to the HTTP server
+ *
+ * - server (Server) - web server to attach to
+ * - [sjs] (SockJS) - used for testing so we can inject our own mock server
+###
+
 init = (server, sjs=sockjs) ->
   websockets = sjs.createServer()
   websockets.installHandlers server, prefix: SOCKET_URL
@@ -49,9 +58,26 @@ init = (server, sjs=sockjs) ->
 
 class Socket
 
+  ###
+   * Socket
+   *
+   * - _socket (Socket) : a WebSocket connection
+  ###
+
   constructor: (@_socket) ->
     @socket = new Jandal(@_socket)
     @bindEvents()
+
+
+  ###
+   * (Private) Bind Events
+   *
+   * Loop thorough each event in @events and bind them to the socket.
+   * @events should be an object in the format { <namespace>: [ <event> ] }
+   * The function handler should be named <namespace>_<event>
+   *
+   * - [action] (string)
+  ###
 
   bindEvents: (action='on') =>
     return unless @events
@@ -60,15 +86,39 @@ class Socket
       for event in methods
         ns[action] event, @[name + '_' + event]
 
-  # Release control over the raw socket
+
+  ###
+   * Release
+   *
+   * Release control over the web socket.
+   * This just unbinds all the events.
+  ###
+
   release: =>
     @bindEvents('removeListener')
 
-  # Disconnect the socket from the server
+
+  ###
+   * End
+   *
+   * Disconnect the socket from the server using the default status code and
+   * error message.
+  ###
+
   end: =>
     @_socket.end()
 
-  # Status codes: http://tools.ietf.org/html/rfc6455#section-7.4.1
+
+  ###
+   * Close
+   *
+   * Close the socket connection and also send a status code and error message.
+   * Status codes: http://tools.ietf.org/html/rfc6455#section-7.4.1
+   *
+   * - status (int)
+   * - message (string)
+  ###
+
   close: (status, message) =>
     @_socket.close(status, message)
 
@@ -81,6 +131,7 @@ class GuestSocket extends Socket
 
   events:
     user: ['auth']
+
 
   ###
    * GuestSocket
@@ -124,6 +175,7 @@ class GuestSocket extends Socket
         log err
         @kick(err)
 
+
   ###
    * (Private) User Login
    *
@@ -144,6 +196,7 @@ class GuestSocket extends Socket
       .fail (err) =>
         log err
         @kick(err)
+
 
   ###
    * (Private) Kick
@@ -206,7 +259,7 @@ class UserSocket extends Socket
   ###
 
   user_info: (fn) =>
-    fn
+    fn null,
       name: @user.name
       email: @user.email
       pro: @user.pro
@@ -219,9 +272,9 @@ class UserSocket extends Socket
    * - fn (function)
   ###
 
-  task_fetch: (fn) => fn @user.exportModel TASK
-  list_fetch: (fn) => fn @user.exportModel LIST
-  pref_fetch: (fn) => fn @user.exportModel PREF
+  task_fetch: (fn) => fn null, @user.exportModel TASK
+  list_fetch: (fn) => fn null, @user.exportModel LIST
+  pref_fetch: (fn) => fn null, @user.exportModel PREF
 
 
   ###

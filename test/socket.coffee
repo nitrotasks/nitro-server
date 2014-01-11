@@ -59,7 +59,7 @@ describe '[Socket]', ->
 
     it 'should login via sockets', (done) ->
       socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_1(true)'
+        message.should.equal 'Jandal.fn_1(null,true)'
         socket.end()
         done()
       socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
@@ -70,23 +70,23 @@ describe '[Socket]', ->
     beforeEach (done) ->
       socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
       socket.on 'message', (message) ->
-        if message is 'Jandal.fn_1(true)'then done()
+        if message is 'Jandal.fn_1(null,true)'then done()
 
     it 'should get user info', (done) ->
       socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2({"name":"Fred","email":"fred@gmail.com","pro":0})'
+        message.should.equal 'Jandal.fn_2(null,{"name":"Fred","email":"fred@gmail.com","pro":0})'
         done()
       socket.reply 'user.info().fn(2)'
 
     it 'should create user data', (done) ->
       socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2("s0")'
+        message.should.equal 'Jandal.fn_2(null,"s0")'
         done()
       socket.reply 'task.create({"name":"something","list":20}).fn(2)'
 
     it 'should fetch user data', (done) ->
       socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2([{"name":"something","list":20,"id":"s0"}])'
+        message.should.equal 'Jandal.fn_2(null,[{"name":"something","list":20,"id":"s0"}])'
         done()
       socket.reply 'task.fetch().fn(2)'
 
@@ -97,7 +97,7 @@ describe '[Socket]', ->
       other.on 'message', (message) ->
         switch message[10]
           when '1'
-            message.should.equal 'Jandal.fn_1(true)'
+            message.should.equal 'Jandal.fn_1(null,true)'
             socket.reply 'task.update({"id":"s0","name":"Old task with new name"}).fn(2)'
           else
             message.should.equal 'task.update({"name":"Old task with new name","list":20,"id":"s0"})'
@@ -108,10 +108,10 @@ describe '[Socket]', ->
       socket.on 'message', (message) ->
         switch message[10]
           when '2'
-            message.should.equal 'Jandal.fn_2()'
+            message.should.equal 'Jandal.fn_2(null)'
             socket.reply 'task.fetch().fn(3)'
           when '3'
-            message.should.equal 'Jandal.fn_3([])'
+            message.should.equal 'Jandal.fn_3(null,[])'
             done()
       socket.reply 'task.destroy("s0").fn(2)'
 
@@ -129,7 +129,9 @@ describe '[Socket]', ->
 
       test = (input, output, done) ->
         socket.on 'message', (message) ->
-          [list, task, pref] = JSON.parse('[' + message[12..-2] + ']')
+          # 17 = "Jandal.fn_2(null,".length
+          # -1 = ")"
+          [list, task, pref] = JSON.parse('[' + message[17...-1] + ']')
           list.should.eql output.list
           task.should.eql output.task
           done()
