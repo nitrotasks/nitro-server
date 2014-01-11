@@ -25,7 +25,7 @@ define = (name, type, details) ->
 
   # Simplest definition
   if not details
-    return definitions[name] = checkType(type)
+    return definitions[name] = getDef(type)
 
   # Checking function
   if check details, 'function'
@@ -51,26 +51,16 @@ define = (name, type, details) ->
 
   # Creating definition
   return definitions[name] = (obj) ->
+    return false unless typeCheck obj
 
-    console.log 'checking type of obj'
-    return false unless check obj, type
-
-    console.log 'checking inheritance'
     if inherit then return false unless inherit(obj)
 
-    console.log 'checking keys'
     for key, value of obj
-      console.log key, value
       if prop
-        console.log 'checking prop', value
         return false unless prop(value)
       else if keys
-        console.log 'checking for definition', key
         return false unless keys[key]
-        console.log 'testing key', key
         return false unless keys[key](value)
-
-    console.log 'passed'
 
     return true
 
@@ -82,10 +72,22 @@ defineFn = (name, args...) ->
 
 
 # -----------------------------------------------------------------------------
-# Useful definitions
+# Useful Definitions
 # -----------------------------------------------------------------------------
 
+# Preserve the native object type
+define '*object', 'object'
+
+# Add array type
 define 'array', 'object', Array.isArray
+
+# Override the native object type to exclude arrays
+define 'object', 'object', (obj) -> not Array.isArray(obj)
+
+
+# -----------------------------------------------------------------------------
+# Exports
+# -----------------------------------------------------------------------------
 
 module.exports =
   define: define
