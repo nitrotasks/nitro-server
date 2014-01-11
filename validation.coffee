@@ -1,3 +1,13 @@
+definitions = {}
+
+define = (name, type, details) ->
+
+defineFn = (name, args...) ->
+
+# ----------------------------------------------------------------------------
+# Models
+# ----------------------------------------------------------------------------
+
 define 'Task', 'object',
   keys:
     id: 'string'
@@ -14,7 +24,6 @@ define 'List', 'object',
     name: 'string'
     tasks: 'array'
 
-
 define 'Pref', 'object',
   keys:
     id: 'string'
@@ -25,6 +34,11 @@ define 'Pref', 'object',
     dateFormat: 'string'
     confirmDelete: 'boolean'
     completedDuration: 'string'
+
+
+# ----------------------------------------------------------------------------
+# Queue
+# ----------------------------------------------------------------------------
 
 define 'Queue', 'object',
   keys:
@@ -83,5 +97,30 @@ define 'Pref', 'array',
     1: 'Pref'
   inherit: 'QueueEvent'
 
+define 'Timestamps', 'object',
+  keys:
+    '*': 'number'
 
 
+# ----------------------------------------------------------------------------
+# Sockets
+# ----------------------------------------------------------------------------
+
+defineFn 'user_auth', 'number', 'string', 'function'
+defineFn 'user_info', 'function'
+
+defineFn 'task_fetch', 'function'
+defineFn 'list_fetch', 'function'
+defineFn 'pref_fetch', 'function'
+
+defineFn 'task_create', 'Task', 'function'
+defineFn 'list_create', 'List', 'function'
+
+defineFn 'task_update', 'Task', 'Timestamps', '~function'
+defineFn 'list_update', 'List', 'Timestamps', '~function'
+defineFn 'pref_update', 'Pref', 'Timestamps', '~function'
+
+defineFn 'task_destroy', 'Task', 'string', '~function'
+defineFn 'list_destroy', 'List', 'string', '~function'
+
+defineFn 'model_sync', 'Queue', 'function'
