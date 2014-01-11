@@ -1,8 +1,20 @@
 definitions = {}
 
+checkType = (obj, type) ->
+    return typeof obj is type
+
 define = (name, type, details) ->
+  def = definitions[name]
+  if def then throw new Error('Definition already defined: ' + name)
+  def = (obj) ->
+    return false unless checkType obj, type
+    return true
 
 defineFn = (name, args...) ->
+  return (input) ->
+    for arg, i in input
+      return false unless checkType arg, args[i]
+    return true
 
 # ----------------------------------------------------------------------------
 # Models
