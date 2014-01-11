@@ -87,34 +87,34 @@ class GuestSocket extends Socket
     super
     log 'A new guest has connected'
     @authenticated = false
-    @_timeout = setTimeout @timeout, TIMEOUT_AUTH
+    @authTimeout = setTimeout @timeout, TIMEOUT_AUTH
 
   user_auth: (@userId, token, fn) =>
+    clearTimeout @authTimeout
     Storage.checkLoginToken(@userId, token)
       .then (exists) =>
         if exists
           @login(fn)
         else
           fn(false)
-          @end()
+          @kick()
       .fail (err) =>
         log err
-        @end()
+        @kick(err)
 
   login: (callback) =>
     socket = @_socket
     @release()
     Storage.get(@userId)
       .then (user) =>
-        clearTimeout @_timeout
         new UserSocket(socket, user)
         callback(true)
       .fail (err) =>
         log err
-        @kick()
+        @kick(err)
 
-  kick: =>
-    @close 3002, 'err_bad_token'
+  kick: (message='err_bad_token') =>
+    @close 3002, message
 
   timeout: =>
     @close 1002, 'err_auth_timeout'
