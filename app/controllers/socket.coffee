@@ -79,15 +79,38 @@ class Socket
 
 class GuestSocket extends Socket
 
-  # Websocket events
   events:
     user: ['auth']
+
+  ###
+   * GuestSocket
+   *
+   * This will handle a newly created socket and allow them to authenticate
+   * themselves. There is a limited time to authenticate before the socket
+   * will be automatically closed. This is done so that the server doesn't
+   * have to handle any more sockets than it needs to.
+   *
+   * - socket (Jandal)
+  ###
 
   constructor: (socket) ->
     super
     log 'A new guest has connected'
     @authenticated = false
     @authTimeout = setTimeout @timeout, TIMEOUT_AUTH
+
+
+  ###
+   * User Authentication
+   *
+   * The callback function will only be called if authentication is successful,
+   * otherwise the socket will be instantly closed and an error message will be
+   * sent back with it.
+   *
+   * - userId (int) : id of the user
+   * - token (string) : login token
+   * - fn (function) : callback
+  ###
 
   user_auth: (@userId, token, fn) =>
     clearTimeout @authTimeout
@@ -96,25 +119,50 @@ class GuestSocket extends Socket
         if exists
           @login(fn)
         else
-          fn(false)
           @kick()
       .fail (err) =>
         log err
         @kick(err)
 
-  login: (callback) =>
+  ###
+   * (Private) User Login
+   *
+   * This handles logging in a user after they have been authenticated.
+   * It releases control of the Jandal instance and then creates a new
+   * UserSocket. If an error occurs, the socket will be closed.
+   *
+   * - fn (callback)
+  ###
+
+  login: (fn) =>
     socket = @_socket
     @release()
     Storage.get(@userId)
       .then (user) =>
         new UserSocket(socket, user)
-        callback(true)
+        fn(null, true)
       .fail (err) =>
         log err
         @kick(err)
 
+  ###
+   * (Private) Kick
+   *
+   * This will close a socket because authentication has failed.
+   *
+   * [message] (string) : Optional error message
+  ###
+
   kick: (message='err_bad_token') =>
     @close 3002, message
+
+
+  ###
+   * (Private) Timeout
+   *
+   * This will close a socket because no attempt was made to authenticate
+   * within the time limit.
+  ###
 
   timeout: =>
     @close 1002, 'err_auth_timeout'
@@ -187,13 +235,13 @@ class UserSocket extends Socket
   task_create: (model, fn) =>
     id = @sync.create(TASK, model)
     @broadcast 'task.create', model
-    if type.function(fn) then fn(id)
+    if type.function(fn) then fn(null, id)
     return id
 
   list_create: (model, fn) =>
     id = @sync.create(LIST, model)
     @broadcast 'list.create', model
-    if type.function(fn) then fn(id)
+    if type.function(fn) then fn(null, id)
     return id
 
 
@@ -208,17 +256,17 @@ class UserSocket extends Socket
   task_update: (model, time, fn) =>
     model = @sync.update TASK, model, time
     if model then @broadcast 'task.update', model
-    if type.function(fn) then fn()
+    if type.function(fn) then fn(null)
 
   list_update: (model, time, fn) =>
     model = @sync.update LIST, model, time
     if model then @broadcast 'list.update', model
-    if type.function(fn) then fn()
+    if type.function(fn) then fn(null)
 
   pref_update: (model, time, fn) =>
     model = @sync.update PREF, model, time
     if model then @broadcast 'pref.update', model
-    if type.function(fn) then fn()
+    if type.function(fn) then fn(null)
 
 
   ###
@@ -232,12 +280,12 @@ class UserSocket extends Socket
   task_destroy: (id, fn) =>
     @sync.destroy TASK, id
     @broadcast 'task.destroy', id
-    if type.function(fn) then fn()
+    if type.function(fn) then fn(null)
 
   list_destroy: (id, fn) =>
     @sync.destroy LIST, id
     @broadcast 'list.destroy', id
-    if type.function(fn) then fn()
+    if type.function(fn) then fn(null)
 
 
   ###
@@ -309,6 +357,7 @@ class UserSocket extends Socket
     # CALLBACK
 
     if type.function(fn) then fn(
+      null,
       @user.exportModel(LIST)
       @user.exportModel(TASK)
       @user.exportModel(PREF)
