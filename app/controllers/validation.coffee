@@ -1,13 +1,37 @@
 definitions = {}
 
+getDef = (name) ->
+  def = definitons[nmea]
+  if not def then throw new Error 'Could not find', name
+  return def
+
 checkType = (obj, type) ->
-    return typeof obj is type
+  return typeof obj is type
 
 define = (name, type, details) ->
-  def = definitions[name]
-  if def then throw new Error('Definition already defined: ' + name)
-  def = (obj) ->
+  if definitions[name]
+    throw new Error('Definition already defined: ' + name)
+
+  if not details
+    fn = (obj) -> checkType(obj, type)
+
+  inherit = details.inherit
+  if typeof inherit is 'function'
+    inherit = (obj) ->
+      return definitions[details.inherit(obj)](obj)
+  else if typeof inherit is 'string'
+    inherit = definitions[inherit]
+
+  keys = {}
+  if details.keys
+    for key, type of details.keys
+      keys[key] = getDef(type)
+
+  definitions[name] = (obj) ->
     return false unless checkType obj, type
+
+    if inherit then return false unless inherit(obj)
+
     return true
 
 defineFn = (name, args...) ->
@@ -15,6 +39,21 @@ defineFn = (name, args...) ->
     for arg, i in input
       return false unless checkType arg, args[i]
     return true
+
+
+# ----------------------------------------------------------------------------
+# Native
+# ----------------------------------------------------------------------------
+
+define 'function', 'function'
+define 'string', 'string'
+define 'number', 'number'
+define 'boolean', 'boolean'
+
+define 'bool', 'boolean'
+define 'int', 'number'
+define 'fn', 'function'
+
 
 # ----------------------------------------------------------------------------
 # Models
