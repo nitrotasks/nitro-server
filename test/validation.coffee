@@ -59,4 +59,24 @@ describe 'Validation', ->
       other: 'prop'
     }).should.be.false
 
+  it 'should inherit properties from other definitions', ->
+
+    define 'model', 'object',
+      keys:
+        id: 'number'
+        name: 'string'
+
+    test = define 'box', 'object',
+      inherit: 'model'
+      keys:
+        width: 'number'
+        height: 'number'
+
+    test({
+      id: 20
+      name: 'Box 1'
+      width: 20
+      height: 30
+    }).should.be.true
+        
 

@@ -5,7 +5,7 @@ definitions = {}
 getDef = (name) ->
   def = definitions[name]
   if not def then return checkType(name)
-  return def
+  return def.fn
 
 # Check an object is of a native type
 check = (obj, type) ->
@@ -18,18 +18,27 @@ checkType = (type) ->
 # Create a new type definition
 define = (name, type, details) ->
 
-  if definitions[name]
-    throw new Error('Definition already defined: ' + name)
+  def = definitions[name]
 
+  if def then throw new Error('Definition already defined: ' + name)
+
+  # Create definition
+  def.name = name
+  def.type = type
+  def.details = details
+
+  # Get function to check type of object
   typeCheck = getDef(type)
 
   # Simplest definition
   if not details
-    return definitions[name] = getDef(type)
+    def.fn = getDef(type)
+    return def
 
   # Checking function
   if check details, 'function'
-    return definitions[name] = details
+    def.fn = details
+    return def
 
   # Inheriting properties from other definitions
   inherit = details.inherit
