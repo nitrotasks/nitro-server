@@ -1,8 +1,19 @@
 should = require 'should'
-{define, defineFn, reset} = require '../app/utils/validation'
+{define, defineFn, undefine} = require '../app/utils/validation'
 
 describe 'Validation', ->
 
+  definitions = []
+
+  _define = define
+
+  define = (name, type, details) ->
+    definitions.push name
+    return _define(name, type, details)
+
+  afterEach ->
+    undefine name for name in definitions
+    definitions = []
 
   it 'should define a native type', ->
 
@@ -121,14 +132,19 @@ describe 'Validation', ->
 
   it 'should override inherited properties', ->
 
-    define 'test_model', 'object',
-      inherit: 'model'
+    define 'model_1', 'object',
+      keys:
+        id: 'number'
+        name: 'string'
+
+    define 'model_2', 'object',
+      inherit: 'model_1'
       keys:
         id: 'string'
         list: 'string'
 
-    test = define 'test_test_model', 'object',
-      inherit: 'test_model'
+    test = define 'model_3', 'object',
+      inherit: 'model_2'
       keys:
         name: 'array'
         list: 'number'
@@ -157,7 +173,7 @@ describe 'Validation', ->
     test([20, 'string']).should.be.false
 
 
-  it 'should inherit with arrays and details.other', ->
+  it 'should inherit with arrays', ->
 
     define 'array_1', 'array',
       keys:
@@ -175,3 +191,42 @@ describe 'Validation', ->
 
     test([20, 'word', {}]).should.be.true
 
+
+  it 'should be able to use custom child classes', ->
+
+    define 'child', 'object',
+      keys:
+        id: 'number'
+        name: 'string'
+
+    test = define 'parent', 'object',
+      keys:
+        name: 'string'
+        child: 'child'
+
+    test({
+      name: 'word'
+    }).should.be.true
+
+    test({
+      name: 20
+    }).should.be.false
+
+    test({
+      name: 'A name'
+      child: {
+        id: 20
+        name: 'no'
+      }
+    }).should.be.true
+
+    test({
+      child: {
+        name: 30
+      }
+    }).should.be.false
+
+    test({
+      child:
+        random: false
+    }).should.be.false

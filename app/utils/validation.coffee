@@ -1,6 +1,10 @@
 # Hold all the definitions
 definitions = {}
 
+# Remove a definition
+undefine = (name) ->
+  delete definitions[name]
+
 # Recursively inherit defintions
 mergeKeys = (a, b) ->
 
@@ -17,8 +21,13 @@ mergeKeys = (a, b) ->
 
   return details.keys
 
-# Get a definition
 getDef = (name) ->
+  def = definitions[name]
+  if not def then throw new Error('Could not find definition: ' + name)
+  return def
+
+# Get a definition
+getDefFn = (name) ->
   def = definitions[name]
   if not def then return checkType(name)
   return def.fn
@@ -44,11 +53,11 @@ define = (name, type, details) ->
     details: details
 
   # Get function to check type of object
-  typeCheck = getDef(type)
+  typeCheck = getDefFn(type)
 
   # Simplest definition
   if not details
-    return def.fn = getDef(type)
+    return def.fn = getDefFn(type)
 
   # Checking function
   if check details, 'function'
@@ -58,12 +67,12 @@ define = (name, type, details) ->
 
   # Check object/array props
   prop = details.prop
-  if prop then prop = getDef(prop)
+  if prop then prop = getDefFn(prop)
 
   # Checking object/array keys
   if details.keys
     for key, value of details.keys
-      details.keys[key] = getDef(value)
+      details.keys[key] = getDefFn(value)
 
   keys = details.keys
 
@@ -73,7 +82,7 @@ define = (name, type, details) ->
   #   inherit = (obj) ->
   #     return definitions[details.inherit(obj)](obj)
   if typeof details.inherit is 'string'
-    keys = mergeKeys def.details, definitions[details.inherit].details
+    keys = mergeKeys def.details, getDef(details.inherit).details
 
   # Creating definition
   return def.fn = (obj) ->
@@ -121,3 +130,4 @@ define 'object', '*object', (obj) -> not Array.isArray(obj)
 module.exports =
   define: define
   defineFn: defineFn
+  undefine: undefine
