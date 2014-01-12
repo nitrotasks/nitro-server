@@ -1,4 +1,4 @@
-{define, defineFn} = require '../utils/validation'
+{define, defineFn} = require 'xtype'
 
 # ----------------------------------------------------------------------------
 # Models
@@ -54,8 +54,6 @@ define 'DestroyEvent', 'array',
 
 
 define 'QueueEvent', 'array',
-  keys:
-    0: 'number'
   inherit: (arr) ->
     switch arr[0]
       when 0
@@ -70,16 +68,19 @@ define 'QueueEvent', 'array',
 define 'TaskEvent', 'array',
   inherit: 'QueueEvent'
   keys:
+    0: 'number'
     1: 'Task'
 
 define 'ListEvent', 'array',
   inherit: 'QueueEvent'
   keys:
+    0: 'number'
     1: 'List'
 
 define 'PrefEvent', 'array',
   inherit: 'QueueEvent'
   keys:
+    0: 'number'
     1: 'Pref'
 
 

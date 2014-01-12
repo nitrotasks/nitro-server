@@ -17,9 +17,10 @@
     "http-proxy": "0.10.x",
     "kew": "0.3.x",
     "hiredis": "0.1.x",
-    "sockjs": "~0.3.8",
+    "sockjs": "0.3.x",
     "cors": "2.1.x",
-    "jandal": "0.0.3"
+    "jandal": "0.0.x",
+    "xtype": "0.0.x"
   },
   "devDependencies": {
     "supertest": "0.8.x",
