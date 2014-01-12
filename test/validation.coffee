@@ -230,3 +230,9 @@ describe 'Validation', ->
       child:
         random: false
     }).should.be.false
+
+  it 'should use a custom function to check', ->
+
+    define 'test', 'object', (obj) ->
+      
+
