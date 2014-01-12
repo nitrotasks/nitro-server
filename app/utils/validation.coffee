@@ -102,10 +102,21 @@ define = (name, type, details) ->
 
     return true
 
-defineFn = (name, args...) ->
-  return (input) ->
-    for arg, i in input
-      return false unless check arg, args[i]
+defineFn = (name, types...) ->
+
+  args = []
+  for type in types
+    if type[0] is '~'
+      fn = getDefFn(type[1..])
+      fn.optional = true
+    else
+      fn = getDefFn(type)
+    args.push fn
+
+  return (input...) ->
+    for arg, i in args
+      continue if input[i] is undefined and arg.optional
+      return false unless arg input[i]
     return true
 
 
@@ -113,15 +124,19 @@ defineFn = (name, args...) ->
 # Useful Definitions
 # -----------------------------------------------------------------------------
 
+ARRAY = '[object Array]'
+OBJECT = '[object Object]'
+
 # Preserve the native object type
 define '*object', 'object'
 
 # Add array type
-define 'array', 'object', Array.isArray
+define 'array', 'object', (obj) ->
+  Object::toString.call(obj) is ARRAY
 
 # Override the native object type to exclude arrays
-define 'object', '*object', (obj) -> not Array.isArray(obj)
-
+define 'object', '*object', (obj) ->
+  Object::toString.call(obj) is OBJECT
 
 # -----------------------------------------------------------------------------
 # Exports
