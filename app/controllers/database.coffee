@@ -5,6 +5,7 @@ connect  = require '../controllers/connect'
 Log      = require '../utils/log'
 
 log = Log 'Database', 'blue'
+warn = Log 'Database', 'red'
 
 db = null
 query = null
@@ -20,8 +21,8 @@ connected = connect.ready.then ->
 
   db.connect  (err) ->
     if err
-      log 'Error while connecting!'
-      deferred.reject err
+      warn 'Could not connect to MySQL database!'
+      return deferred.reject err
     log 'Connected to MySQL server'
     setup()
     deferred.resolve()
