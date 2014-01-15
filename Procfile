@@ -1,1 +1,1 @@
-web: coffee app/init.coffee
+web: coffee app/init.coffee --debug
