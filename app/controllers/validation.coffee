@@ -54,15 +54,8 @@ define 'DestroyEvent', 'array',
 
 
 define 'QueueEvent', 'array',
-  inherit: (arr) ->
-    switch arr[0]
-      when 0
-        return 'CreateEvent'
-      when 1
-        return 'UpdateEvent'
-      when 2
-        return 'DestroyEvent'
-
+  inherit: ['CreateEvent', 'UpdateEvent', 'DestroyEvent']
+  check: (arr) -> arr[0]
 
 
 define 'TaskEvent', 'array',
