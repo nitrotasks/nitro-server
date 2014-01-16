@@ -12,7 +12,7 @@ define 'Task', 'object',
     name: 'string'
     notes: 'string'
     priority: 'number'
-    completed: 'boolean'
+    completed: 'number'
 
 define 'List', 'object',
   keys:
