@@ -412,12 +412,10 @@ class UserSocket extends Socket
 
     # CALLBACK
 
-    if fn then fn(
-      null,
-      @user.exportModel(LIST)
-      @user.exportModel(TASK)
-      @user.exportModel(PREF)
-    )
+    if fn then fn null,
+      list: @user.exportModel(LIST)
+      task: @user.exportModel(TASK)
+      pref: @user.exportModel(PREF)
 
 module.exports =
   init: init

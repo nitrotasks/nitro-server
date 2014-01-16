@@ -137,7 +137,7 @@ describe '[Socket]', ->
         socket.on 'message', (message) ->
           # 17 = "Jandal.fn_2(null,".length
           # -1 = ")"
-          [list, task, pref] = JSON.parse('[' + message[17...-1] + ']')
+          {list, task, pref} = JSON.parse(message[17...-1])
           list.should.eql output.list
           task.should.eql output.task
           done()
