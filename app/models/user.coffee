@@ -1,6 +1,6 @@
 throttle = require '../utils/throttle'
 
-### ---------------------------------------------------------------------------
+###
 
 Recommended data structure
 
@@ -20,7 +20,7 @@ Recommended data structure
     updated_at:  date
   }
 
-#### --------------------------------------------------------------------------
+###
 
 class User
 
@@ -31,7 +31,7 @@ class User
    * - [duration] (int) : how long to wait between writes
   ###
 
-  constructor: (attrs, duration=5000) ->
+  constructor: (attrs, duration=10000) ->
     @_load attrs if attrs
     @_write = throttle @_write, duration
 
@@ -243,7 +243,7 @@ class User
   ###
    * Wipe the data contained in a user
   ###
-  
+
   wipe: ->
     @data 'task', {}
     @data 'list', {}
