@@ -65,7 +65,7 @@ class Sync
     # Inbox list is special
     else if classname is LIST and model.id is INBOX
       id = model.id
-      if @hasModel(LIST, INBOX) then return
+      if @user.hasModel(LIST, INBOX) then return
 
     # Assign server id
     else
