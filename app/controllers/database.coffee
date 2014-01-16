@@ -65,7 +65,10 @@ write_user = (user, attrs) ->
   if attrs
 
     for attr in attrs
-      data[attr] = user[attr]
+      if attr in ['data_task', 'data_list', 'data_pref', 'data_time']
+        data[attr] = shrink.pack(user[attr])
+      else
+        data[attr] = user[attr]
 
     # id is required
     data.id = user.id
