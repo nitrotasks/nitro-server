@@ -16,5 +16,5 @@ keys = JSON.parse data.toString()
 
 module.exports = (key) ->
   if not keys.hasOwnProperty(key)
-   warn "Key not found for '#{key}'"
+    warn "Key not found for '#{key}'"
   return keys[key]

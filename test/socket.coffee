@@ -4,6 +4,7 @@ Auth    = require '../app/controllers/auth'
 should  = require 'should'
 setup   = require './setup'
 mockjs  = require './mockjs'
+client  = require './mock_client'
 
 describe '[Socket]', ->
 
@@ -21,9 +22,11 @@ describe '[Socket]', ->
   beforeEach ->
     Socket.init(null, mockjs)
     socket = mockjs.createSocket()
+    client.use(socket)
 
   afterEach ->
     socket.end()
+    client.reset()
 
   describe '[setup]', ->
 
@@ -45,8 +48,7 @@ describe '[Socket]', ->
       socket.on 'close', ->
         socket.open.should.equal false
         done()
-      socket.reply 'user.auth(20,"token").fn(20)'
-
+      client.user.auth(20, "token")
 
     it 'should be kicked after 3 seconds', (done) ->
       @timeout 3200
@@ -62,13 +64,13 @@ describe '[Socket]', ->
         message.should.equal 'Jandal.fn_1(null,true)'
         socket.end()
         done()
-      socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
+      client.user.auth(user.id, user.token)
 
 
   describe '[methods]', ->
 
     beforeEach (done) ->
-      socket.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
+      client.user.auth(user.id, user.token)
       socket.on 'message', (message) ->
         if message is 'Jandal.fn_1(null,true)'then done()
 
@@ -76,19 +78,21 @@ describe '[Socket]', ->
       socket.on 'message', (message) ->
         message.should.equal 'Jandal.fn_2(null,{"name":"Fred","email":"fred@gmail.com","pro":0})'
         done()
-      socket.reply 'user.info().fn(2)'
+      client.user.info()
 
     it 'should create user data', (done) ->
       socket.on 'message', (message) ->
         message.should.equal 'Jandal.fn_2(null,"s0")'
         done()
-      socket.reply 'task.create({"name":"something","list":20}).fn(2)'
+      client.task.create
+        name: 'something'
+        listId: '20'
 
     it 'should fetch user data', (done) ->
       socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2(null,[{"name":"something","list":20,"id":"s0"}])'
+        message.should.equal 'Jandal.fn_2(null,[{"name":"something","listId":"20","id":"s0"}])'
         done()
-      socket.reply 'task.fetch().fn(2)'
+      client.task.fetch()
 
     it 'should broadcast events to other sockets', (done) ->
       other = mockjs.createSocket()
@@ -98,9 +102,11 @@ describe '[Socket]', ->
         switch message[10]
           when '1'
             message.should.equal 'Jandal.fn_1(null,true)'
-            socket.reply 'task.update({"id":"s0","name":"Old task with new name"}).fn(2)'
+            client.task.update
+              id: 's0'
+              name: 'Old task with new name'
           else
-            message.should.equal 'task.update({"name":"Old task with new name","list":20,"id":"s0"})'
+            message.should.equal 'task.update({"name":"Old task with new name","listId":"20","id":"s0"})'
             other.end()
             done()
 
@@ -109,11 +115,11 @@ describe '[Socket]', ->
         switch message[10]
           when '2'
             message.should.equal 'Jandal.fn_2(null)'
-            socket.reply 'task.fetch().fn(3)'
+            client.task.fetch()
           when '3'
             message.should.equal 'Jandal.fn_3(null,[])'
             done()
-      socket.reply 'task.destroy("s0").fn(2)'
+      client.task.destroy id: 's0'
 
 
     describe '[queue]', ->
@@ -135,7 +141,7 @@ describe '[Socket]', ->
           list.should.eql output.list
           task.should.eql output.task
           done()
-        socket.reply "model.sync(#{ JSON.stringify input }).fn(2)"
+        client.queue.sync input
 
 
       it 'create lists and tasks simultaneously', (done) ->
@@ -188,10 +194,10 @@ describe '[Socket]', ->
 
       it 'update existing items', (done) ->
 
-        socket.reply 'list.create({"id":"c0","name":"List 1","tasks":[]})'
-        socket.reply 'task.create({"id":"c1","name":"Task 1","listId":"s0"})'
-        socket.reply 'task.create({"id":"c2","name":"Task 2","listId":"s0"})'
-        socket.reply 'task.create({"id":"c3","name":"Task 3","listId":"s0"})'
+        client.list.create id: 'c0', name: 'List 1', tasks: []
+        client.task.create id: 'c1', name: 'Task 1', listId: 's0'
+        client.task.create id: 'c2', name: 'Task 2', listId: 's0'
+        client.task.create id: 'c3', name: 'Task 3', listId: 's0'
 
         input =
 
@@ -236,17 +242,17 @@ describe '[Socket]', ->
 
       it 'destroy existing tasks', (done) ->
 
-        socket.reply 'list.create({"id":"c0","name":"List 1","tasks":[]})'
-        socket.reply 'task.create({"id":"c1","name":"Task 1","listId":"s0"})'
-        socket.reply 'task.create({"id":"c2","name":"Task 2","listId":"s0"})'
-        socket.reply 'task.create({"id":"c3","name":"Task 3","listId":"s0"})'
+        client.list.create id: 'c0', name: 'List 1', tasks: []
+        client.task.create id: 'c1', name: 'Task 1', listId: 's0'
+        client.task.create id: 'c2', name: 'Task 2', listId: 's0'
+        client.task.create id: 'c3', name: 'Task 3', listId: 's0'
 
         input =
 
           task:
-            s0: [DESTROY, 's0']
-            s1: [DESTROY, 's1']
-            s2: [DESTROY, 's2']
+            s0: [DESTROY, {id: 's0'}]
+            s1: [DESTROY, {id: 's1'}]
+            s2: [DESTROY, {id: 's2'}]
             c1: [CREATE, {name: 'Task 4', listId: 'c1'}]
 
           list:

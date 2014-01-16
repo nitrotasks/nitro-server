@@ -1,6 +1,6 @@
 ###
  * Wrap redis commands in promises
- * 
+ *
  * Instead of binding every method, we only bind the ones that we use.
 ###
 

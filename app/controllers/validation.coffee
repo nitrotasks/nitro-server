@@ -39,6 +39,7 @@ define 'Pref', 'object',
 define 'Timestamps', 'object',
   all: 'number'
 
+
 define 'CreateEvent', 'array',
   keys:
     2: 'number'
@@ -50,7 +51,6 @@ define 'UpdateEvent', 'array',
 define 'DestroyEvent', 'array',
   keys:
     2: 'number'
-
 
 
 define 'QueueEvent', 'array',
@@ -107,14 +107,14 @@ defineFn 'task_fetch', 'function'
 defineFn 'list_fetch', 'function'
 defineFn 'pref_fetch', 'function'
 
-defineFn 'task_create', 'Task', 'function'
-defineFn 'list_create', 'List', 'function'
+defineFn 'task_create', 'Task', 'number', 'function'
+defineFn 'list_create', 'List', 'number', 'function'
 
 defineFn 'task_update', 'Task', 'Timestamps', '~function'
 defineFn 'list_update', 'List', 'Timestamps', '~function'
 defineFn 'pref_update', 'Pref', 'Timestamps', '~function'
 
-defineFn 'task_destroy', 'Task', 'string', '~function'
-defineFn 'list_destroy', 'List', 'string', '~function'
+defineFn 'task_destroy', 'Task', 'number', '~function'
+defineFn 'list_destroy', 'List', 'number', '~function'
 
-defineFn 'model_sync', 'Queue', 'function'
+defineFn 'queue_sync', 'Queue', 'function'

@@ -19,7 +19,7 @@ connect =
 
     # Connect to Redis
     if process.env.REDISTOGO_URL
-      rtg = url.parse(process.env.REDISTOGO_URL);
+      rtg = url.parse(process.env.REDISTOGO_URL)
       console.log rtg
       @redis = redis.createClient(rtg.port, rtg.hostname)
       @redis.auth rtg.auth.split(':')[1]

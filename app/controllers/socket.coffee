@@ -1,9 +1,10 @@
 sockjs = require 'sockjs'
 Jandal = require 'jandal'
+xType = require 'xtype'
 Sync = require '../controllers/sync'
 Storage = require '../controllers/storage'
+Validation = require '../controllers/validation'
 Log = require '../utils/log'
-type = require '../utils/type'
 
 log = Log 'Socket', 'yellow'
 Jandal.handle 'node'
@@ -84,7 +85,9 @@ class Socket
     for name, methods of @events
       ns = @socket.namespace name
       for event in methods
-        ns[action] event, @[name + '_' + event]
+        id = name + '_' + event
+        fn = xType.guard(id, @[id], this)
+        ns[action](event, fn)
 
 
   ###
@@ -229,8 +232,8 @@ class UserSocket extends Socket
 
   # Websocket events
   events:
+    queue: ['sync']
     user: ['info']
-    model: ['sync']
     list: ['create', 'update', 'destroy', 'fetch']
     task: ['create', 'update', 'destroy', 'fetch']
     pref: ['update', 'fetch']
@@ -280,65 +283,65 @@ class UserSocket extends Socket
   ###
    * Model Create
    *
-   * - classname (string)
    * - model (object)
+   * - time (number)
    * - fn (function)
   ###
 
-  task_create: (model, fn) =>
-    id = @sync.create(TASK, model)
+  task_create: (model, time, fn) =>
+    id = @sync.create(TASK, model, time)
     @broadcast 'task.create', model
-    if type.function(fn) then fn(null, id)
+    if fn then fn(null, id)
     return id
 
-  list_create: (model, fn) =>
-    id = @sync.create(LIST, model)
+  list_create: (model, time, fn) =>
+    id = @sync.create(LIST, model, time)
     @broadcast 'list.create', model
-    if type.function(fn) then fn(null, id)
+    if fn then fn(null, id)
     return id
 
 
   ###
    * Model Update
    *
-   * - classname (string)
    * - model (object)
+   * - time (object)
    * - [fn] (function)
   ###
 
   task_update: (model, time, fn) =>
     model = @sync.update TASK, model, time
     if model then @broadcast 'task.update', model
-    if type.function(fn) then fn(null)
+    if fn then fn(null)
 
   list_update: (model, time, fn) =>
     model = @sync.update LIST, model, time
     if model then @broadcast 'list.update', model
-    if type.function(fn) then fn(null)
+    if fn then fn(null)
 
   pref_update: (model, time, fn) =>
     model = @sync.update PREF, model, time
     if model then @broadcast 'pref.update', model
-    if type.function(fn) then fn(null)
+    if fn then fn(null)
 
 
   ###
    * Model Destroy
    *
-   * - classname (string)
-   * - id (string)
+   * - model (object)
+   * - time (number)
    * - [fn] (function)
   ###
 
-  task_destroy: (id, fn) =>
-    @sync.destroy TASK, id
-    @broadcast 'task.destroy', id
-    if type.function(fn) then fn(null)
+  task_destroy: (model, time, fn) =>
+    @sync.destroy TASK, model.id, time
+    @broadcast 'task.destroy', model
+    if fn then fn(null)
 
-  list_destroy: (id, fn) =>
-    @sync.destroy LIST, id
-    @broadcast 'list.destroy', id
-    if type.function(fn) then fn(null)
+  list_destroy: (model, time, fn) =>
+    @sync.destroy LIST, model.id, time
+    @broadcast 'list.destroy', model
+    if fn then fn(null)
 
 
   ###
@@ -348,7 +351,7 @@ class UserSocket extends Socket
    * - fn (function)
   ###
 
-  model_sync: (queue, fn) =>
+  queue_sync: (queue, fn) =>
 
     # Map client IDs to server IDs -- for lists only
     lists = {}
@@ -361,7 +364,7 @@ class UserSocket extends Socket
 
           when CREATE
 
-            if type.array list.tasks
+            if xType.get('array')(list.tasks)
               tasks = list.tasks
               for taskId, i in tasks by -1 when taskId[0] is CLIENT_ID
                 tasks.splice(i, 1)
@@ -409,7 +412,7 @@ class UserSocket extends Socket
 
     # CALLBACK
 
-    if type.function(fn) then fn(
+    if fn then fn(
       null,
       @user.exportModel(LIST)
       @user.exportModel(TASK)

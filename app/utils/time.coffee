@@ -1,6 +1,6 @@
 
 # Since timestamps are quite long, and are based on the 1st of January 1970,
-# it is possible to save space in the database by subtracting a fixed date from 
+# it is possible to save space in the database by subtracting a fixed date from
 # the timestamp.
 # Set to the 1st of January, 2014
 BASE = 1388487600000
