@@ -10,6 +10,12 @@ class Socket
   on: (event, fn) =>
     @vent.on(event, fn)
 
+  once: (event, fn) =>
+    @vent.once(event, fn)
+
+  off: (event, fn) =>
+    @vent.removeListener(event, fn)
+
   emit: (event, args...) =>
     @vent.emit(event, args...)
 

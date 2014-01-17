@@ -3,6 +3,18 @@
 # This is not a normal test, so don't include it with the rest of the tests
 # return unless global.FUZZ
 
+Q       = require 'kew'
+Socket  = require '../app/controllers/socket'
+Auth    = require '../app/controllers/auth'
+should  = require 'should'
+setup   = require './setup'
+mockjs  = require './mockjs'
+client  = require './mock_client'
+
+# -----------------------------------------------------------------------------
+# Fuzzer
+# -----------------------------------------------------------------------------
+
 events = ['create', 'update', 'destroy']
 
 classnames = ['task', 'list', 'pref']
@@ -92,13 +104,99 @@ random =
   pref: ->
     random.model(models.pref)
 
+  timestamp: ->
+    return random.int(0, 10000000)
+
+  timestamps: (obj) ->
+    time = {}
+    for key of obj
+      time[key] = random.timestamp()
+    return time
+
   command: ->
     event = random.event()
     classname = random.classname()
     callback = random.callback()
-    data = JSON.stringify random[classname]()
+    data = random[classname]()
+    json = JSON.stringify data
 
-    "#{ event }.#{ classname }(#{ data })#{ callback }"
+    if event is 'update'
+      timestamp = JSON.stringify random.timestamps(data)
+    else
+      timestamp = random.timestamp()
 
-for i in [0..10]
-  console.log random.command()
+    "#{ classname }.#{ event }(#{ json },#{ timestamp })#{ callback }"
+
+
+# -----------------------------------------------------------------------------
+# SETUP
+# -----------------------------------------------------------------------------
+
+describe 'Fuzz', ->
+  socket = null
+
+  user =
+    id: null
+    token: null
+    name: 'Fred'
+    email: 'fred@gmail.com'
+    pass: 'xkcd'
+
+  before ->
+    setup()
+
+    Socket.init(null, mockjs)
+    socket = mockjs.createSocket()
+    client.use(socket)
+
+  exec = (command) ->
+    deferred = Q.defer()
+    console.log '\n', command
+
+    timeout = setTimeout ->
+      socket.off('message', callback)
+      deferred.resolve()
+    , 300
+
+    callback = (response) ->
+      clearTimeout timeout
+      deferred.resolve(response)
+
+    socket.once('message', callback)
+
+    socket.reply(command)
+    return deferred.promise
+
+  it 'should create a new user', (done) ->
+    Auth.register(user.name, user.email, user.pass)
+    .then (token) ->
+      Auth.verifyRegistration(token)
+    .then ->
+      Auth.login(user.email, user.pass)
+    .then ([id, token]) ->
+      user.id = id
+      user.token = token
+      done()
+
+  it 'should login the user', (done) ->
+    auth = client.user.auth(user.id, user.token)
+    exec(auth).then (message) ->
+      message.should.equal 'Jandal.fn_1(null,true)'
+      done()
+
+  it 'should fuzz', (done) ->
+
+    @timeout 20000
+
+    promise = Q.resolve()
+
+    for i in [0..100]
+      promise = promise.then ->
+        exec random.command()
+
+    promise.then ->
+      done()
+
+    promise.fail (err) ->
+      console.log err
+
