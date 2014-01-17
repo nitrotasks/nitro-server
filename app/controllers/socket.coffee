@@ -14,7 +14,7 @@ Jandal.handle 'node'
 # Constants
 # -----------------------------------------------------------------------------
 
-CLIENT_ID = 'c'
+SERVER_PREFIX = 's'
 
 SOCKET_URL = '/socket'
 
@@ -366,7 +366,7 @@ class UserSocket extends Socket
 
             if xType.get('array')(list.tasks)
               tasks = list.tasks
-              for taskId, i in tasks by -1 when taskId[0] is CLIENT_ID
+              for taskId, i in tasks by -1 when taskId[0] isnt SERVER_PREFIX
                 tasks.splice(i, 1)
 
             list.id = id
