@@ -1,7 +1,8 @@
 # FUZZ
 
 # This is not a normal test, so don't include it with the rest of the tests
-# return unless global.FUZZ
+
+global.DEBUG = true
 
 Q       = require 'kew'
 Socket  = require '../app/controllers/socket'
@@ -132,7 +133,7 @@ random =
 # SETUP
 # -----------------------------------------------------------------------------
 
-describe 'Fuzz', ->
+describe 'IGNORE Fuzz', ->
   socket = null
 
   user =
@@ -147,7 +148,7 @@ describe 'Fuzz', ->
 
     Socket.init(null, mockjs)
     socket = mockjs.createSocket()
-    client.use(socket)
+    client.use(null)
 
   exec = (command) ->
     deferred = Q.defer()

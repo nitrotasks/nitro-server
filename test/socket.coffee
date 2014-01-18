@@ -1,3 +1,5 @@
+global.DEBUG = true
+
 Socket  = require '../app/controllers/socket'
 Storage = require '../app/controllers/storage'
 Auth    = require '../app/controllers/auth'
@@ -85,12 +87,13 @@ describe '[Socket]', ->
         message.should.equal 'Jandal.fn_2(null,"s0")'
         done()
       client.task.create
+        id: 'c2'
         name: 'something'
         listId: '20'
 
     it 'should fetch user data', (done) ->
       socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2(null,[{"name":"something","listId":"20","id":"s0"}])'
+        message.should.equal 'Jandal.fn_2(null,[{"id":"s0","name":"something","listId":"20"}])'
         done()
       client.task.fetch()
 
@@ -106,7 +109,7 @@ describe '[Socket]', ->
               id: 's0'
               name: 'Old task with new name'
           else
-            message.should.equal 'task.update({"name":"Old task with new name","listId":"20","id":"s0"})'
+            message.should.equal 'task.update({"id":"s0","name":"Old task with new name","listId":"20"})'
             other.end()
             done()
 

@@ -60,11 +60,11 @@ class Sync
 
     # TODO: Get prefs to sync
     if classname is PREF
-      id = 1
+      id = SERVER_ID + '0'
 
     # Inbox list is special
     else if classname is LIST and model.id is INBOX
-      id = model.id
+      id = INBOX
       if @user.hasModel(LIST, INBOX) then return
 
     # Assign server id
@@ -74,6 +74,9 @@ class Sync
     # Add task to list
     if classname is TASK
       listId = model.listId
+      unless @user.hasModel LIST, listId
+        console.log 'Could not match listId to list'
+        return false
       @taskAdd id, listId
 
     # Make sure model.tasks exists
@@ -86,7 +89,7 @@ class Sync
     # Set timestamp
     timestamp ?= Date.now()
     @time.set classname, id, '*', timestamp
-    log "Created #{ classname }: #{ model.name }"
+    log "Created #{ classname }: #{ id}. #{ model.name || '<no name>'}"
 
     return id
 
@@ -102,10 +105,16 @@ class Sync
   # Update existing model
   update: (classname, changes, timestamps) =>
 
+    # id is a required field
     id = changes.id
+    delete changes.id
+
+    if classname is PREF
+      id = SERVER_ID + '0'
 
     # Check model exists on server
-    unless classname is 'pref' or @user.hasModel(classname, id)
+    # TODO: Automatically create the pref model
+    unless classname is PREF or @user.hasModel(classname, id)
       log "#{classname} doesn't exist on server"
       return false
 
@@ -119,7 +128,7 @@ class Sync
     else
       timestamps = {}
       now = Date.now()
-      for key of changes when key isnt 'id'
+      for key of changes
         timestamps[key] = now
 
     @time.set classname, id, timestamps
@@ -132,7 +141,7 @@ class Sync
 
     # Save to server
     model = @user.updateModel classname, id, changes
-    log "Updated #{ classname }: #{ model.name }"
+    log "Updated #{ classname }: #{ model.id }"
 
     return model
 
@@ -147,7 +156,16 @@ class Sync
 
   # Delete existing model
   destroy: (classname, id, timestamp) =>
+
+    if not @user.hasModel(classname, id)
+      console.log 'could not find model:', classname, id
+      return
+
     model = @user.findModel classname, id
+
+    if model.deleted
+      console.log 'model has already been deleted:', classname, id
+      return
 
     # Check that the model hasn't been updated after this event
     timestamp ?= Date.now()
@@ -157,7 +175,7 @@ class Sync
     if classname is LIST
       for taskId in model.tasks
         log "Destroying Task #{ taskId }"
-        @destroy [TASK, taskId]
+        @destroy TASK, taskId, timestamp
 
     # Remove from list
     else if classname is TASK

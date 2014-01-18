@@ -20,7 +20,8 @@ emit = (event, fn, args...) ->
     string += ++callback
     string += ')'
 
-  socket.reply(string)
+  if socket then socket.reply string
+
   return string
 
 client =
