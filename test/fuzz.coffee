@@ -55,7 +55,7 @@ random =
     string[index ... index + 1]
 
   id: ->
-    random.char('csx') + random.int(0,20)
+    random.char('csx') + random.int(0,10)
 
   ids: ->
     arr = []
@@ -90,8 +90,8 @@ random =
     ".fn(#{ random.int(0, 100) })"
 
   model: (model) ->
-    obj = {}
-    for key, value of model when random.boolean()
+    obj = id: random.id()
+    for key, value of model when key isnt 'id' and random.boolean()
       obj[key] = random[value]()
     return obj
 
@@ -156,7 +156,7 @@ describe 'Fuzz', ->
     timeout = setTimeout ->
       socket.off('message', callback)
       deferred.resolve()
-    , 300
+    , 150
 
     callback = (response) ->
       clearTimeout timeout
@@ -186,11 +186,11 @@ describe 'Fuzz', ->
 
   it 'should fuzz', (done) ->
 
-    @timeout 20000
+    @timeout 60000
 
     promise = Q.resolve()
 
-    for i in [0..100]
+    for i in [0..400]
       promise = promise.then ->
         exec random.command()
 
