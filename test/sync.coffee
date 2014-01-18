@@ -32,9 +32,9 @@ describe 'Sync API', ->
     # Lists
     # -----
 
-    sync.create LIST, {name: 'List 1', tasks: []}
-    sync.create LIST, {name: 'List 2', tasks: []}
-    sync.create LIST, {name: 'List 3', tasks: []}
+    sync.list_create {name: 'List 1'}
+    sync.list_create {name: 'List 2'}
+    sync.list_create {name: 'List 3'}
 
     # Check lists exist
     lists = sync.user.data(LIST)
@@ -47,9 +47,9 @@ describe 'Sync API', ->
     # Tasks
     # -----
 
-    sync.create TASK, {name: 'Task 1', listId: 's0'}
-    sync.create TASK, {name: 'Task 2', listId: 's0'}
-    sync.create TASK, {name: 'Task 3', listId: 's0'}
+    sync.task_create {name: 'Task 1', listId: 's0'}
+    sync.task_create {name: 'Task 2', listId: 's0'}
+    sync.task_create {name: 'Task 3', listId: 's0'}
 
     # Check tasks exist
     tasks = sync.user.data(TASK)
@@ -58,6 +58,7 @@ describe 'Sync API', ->
       s1: name: 'Task 2', listId: 's0', id: 's1'
       s2: name: 'Task 3', listId: 's0', id: 's2'
 
+    # Should add tasks to lists
     lists.s0.tasks.should.eql ['s0', 's1', 's2']
 
   it 'should handle task and list updates', ->

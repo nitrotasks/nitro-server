@@ -289,15 +289,22 @@ class UserSocket extends Socket
   ###
 
   task_create: (model, time, fn) =>
-    id = @sync.create(TASK, model, time)
-    @broadcast 'task.create', model
-    if fn then fn(null, id)
+    id = @sync.task_create(model, time)
+    if id isnt null
+      @broadcast 'task.create', model
+      if fn then fn(null, id)
+    else
+      if fn then fn(true)
     return id
 
   list_create: (model, time, fn) =>
-    id = @sync.create(LIST, model, time)
+    id = @sync.list_create(model, time)
     @broadcast 'list.create', model
-    if fn then fn(null, id)
+    if id isnt null
+      @broadcast 'list.create', model
+      if fn then fn(null, id)
+    else
+      if fn then fn(true)
     return id
 
 

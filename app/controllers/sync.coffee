@@ -55,41 +55,45 @@ class Sync
   #####################################
 
 
-  # Create a new model
-  create: (classname, model, timestamp) =>
 
-    # TODO: Get prefs to sync
-    if classname is PREF
-      id = SERVER_ID + '0'
+  task_create: (model, timestamp) =>
 
-    # Inbox list is special
-    else if classname is LIST and model.id is INBOX
-      id = INBOX
-      if @user.hasModel(LIST, INBOX) then return
+    unless @user.hasModel(LIST, model.listId)
+      log 'Trying to add a task to a list that doesn\'t exist'
+      return null
 
-    # Assign server id
-    else
-      id = model.id = @createId classname
+    id = @createId TASK
+    model.id = id
 
-    # Add task to list
-    if classname is TASK
-      listId = model.listId
-      unless @user.hasModel LIST, listId
-        console.log 'Could not match listId to list'
-        return false
-      @taskAdd id, listId
+    @taskAdd id, model.listId
 
-    # Make sure model.tasks exists
-    else if classname is LIST
-      model.tasks ?= []
+    @user.setModel TASK, id, model
 
-    # Add item to server
-    @user.setModel(classname, id, model)
-
-    # Set timestamp
     timestamp ?= Date.now()
-    @time.set classname, id, '*', timestamp
-    log "Created #{ classname }: #{ id}. #{ model.name || '<no name>'}"
+    @time.set TASK, id, '*', timestamp
+
+    log '[task] Created', id, model.name
+
+    return id
+
+  list_create: (model, timestamp) =>
+
+    if model.id is INBOX
+      id = INBOX
+      if @user.hasModel(LIST, INBOX) then return null
+      console.log 'Creating inbox'
+    else
+      id = @createId LIST
+      model.id = id
+
+    model.tasks = []
+
+    @user.setModel LIST, id, model
+
+    timestamp ?= Date.now()
+    @time.set LIST, id, '*', timestamp
+
+    log '[list] Created', id, model.name
 
     return id
 

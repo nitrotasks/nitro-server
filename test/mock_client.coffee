@@ -1,72 +1,79 @@
 # Generate strings for Jandal
 
-socket = null
-callback = 0
-
 timestamps = (obj) ->
   time = {}
   for key of obj when key isnt 'id'
-    time[key] = Date.now()
+    time[key] = client.timestamp()
   return time
 
-emit = (event, fn, args...) ->
+emit = (event, args...) ->
   string = event
   string += '('
   string += JSON.stringify(args)[1...-1]
   string += ')'
 
-  if fn
+  if client.callback
     string += '.fn('
-    string += ++callback
+    string += ++client.id
     string += ')'
 
-  if socket then socket.reply string
+  if client.socket
+    client.socket.reply string
 
   return string
 
 client =
 
-  use: (_socket) ->
-    socket = _socket
+  id: -1
+  callback: true
+  socket: null
+  timestamp: -> return Date.now()
 
-  reset: ->
-    callback = 0
+  setId: (id) ->
+    client.id = id - 1
 
   queue:
 
     sync: (queue) ->
-      emit 'queue.sync', true, queue
+      emit 'queue.sync', queue
 
   user:
 
     auth: (id, token) ->
-      emit 'user.auth', true, id, token
+      emit 'user.auth', id, token
 
     info: ->
-      emit 'user.info', true
+      emit 'user.info'
 
   task:
 
     fetch: ->
-      emit 'task.fetch', true
+      emit 'task.fetch'
 
     create: (model) ->
-      emit 'task.create', true, model, Date.now()
+      emit 'task.create', model, client.timestamp()
 
     update: (model) ->
-      emit 'task.update', false, model, timestamps(model)
+      emit 'task.update', model, timestamps(model)
 
     destroy: (model) ->
-      emit 'task.destroy', true, model, Date.now()
+      emit 'task.destroy', model, client.timestamp()
 
   list:
 
     create: (model) ->
-      emit 'list.create', true, model, Date.now()
+      emit 'list.create', model, client.timestamp()
 
-    update: ->
+    update: (model) ->
+      emit 'list.update', model, timestamps(model)
 
-    destroy: ->
+    destroy: (model) ->
+      emit 'list.destroy', model, client.timestamp()
+
+  pref:
+
+    update: (model) ->
+      emit 'pref.update', model, timestamps(model)
 
 
 module.exports = client

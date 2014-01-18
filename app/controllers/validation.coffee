@@ -41,7 +41,7 @@ define 'Pref', 'object',
 # -----------------------------------------------------------------------------
 
 define 'CreateList', 'object',
-  required: ['id', 'tasks']
+  required: ['id']
   inherit: 'List'
 
 define 'UpdateList', 'object',

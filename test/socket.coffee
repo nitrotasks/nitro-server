@@ -24,11 +24,11 @@ describe '[Socket]', ->
   beforeEach ->
     Socket.init(null, mockjs)
     socket = mockjs.createSocket()
-    client.use(socket)
+    client.socket = socket
 
   afterEach ->
     socket.end()
-    client.reset()
+    client.setId 1
 
   describe '[setup]', ->
 
@@ -82,6 +82,22 @@ describe '[Socket]', ->
         done()
       client.user.info()
 
+    it 'should create the inbox list', (done) ->
+      socket.on 'message', (message) ->
+        message.should.equal 'Jandal.fn_2(null,"inbox")'
+        done()
+      client.list.create
+        id: 'inbox'
+        name: 'Inbox'
+
+    it 'should only create the inbox list once', (done) ->
+      socket.on 'message', (message) ->
+        message.should.equal 'Jandal.fn_2(true)'
+        done()
+      client.list.create
+        id: 'inbox'
+        name: 'Inbox'
+
     it 'should create user data', (done) ->
       socket.on 'message', (message) ->
         message.should.equal 'Jandal.fn_2(null,"s0")'
@@ -89,11 +105,11 @@ describe '[Socket]', ->
       client.task.create
         id: 'c2'
         name: 'something'
-        listId: '20'
+        listId: 'inbox'
 
     it 'should fetch user data', (done) ->
       socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2(null,[{"id":"s0","name":"something","listId":"20"}])'
+        message.should.equal 'Jandal.fn_2(null,[{"id":"s0","name":"something","listId":"inbox"}])'
         done()
       client.task.fetch()
 
@@ -109,7 +125,7 @@ describe '[Socket]', ->
               id: 's0'
               name: 'Old task with new name'
           else
-            message.should.equal 'task.update({"id":"s0","name":"Old task with new name","listId":"20"})'
+            message.should.equal 'task.update({"id":"s0","name":"Old task with new name","listId":"inbox"})'
             other.end()
             done()
 
