@@ -25,11 +25,10 @@ define 'List', 'object',
 
 define 'Pref', 'object',
   keys:
-    id: 'string'
     sort: 'boolean'
     night: 'string'
     language: 'string'
-    weekstart: 'number'
+    weekStart: 'number'
     dateFormat: 'string'
     confirmDelete: 'boolean'
     completedDuration: 'string'

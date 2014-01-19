@@ -8,6 +8,10 @@ timestamps = (obj) ->
 
 emit = (event, args...) ->
   string = event
+
+  if client.no_ts
+    args = args[0...-1]
+
   string += '('
   string += JSON.stringify(args)[1...-1]
   string += ')'
@@ -50,7 +54,7 @@ client =
     fetch: ->
       emit 'task.fetch'
 
-    create: (model) ->
+    create: (model, ts) ->
       emit 'task.create', model, client.timestamp()
 
     update: (model) ->

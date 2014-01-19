@@ -299,7 +299,6 @@ class UserSocket extends Socket
 
   list_create: (model, time, fn) =>
     id = @sync.list_create(model, time)
-    @broadcast 'list.create', model
     if id isnt null
       @broadcast 'list.create', model
       if fn then fn(null, id)

@@ -114,7 +114,11 @@ class Sync
 
     # Check model exists on server
     unless @user.hasModel(TASK, id)
-      log '[list] [update] could not find', id
+      log '[task] [update] could not find', id
+      return null
+
+    if @user.findModel(TASK, id).deleted
+      log '[task] [update] already deleted', id
       return null
 
     # Set timestamp
@@ -125,7 +129,7 @@ class Sync
           delete timestamps[attr]
           delete changes[attr]
       if Object.keys(changes).length is 0
-        log '[list] [update] old event', id
+        log '[task] [update] old event', id
         return null
     else
       timestamps = {}
@@ -145,7 +149,8 @@ class Sync
     model = @user.updateModel TASK, id, changes
     log '[task] updated', id, model.name
 
-    return model
+    changes.id = id
+    return changes
 
   list_update: (changes, timestamps) =>
 
@@ -156,6 +161,10 @@ class Sync
     # Check model exists on server
     unless @user.hasModel(LIST, id)
       log '[list] [update] could not find', id
+      return null
+
+    if @user.findModel(LIST, id).deleted
+      log '[list] [update] already deleted', id
       return null
 
     # Set timestamp
@@ -185,13 +194,13 @@ class Sync
     model = @user.updateModel LIST, id, changes
     log '[list] updated', id
 
-    return model
+    changes.id = id
+    return changes
 
   pref_update: (changes, timestamps) =>
 
     # Pref id is always s0
     id = SERVER_ID + '0'
-    delete changes.id
 
     # Set timestamp
     if timestamps
@@ -215,7 +224,7 @@ class Sync
     model = @user.updateModel PREF, id, changes
     log '[pref] updated', changes
 
-    return model
+    return changes
 
 
 

@@ -1,3 +1,4 @@
+# Switch xType into debug mode
 global.DEBUG = true
 
 Socket  = require '../app/controllers/socket'
@@ -98,6 +99,7 @@ describe '[Socket]', ->
         id: 'inbox'
         name: 'Inbox'
 
+
     it 'should create user data', (done) ->
       socket.on 'message', (message) ->
         message.should.equal 'Jandal.fn_2(null,"s0")'
@@ -107,29 +109,18 @@ describe '[Socket]', ->
         name: 'something'
         listId: 'inbox'
 
+
     it 'should fetch user data', (done) ->
+
       socket.on 'message', (message) ->
         message.should.equal 'Jandal.fn_2(null,[{"id":"s0","name":"something","listId":"inbox"}])'
         done()
+
       client.task.fetch()
 
-    it 'should broadcast events to other sockets', (done) ->
-      other = mockjs.createSocket()
-      other.reply "user.auth(#{ user.id },\"#{ user.token }\").fn(1)"
-
-      other.on 'message', (message) ->
-        switch message[10]
-          when '1'
-            message.should.equal 'Jandal.fn_1(null,true)'
-            client.task.update
-              id: 's0'
-              name: 'Old task with new name'
-          else
-            message.should.equal 'task.update({"id":"s0","name":"Old task with new name","listId":"inbox"})'
-            other.end()
-            done()
 
     it 'should destroy user data', (done) ->
+
       socket.on 'message', (message) ->
         switch message[10]
           when '2'
@@ -138,8 +129,142 @@ describe '[Socket]', ->
           when '3'
             message.should.equal 'Jandal.fn_3(null,[])'
             done()
+
       client.task.destroy id: 's0'
 
+
+
+    describe '[broadcast]', ->
+
+      # Create a second socket called other
+      other = null
+
+
+      beforeEach (done) ->
+        other = mockjs.createSocket()
+        client.socket = other
+
+        other.on 'message', (message) ->
+          if message is 'Jandal.fn_2(null,true)'
+            client.socket = socket
+            done()
+
+        client.user.auth(user.id, user.token)
+
+
+      afterEach ->
+        other.end()
+
+
+      testBroadcast = (done, fn) ->
+
+        client.socket = null
+        client.no_ts = true
+        client.callback = false
+
+        message = fn()
+
+
+        client.socket = socket
+        client.no_ts = false
+        client.callback = true
+
+        other.on 'message', (text) ->
+          text.should.equal message
+          done()
+
+
+      it 'should create a task', (done) ->
+
+        testBroadcast done, ->
+          client.task.create
+            id: 's1'
+            listId: 'inbox'
+            name: 'A brand new task'
+
+        client.task.create
+          id: 'c1'
+          listId: 'inbox'
+          name: 'A brand new task'
+
+      it 'should create a list', (done) ->
+
+        testBroadcast done, ->
+          client.list.create
+            id: 's0'
+            name: 'A brand new list'
+            tasks: []
+
+        client.list.create
+          id: 'c1'
+          name: 'A brand new list'
+
+      it 'should update a task', (done) ->
+
+        testBroadcast done, ->
+          client.task.update
+            name: 'An updated task'
+            id: 's1'
+
+        client.task.update
+          id: 's1'
+          name: 'An updated task'
+
+      it 'should update a list', (done) ->
+
+        testBroadcast done, ->
+          client.list.update
+            name: 'An updated list'
+            id: 's0'
+
+        client.list.update
+          id: 's0'
+          name: 'An updated list'
+
+      it 'should update a pref', (done) ->
+
+        testBroadcast done, ->
+          client.pref.update
+            sort: true
+
+        client.pref.update
+          sort: true
+
+      it 'should update a pref', (done) ->
+
+        testBroadcast done, ->
+          client.pref.update
+            sort: true
+
+        client.pref.update
+          sort: true
+
+      it 'should update a pref again', (done) ->
+
+        testBroadcast done, ->
+          client.pref.update
+            language: 'en-us'
+
+        client.pref.update
+          language: 'en-us'
+
+      it 'should destroy a task', (done) ->
+
+        testBroadcast done, ->
+          client.task.destroy
+            id: 's1'
+
+        client.task.destroy
+          id: 's1'
+
+      it 'should destroy a list', (done) ->
+
+        testBroadcast done, ->
+          client.list.destroy
+            id: 's0'
+
+        client.list.destroy
+          id: 's0'
 
     describe '[queue]', ->
 

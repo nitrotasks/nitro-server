@@ -191,3 +191,9 @@ describe 'Sync API', ->
     # Models that exist but are deleted
     should.equal null, sync.task_destroy 's0'
     should.equal null, sync.list_destroy 's0'
+
+  it 'should not fail when updating a model that has been deleted', ->
+
+    # Models that exist but are deleted
+    should.equal null, sync.task_update {id: 's0', name: 'test'}
+    should.equal null, sync.list_update {id: 's0', name: 'test'}
