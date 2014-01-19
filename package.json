@@ -19,8 +19,8 @@
     "hiredis": "0.1.x",
     "sockjs": "0.3.x",
     "cors": "2.1.x",
-    "jandal": "0.0.x",
-    "xtype": "0.0.x"
+    "jandal": "0.0.10",
+    "xtype": "0.0.7"
   },
   "devDependencies": {
     "supertest": "0.8.x",
