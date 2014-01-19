@@ -81,7 +81,7 @@ class Sync
     if model.id is INBOX
       id = INBOX
       if @user.hasModel(LIST, INBOX) then return null
-      console.log 'Creating inbox'
+      log '[list] [create] made inbox'
     else
       id = @createId LIST
       model.id = id
@@ -106,46 +106,114 @@ class Sync
   #                                  #
   ####################################
 
-  # Update existing model
-  update: (classname, changes, timestamps) =>
+  task_update: (changes, timestamps) =>
 
     # id is a required field
     id = changes.id
     delete changes.id
 
-    if classname is PREF
-      id = SERVER_ID + '0'
-
     # Check model exists on server
-    # TODO: Automatically create the pref model
-    unless classname is PREF or @user.hasModel(classname, id)
-      log "#{classname} doesn't exist on server"
-      return false
+    unless @user.hasModel(TASK, id)
+      log '[list] [update] could not find', id
+      return null
 
     # Set timestamp
     if timestamps
       for attr, time of timestamps
-        old = @time.get classname, id, attr
+        old = @time.get TASK, id, attr
         if old > time
           delete timestamps[attr]
           delete changes[attr]
+      if Object.keys(changes).length is 0
+        log '[list] [update] old event', id
+        return null
     else
       timestamps = {}
       now = Date.now()
       for key of changes
         timestamps[key] = now
 
-    @time.set classname, id, timestamps
+    @time.set TASK, id, timestamps
 
-    # Update list
-    if classname is TASK and changes.listId?
-      oldTask = @user.findModel classname, id
+    # If task has changed list
+    if changes.listId?
+      oldTask = @user.findModel TASK, id
       if oldTask.listId isnt changes.listId
         @taskMove id, oldTask.listId, changes.listId
 
     # Save to server
-    model = @user.updateModel classname, id, changes
-    log "Updated #{ classname }: #{ model.id }"
+    model = @user.updateModel TASK, id, changes
+    log '[task] updated', id, model.name
+
+    return model
+
+  list_update: (changes, timestamps) =>
+
+    # id is a required field
+    id = changes.id
+    delete changes.id
+
+    # Check model exists on server
+    unless @user.hasModel(LIST, id)
+      log '[list] [update] could not find', id
+      return null
+
+    # Set timestamp
+    if timestamps
+      for attr, time of timestamps
+        old = @time.get LIST, id, attr
+        if old > time
+          delete timestamps[attr]
+          delete changes[attr]
+      if Object.keys(changes).length is 0
+        log '[list] [update] old event', id
+        return null
+    else
+      timestamps = {}
+      now = Date.now()
+      for key of changes
+        timestamps[key] = now
+
+    if changes.tasks
+      console.log 'WE CAN NOT HANDLE THIS YET!!!!'
+      delete changes.tasks
+      delete timestamps.tasks
+
+    @time.set LIST, id, timestamps
+
+    # Save to server
+    model = @user.updateModel LIST, id, changes
+    log '[list] updated', id
+
+    return model
+
+  pref_update: (changes, timestamps) =>
+
+    # Pref id is always s0
+    id = SERVER_ID + '0'
+    delete changes.id
+
+    # Set timestamp
+    if timestamps
+      for attr, time of timestamps
+        old = @time.get PREF, id, attr
+        if old > time
+          delete timestamps[attr]
+          delete changes[attr]
+      if Object.keys(changes).length is 0
+        log '[pref] [update] old event', id
+        return null
+    else
+      timestamps = {}
+      now = Date.now()
+      for key of changes
+        timestamps[key] = now
+
+    @time.set PREF, id, timestamps
+
+    # Save to server
+    model = @user.updateModel PREF, id, changes
+    log '[pref] updated', changes
 
     return model
 
@@ -158,43 +226,68 @@ class Sync
   #                                      #
   ########################################
 
-  # Delete existing model
-  destroy: (classname, id, timestamp) =>
+  task_destroy: (id, timestamp) =>
 
-    if not @user.hasModel(classname, id)
-      console.log 'could not find model:', classname, id
-      return
+   if not @user.hasModel(TASK, id)
+     log '[task] [destroy] could not find:', id
+     return null
 
-    model = @user.findModel classname, id
+    model = @user.findModel TASK, id
 
     if model.deleted
-      console.log 'model has already been deleted:', classname, id
-      return
+      log '[task] [destroy] already deleted:', id
+      return null
 
     # Check that the model hasn't been updated after this event
     timestamp ?= Date.now()
-    return unless @time.check classname, id, timestamp
-
-    # Destroy all tasks within that list
-    if classname is LIST
-      for taskId in model.tasks
-        log "Destroying Task #{ taskId }"
-        @destroy TASK, taskId, timestamp
+    unless @time.check TASK, id, timestamp
+      return null
 
     # Remove from list
-    else if classname is TASK
-      @taskRemove id, model.listId
+    @taskRemove id, model.listId
 
     # Replace task with deleted template
-    @user.setModel classname, id,
+    @user.setModel TASK, id,
+      id: id
+      deleted: true
+
+    # Set timestamp
+    @time.set TASK, id, 'deleted', timestamp
+    log '[task] destroyed', id
+
+    return true
+
+  list_destroy: (id, timestamp) =>
+
+   if not @user.hasModel(LIST, id)
+     log '[list] [destroy] could not find:', id
+     return null
+
+    model = @user.findModel LIST, id
+
+    if model.deleted
+      log '[list] [destroy] already deleted:', id
+      return null
+
+    # Check that the model hasn't been updated after this event
+    timestamp ?= Date.now()
+    unless @time.check LIST, id, timestamp
+      return null
+
+    # Destroy all tasks within that list
+    for taskId, i in model.tasks by -1
+      @task_destroy taskId, timestamp
+
+    # Replace task with deleted template
+    @user.setModel LIST, id,
       id: id
       deleted: yes
 
     # Set timestamp
-    @time.set classname, id, 'deleted', timestamp
-    log "Destroyed #{ classname } #{ id }"
+    @time.set LIST, id, 'deleted', timestamp
+    log '[list] [destroy] deleted:', id
 
-
+    return true
 
 # -----------------------------------------------------------------------------
 # Useful Task Management Methods

@@ -148,7 +148,7 @@ describe 'IGNORE Fuzz', ->
 
     Socket.init(null, mockjs)
     socket = mockjs.createSocket()
-    client.use(null)
+    client.socket = null
 
   exec = (command) ->
     deferred = Q.defer()

@@ -317,19 +317,28 @@ class UserSocket extends Socket
   ###
 
   task_update: (model, time, fn) =>
-    model = @sync.update TASK, model, time
-    if model then @broadcast 'task.update', model
-    if fn then fn(null)
+    model = @sync.task_update(model, time)
+    if model
+      @broadcast 'task.update', model
+      if fn then fn(null)
+    else
+      if fn then fn(true)
 
   list_update: (model, time, fn) =>
-    model = @sync.update LIST, model, time
-    if model then @broadcast 'list.update', model
-    if fn then fn(null)
+    model = @sync.list_update(model, time)
+    if model
+      @broadcast 'list.update', model
+      if fn then fn(null)
+    else
+      if fn then fn(true)
 
   pref_update: (model, time, fn) =>
-    model = @sync.update PREF, model, time
-    if model then @broadcast 'pref.update', model
-    if fn then fn(null)
+    model = @sync.pref_update(model, time)
+    if model
+      @broadcast 'pref.update', model
+      if fn then fn(null)
+    else
+      if fn then fn(true)
 
 
   ###
@@ -341,14 +350,20 @@ class UserSocket extends Socket
   ###
 
   task_destroy: (model, time, fn) =>
-    @sync.destroy TASK, model.id, time
-    @broadcast 'task.destroy', model
-    if fn then fn(null)
+    id = model.id
+    if @sync.task_destroy(id, time)
+      @broadcast 'task.destroy', id: id
+      if fn then fn(null)
+    else
+      if fn then fn(true)
 
   list_destroy: (model, time, fn) =>
-    @sync.destroy LIST, model.id, time
-    @broadcast 'list.destroy', model
-    if fn then fn(null)
+    id = model.id
+    if @sync.list_destroy(id, time)
+      @broadcast 'list.destroy', id: id
+      if fn then fn(null)
+    else
+      if fn then fn(true)
 
 
   ###
