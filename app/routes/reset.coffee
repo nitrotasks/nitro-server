@@ -35,7 +35,7 @@ sendEmail = (req, res) ->
       #     <p>- Nitrotasks</p>
       #   """
 
-      if global.DebugMode
+      if DEBUG
         res.send token
       else
         res.sendfile page 'reset_email'
@@ -44,7 +44,7 @@ sendEmail = (req, res) ->
       log err
       log email, 'do not get a token'
       res.status 400
-      if global.DebugMode
+      if DEBUG
         res.send 'error'
       else
         res.sendfile page 'error'
@@ -56,7 +56,7 @@ confirmToken = (req, res) ->
     .then ->
       res.sendfile page 'reset_form'
     .fail (err) ->
-      if global.DebugMode
+      if DEBUG
         res.send 'error'
       else
         res.sendfile page 'error'

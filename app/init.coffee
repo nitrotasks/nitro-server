@@ -4,27 +4,18 @@ connect = require './controllers/connect'
 router  = require './controllers/router'
 socket = require './controllers/socket'
 
-###
- * If this file is required by another, then it will put the app into
- * debug mode and just return the router.
-###
-
-if module.parent?
-  global.DebugMode = true
-  module.exports = router
-
 log  = Log 'Info', 'green'
 warn = Log 'Warning', 'red'
 
 # Handle debug mode
-global.DebugMode = off
+DEBUG = global.DEBUG ?= off
 
 # Enable debug mode if passed as argument
 if '--debug' in process.argv
-  global.DebugMode = on
+  DEBUG = on
   warn 'Running in debug mode!'
 
-config.use if global.DebugMode then 'development' else 'production'
+config.use if DEBUG then 'development' else 'production'
 
 connect.init()
 
@@ -35,3 +26,6 @@ server = router.listen config.port
 
 # Start sync
 socket.init server
+
+# Return router
+module.exports = router

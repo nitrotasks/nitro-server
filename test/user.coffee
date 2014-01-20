@@ -2,7 +2,7 @@ User    = require '../app/models/user'
 Storage = require '../app/controllers/storage'
 should  = require 'should'
 
-global.DebugMode = true
+global.DEBUG = true
 
 describe 'User class', ->
 

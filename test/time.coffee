@@ -3,7 +3,7 @@ Storage = require '../app/controllers/storage'
 Time    = require '../app/utils/time'
 should  = require 'should'
 
-global.DebugMode = true
+global.DEBUG = true
 
 TASK = 'task'
 TIME = 'time'

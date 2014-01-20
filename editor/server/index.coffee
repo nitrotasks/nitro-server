@@ -1,5 +1,5 @@
 # Dependencies
-global.DebugMode = true
+global.DEBUG = true
 
 folder = '../../app/'
 
@@ -13,6 +13,7 @@ log = Log 'Editor', 'white'
 
 # Config
 PORT = 8001
+# config.use 'testing'
 config.use 'development'
 
 # Create a new express web server

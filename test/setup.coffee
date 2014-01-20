@@ -6,7 +6,7 @@ config   = require '../app/config'
 # -----------------------------------------------------------------------------
 
 config.use 'testing'
-global.DebugMode = true
+global.DEBUG = true
 
 # Load controllers
 database = require '../app/controllers/database'

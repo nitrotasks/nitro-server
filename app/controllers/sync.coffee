@@ -24,8 +24,8 @@ PREF = 'pref'
 TASK = 'task'
 INBOX = 'inbox'
 
-SERVER_ID = 's'
-CLIENT_ID = 'c'
+SERVER_PREFIX = 's'
+PREF_ID = SERVER_PREFIX + '0'
 
 
 # Does all the useful stuff
@@ -44,7 +44,7 @@ class Sync
 
   createId: (classname) ->
     id = @user.incrIndex classname
-    return SERVER_ID + (id - 1)
+    return SERVER_PREFIX + (id - 1)
 
 
   #####################################
@@ -105,6 +105,10 @@ class Sync
   #   \__/ |    |__/ /~~\  |  |___   #
   #                                  #
   ####################################
+
+  generic_update: (changes, timestamps) =>
+
+    # Handles generic code for updating a model
 
   task_update: (changes, timestamps) =>
 
@@ -200,7 +204,7 @@ class Sync
   pref_update: (changes, timestamps) =>
 
     # Pref id is always s0
-    id = SERVER_ID + '0'
+    id = PREF_ID
 
     # Set timestamp
     if timestamps
@@ -316,7 +320,7 @@ class Sync
     tasks = @user.findModel(LIST, listId).tasks
     return false unless tasks
     index = tasks.indexOf taskId
-    if index > -1
+    if index >= 0
       tasks.splice index, 1
       @user.save LIST
 
@@ -329,7 +333,7 @@ class Sync
   taskUpdateId: (oldId, newId, listId) ->
     tasks = @user.findModel(LIST, listId).tasks
     index = tasks.indexOf oldId
-    if index > -1
+    if index >= 0
       tasks.spice index, 1, newId
       @user.save LIST
 

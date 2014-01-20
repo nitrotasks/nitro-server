@@ -134,7 +134,7 @@ describe 'Sync API', ->
     })
 
     should.equal null, sync.pref_update({
-      id: 's0', sort: false
+      sort: false
     }, {
       sort: now
     })
