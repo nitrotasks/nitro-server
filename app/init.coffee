@@ -13,9 +13,12 @@ DEBUG = global.DEBUG ?= off
 # Enable debug mode if passed as argument
 if '--debug' in process.argv
   DEBUG = on
-  warn 'Running in debug mode!'
 
-config.use if DEBUG then 'development' else 'production'
+if DEBUG
+  warn 'Running in debug mode!'
+  config.use 'development'
+else
+  config.use 'production'
 
 connect.init()
 
