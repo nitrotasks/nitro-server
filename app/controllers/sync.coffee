@@ -130,6 +130,10 @@ class Sync
       for attr, time of timestamps
         old = @time.get TASK, id, attr
         if old > time
+          log '[task] [update] old prop', attr,
+            time: time
+            old: old
+            diff: old - time
           delete timestamps[attr]
           delete changes[attr]
       if Object.keys(changes).length is 0

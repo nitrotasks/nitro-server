@@ -94,19 +94,21 @@ define 'TaskEvent', 'array',
   keys:
     0: 'number'
     1: 'Task'
+  required: [0,1,2]
 
 define 'ListEvent', 'array',
   inherit: 'QueueEvent'
   keys:
     0: 'number'
     1: 'List'
+  required: [0,1,2]
 
 define 'PrefEvent', 'array',
   inherit: 'QueueEvent'
   keys:
     0: 'number'
     1: 'Pref'
-
+  required: [0,1,2]
 
 
 define 'TaskQueue', 'object',
@@ -138,14 +140,14 @@ defineFn 'task_fetch', 'function'
 defineFn 'list_fetch', 'function'
 defineFn 'pref_fetch', 'function'
 
-defineFn 'task_create', 'CreateTask', 'number', 'function'
-defineFn 'list_create', 'CreateList', 'number', 'function'
+defineFn 'task_create', 'CreateTask', 'function'
+defineFn 'list_create', 'CreateList', 'function'
 
-defineFn 'task_update', 'UpdateTask', 'Timestamps', '~function'
-defineFn 'list_update', 'UpdateList', 'Timestamps', '~function'
-defineFn 'pref_update', 'Pref', 'Timestamps', '~function'
+defineFn 'task_update', 'UpdateTask', '~function'
+defineFn 'list_update', 'UpdateList', '~function'
+defineFn 'pref_update', 'Pref', '~function'
 
-defineFn 'task_destroy', 'DestroyTask', 'number', '~function'
-defineFn 'list_destroy', 'DestroyList', 'number', '~function'
+defineFn 'task_destroy', 'DestroyTask', '~function'
+defineFn 'list_destroy', 'DestroyList', '~function'
 
 defineFn 'queue_sync', 'Queue', 'function'

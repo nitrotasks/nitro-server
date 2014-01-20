@@ -284,11 +284,11 @@ class UserSocket extends Socket
    * Model Create
    *
    * - model (object)
-   * - time (number)
    * - fn (function)
+   * - [time] (number)
   ###
 
-  task_create: (model, time, fn) =>
+  task_create: (model, fn, time) =>
     id = @sync.task_create(model, time)
     if id isnt null
       @broadcast 'task.create', model
@@ -297,7 +297,7 @@ class UserSocket extends Socket
       if fn then fn(true)
     return id
 
-  list_create: (model, time, fn) =>
+  list_create: (model, fn, time) =>
     id = @sync.list_create(model, time)
     if id isnt null
       @broadcast 'list.create', model
@@ -311,11 +311,10 @@ class UserSocket extends Socket
    * Model Update
    *
    * - model (object)
-   * - time (object)
    * - [fn] (function)
   ###
 
-  task_update: (model, time, fn) =>
+  task_update: (model, fn, time) =>
     model = @sync.task_update(model, time)
     if model
       @broadcast 'task.update', model
@@ -323,7 +322,7 @@ class UserSocket extends Socket
     else
       if fn then fn(true)
 
-  list_update: (model, time, fn) =>
+  list_update: (model, fn, time) =>
     model = @sync.list_update(model, time)
     if model
       @broadcast 'list.update', model
@@ -331,7 +330,7 @@ class UserSocket extends Socket
     else
       if fn then fn(true)
 
-  pref_update: (model, time, fn) =>
+  pref_update: (model, fn, time) =>
     model = @sync.pref_update(model, time)
     if model
       @broadcast 'pref.update', model
@@ -344,11 +343,10 @@ class UserSocket extends Socket
    * Model Destroy
    *
    * - model (object)
-   * - time (number)
    * - [fn] (function)
   ###
 
-  task_destroy: (model, time, fn) =>
+  task_destroy: (model, fn, time) =>
     id = model.id
     if @sync.task_destroy(id, time)
       @broadcast 'task.destroy', id: id
@@ -356,7 +354,7 @@ class UserSocket extends Socket
     else
       if fn then fn(true)
 
-  list_destroy: (model, time, fn) =>
+  list_destroy: (model, fn, time) =>
     id = model.id
     if @sync.list_destroy(id, time)
       @broadcast 'list.destroy', id: id
@@ -391,14 +389,14 @@ class UserSocket extends Socket
                 tasks.splice(i, 1)
 
             list.id = id
-            lists[id] = @list_create list, time
+            lists[id] = @list_create(list, null, time)
 
           when UPDATE
             list.id = id
-            @list_update list, time
+            @list_update(list, null, time)
 
           when DESTROY
-            @list_destroy list, time
+            @list_destroy(list, null, time)
 
     # TASKS
 
@@ -410,16 +408,16 @@ class UserSocket extends Socket
             task.id = id
             if lists[task.listId]
               task.listId = lists[task.listId]
-            @task_create task, time
+            @task_create(task, null, time)
 
           when UPDATE
             task.id = id
             if task.listId? and lists[task.listId]
               task.listId = lists[task.listId]
-            @task_update task, time
+            @task_update(task, null, time)
 
           when DESTROY
-            @task_destroy task, time
+            @task_destroy(task, null, time)
 
     # PREFS
 
@@ -428,7 +426,7 @@ class UserSocket extends Socket
         switch event
 
           when UPDATE
-            @pref_update pref, time
+            @pref_update(pref, null, time)
 
 
     # CALLBACK

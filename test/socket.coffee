@@ -159,14 +159,12 @@ describe '[Socket]', ->
       testBroadcast = (done, fn) ->
 
         client.socket = null
-        client.no_ts = true
         client.callback = false
 
         message = fn()
 
 
         client.socket = socket
-        client.no_ts = false
         client.callback = true
 
         other.on 'message', (text) ->
@@ -290,17 +288,19 @@ describe '[Socket]', ->
 
       it 'create lists and tasks simultaneously', (done) ->
 
+        now = Date.now()
+
         input =
 
           list:
-            c20: [CREATE, {name: 'list 1', tasks: ['c12', 'c13']}]
-            c33: [CREATE, {name: 'list 2', tasks: ['c14', 'c15']}]
+            c20: [CREATE, {name: 'list 1', tasks: ['c12', 'c13']}, now]
+            c33: [CREATE, {name: 'list 2', tasks: ['c14', 'c15']}, now]
 
           task:
-            c12: [CREATE, {name: 'task 1', listId: 'c20'}]
-            c13: [CREATE, {name: 'task 2', listId: 'c20'}]
-            c14: [CREATE, {name: 'task 3', listId: 'c33'}]
-            c15: [CREATE, {name: 'task 4', listId: 'c33'}]
+            c12: [CREATE, {name: 'task 1', listId: 'c20'}, now]
+            c13: [CREATE, {name: 'task 2', listId: 'c20'}, now]
+            c14: [CREATE, {name: 'task 3', listId: 'c33'}, now]
+            c15: [CREATE, {name: 'task 4', listId: 'c33'}, now]
 
         output =
 
@@ -338,6 +338,8 @@ describe '[Socket]', ->
 
       it 'update existing items', (done) ->
 
+        now = Date.now() + 10
+
         client.list.create id: 'c0', name: 'List 1', tasks: []
         client.task.create id: 'c1', name: 'Task 1', listId: 's0'
         client.task.create id: 'c2', name: 'Task 2', listId: 's0'
@@ -346,13 +348,21 @@ describe '[Socket]', ->
         input =
 
           task:
-            s0: [UPDATE, {name: 'Task 1 - Updated', listId: 'c1'}]
-            s1: [UPDATE, {name: 'Task 2 - Updated'}]
-            s2: [UPDATE, {name: 'Task 3 - Updated', listId: 'c1'}]
+            s0: [ UPDATE,
+              { name: 'Task 1 - Updated', listId: 'c1' },
+              { name: now, listId: now }]
+            s1: [ UPDATE,
+              { name: 'Task 2 - Updated' },
+              { name: now }]
+            s2: [ UPDATE,
+              { name: 'Task 3 - Updated', listId: 'c1' },
+              { name: now, listId: now }]
 
           list:
-            s0: [UPDATE, {name: 'List 1 - Updated'}]
-            c1: [CREATE, {name: 'List 2'}]
+            s0: [ UPDATE,
+              { name: 'List 1 - Updated' },
+              { name: now }]
+            c1: [CREATE, {name: 'List 2'}, now]
 
 
         output =
@@ -386,6 +396,8 @@ describe '[Socket]', ->
 
       it 'destroy existing tasks', (done) ->
 
+        now = Date.now() + 10
+
         client.list.create id: 'c0', name: 'List 1', tasks: []
         client.task.create id: 'c1', name: 'Task 1', listId: 's0'
         client.task.create id: 'c2', name: 'Task 2', listId: 's0'
@@ -394,14 +406,14 @@ describe '[Socket]', ->
         input =
 
           task:
-            s0: [DESTROY, {id: 's0'}]
-            s1: [DESTROY, {id: 's1'}]
-            s2: [DESTROY, {id: 's2'}]
-            c1: [CREATE, {name: 'Task 4', listId: 'c1'}]
+            s0: [DESTROY, {id: 's0'}, now]
+            s1: [DESTROY, {id: 's1'}, now]
+            s2: [DESTROY, {id: 's2'}, now]
+            c1: [CREATE, {name: 'Task 4', listId: 'c1'}, now]
 
           list:
-            s0: [UPDATE, {name: 'List 1 - Updated'}]
-            c1: [CREATE, {name: 'List 2', tasks: []}]
+            s0: [UPDATE, {name: 'List 1 - Updated'}, {name: now}]
+            c1: [CREATE, {name: 'List 2', tasks: []}, now]
 
         output =
 
