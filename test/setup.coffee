@@ -27,7 +27,6 @@ module.exports = (done) ->
 
   promise
     .then ->
-      connect.redis.flushdb()
       database.deleteAll 'user'
     .then ->
       done()

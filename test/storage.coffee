@@ -2,7 +2,6 @@ Q        = require 'kew'
 should   = require 'should'
 setup    = require './setup'
 Storage  = require '../app/controllers/storage'
-redis    = require '../app/controllers/redis'
 
 users = [
   {name: 'stayradiated',  email: 'george@czabania.com',   password: 'abc'}
@@ -132,38 +131,6 @@ describe 'Storage API >', ->
           done()
         .fail(log)
 
-# -----------------------------------------------------------------------------
-# Change Email Address
-# -----------------------------------------------------------------------------
-
-  do ->
-
-    user = oldEmail = null
-
-    it 'changing', (done) ->
-
-      user = users[1]
-      oldEmail = user.email
-      user.email = 'example@mail.com'
-
-      Storage.replaceEmail(user.id, oldEmail, user.email)
-        .then ->
-          done()
-        .fail(log)
-
-    it 'check old email has been removed', (done) ->
-      Storage.getByEmail(oldEmail)
-        .fail (err) ->
-          err.should.equal 'err_no_user'
-          done()
-
-    it 'check new email has been added', (done) ->
-      Storage.getByEmail(user.email)
-        .then (_user) ->
-          _user.name.should.equal user.name
-          done()
-        .fail(log)
-
 
 # -----------------------------------------------------------------------------
 # User Data
@@ -280,7 +247,8 @@ describe 'Storage API >', ->
 
       Storage.register(token, user.name, user.email, user.password)
         .then (_token) ->
-          token.should.equal token
+          _token.match(/\d+_(\d+)/)[1].should.equal token
+          token = _token
           done()
         .fail(log)
 
@@ -300,3 +268,4 @@ describe 'Storage API >', ->
         .fail (err) ->
           err.should.equal 'err_bad_token'
           done()
+###

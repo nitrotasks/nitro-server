@@ -14,123 +14,132 @@ describe 'Auth API', ->
     name: 'Mr. Nitro'
     password: 'password'
 
-  token = null
 
 # -----------------------------------------------------------------------------
 # Crypto
 # -----------------------------------------------------------------------------
 
-  it 'should hash some data', (done) ->
+  describe 'Crypto', ->
 
-    string = JSON.stringify data
+    it 'should hash some data', (done) ->
 
-    Auth.hash(string)
-      .then (hash) ->
-        Auth.compare(string, hash)
-      .then (same) ->
-        same.should.be.true
-        done()
-      .fail(log)
+      string = JSON.stringify data
+
+      Auth.hash(string)
+        .then (hash) ->
+          Auth.compare(string, hash)
+        .then (same) ->
+          same.should.be.true
+          done()
+        .fail(log)
 
 
-  it 'should compare correctly', (done) ->
+    it 'should compare correctly', (done) ->
 
-    real = 'hamburger'
-    fake = 'Hamburger'
+      real = 'hamburger'
+      fake = 'Hamburger'
 
-    Auth.hash(real)
-      .then (hash) ->
-        Auth.compare fake, hash
-      .then (same) ->
-        same.should.be.false
-        done()
-      .fail(log)
+      Auth.hash(real)
+        .then (hash) ->
+          Auth.compare fake, hash
+        .then (same) ->
+          same.should.be.false
+          done()
+        .fail(log)
 
-  it 'should generate random bytes', (done) ->
+    it 'should generate random bytes', (done) ->
 
-    size = 30
+      size = 30
 
-    Auth.randomBytes(size)
-      .then (bytes) ->
-        bytes.length.should.equal size
-        done()
-      .fail(log)
+      Auth.randomBytes(size)
+        .then (bytes) ->
+          bytes.length.should.equal size
+          done()
+        .fail(log)
 
 
 # -----------------------------------------------------------------------------
 # Registration
 # -----------------------------------------------------------------------------
 
-  it 'should be able to register a user', (done) ->
+  describe 'Registration', ->
 
-    Auth.register(data.name, data.email, data.password)
-      .then (_token) ->
-        token = _token
-        token.should.be.type 'string'
-        token.should.have.length 22
-        done()
-      .fail(log)
+    token = null
+
+    it 'should be able to register a user', (done) ->
+
+      Auth.register(data.name, data.email, data.password)
+        .then (_token) ->
+          token = _token
+          token.should.be.type 'string'
+          token.should.match(/^\d+_\w+$/)
+          done()
+        .fail(log)
 
 
-  it 'should verify the registration', (done) ->
+    it 'should verify the registration', (done) ->
 
-    Auth.verifyRegistration(token)
-      .then (user) ->
-        data.name.should.equal user.name
-        data.email.should.equal user.email
-        data.password.should.not.equal user.password
-        done()
-      .fail(log)
+      Auth.verifyRegistration(token)
+        .then (user) ->
+          data.name.should.equal user.name
+          data.email.should.equal user.email
+          data.password.should.not.equal user.password
+          done()
+        .fail(log)
 
 
 # -----------------------------------------------------------------------------
 # Login
 # -----------------------------------------------------------------------------
 
-  it 'Login with real password', (done) ->
+  describe 'Login', ->
 
-    Auth.login(data.email, data.password).then (info) ->
-      [uid, token] = info
-      uid.should.be.type 'number'
-      token.should.have.length 64
-      done()
-    .fail (log)
+    it 'Login with real password', (done) ->
 
-  it 'Login with wrong password', (done) ->
+      Auth.login(data.email, data.password).then (info) ->
+        [uid, token] = info
+        uid.should.be.type 'number'
+        token.should.have.length 64
+        done()
+      .fail (log)
 
-    Auth.login(data.email, 'hunter2').fail -> done()
+    it 'Login with wrong password', (done) ->
+
+      Auth.login(data.email, 'hunter2').fail -> done()
 
 
 # -----------------------------------------------------------------------------
 # Tokens
 # -----------------------------------------------------------------------------
 
-  it 'should generate a random token', (done) ->
+  describe 'Tokens', ->
 
-    Q.all([
-      Auth.createToken 12
-      Auth.createToken 15
-      Auth.createToken 20
-      Auth.createToken 50
-      Auth.createToken 64
-    ])
-    .then ([t12, t15, t20, t50, t64]) ->
-      t12.should.have.length 12
-      t15.should.have.length 15
-      t20.should.have.length 20
-      t50.should.have.length 50
-      t64.should.have.length 64
-      done()
-    .fail(log)
+    it 'should generate a random token', (done) ->
+
+      Q.all([
+        Auth.createToken 12
+        Auth.createToken 15
+        Auth.createToken 20
+        Auth.createToken 50
+        Auth.createToken 64
+      ])
+      .then ([t12, t15, t20, t50, t64]) ->
+        t12.should.have.length 12
+        t15.should.have.length 15
+        t20.should.have.length 20
+        t50.should.have.length 50
+        t64.should.have.length 64
+        done()
+      .fail(log)
 
 
-  it 'should add a reset token for a user', (done) ->
+    it 'should add a reset token for a user', (done) ->
 
-    Auth.createResetToken(data.email)
-    .then (token) ->
-      token.should.have.length 22
-      done()
-    .fail(log)
+      Auth.createResetToken(data.email)
+      .then (token) ->
+        token.should.match(/^\d+_\w+$/)
+        done()
+      .fail(log)
 
 
 

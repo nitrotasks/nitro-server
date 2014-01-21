@@ -3,12 +3,10 @@
 ## Requirements ##
 - Node.js and NPM
 - Coffeescript
-- Redis Server
 - MySQL Server
 
 ## To install and run ##
 - `npm install` to install the dependencies
-- `redis-server` to start Redis
 - `coffee app/init.coffee` to run the app
 
 ## To start in debug mode ##
@@ -29,14 +27,7 @@
 
 ## Storage
 
-We use Redis and MySQL to store the Nitro Sync data.
-
-Data stored on Redis includes
-
-- Authentication tokens
-- Password reset tokens
-- User ID lookup tables (to quickly get a users ID from their email address)
-- Task and list counts
+All data is stored in a MySQL database
 
 Data stored on MySQL includes
 
@@ -50,6 +41,9 @@ Data stored on MySQL includes
     - Task and list timestamps (for merging data)
     - Creation timestamp of user account
     - Timestamp of last change to user account
+- Login Tokens
+- Registration Tokens
+- Password Reset Tokens
 
 ## Websockets
 

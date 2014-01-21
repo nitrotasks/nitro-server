@@ -1,6 +1,5 @@
 Q         = require 'kew'
 dbase     = require '../controllers/database'
-redis     = require '../controllers/redis'
 Log       = require '../utils/log'
 
 log = Log 'Storage', 'green'
@@ -52,13 +51,13 @@ Storage =
   register: (token, name, email, password) ->
     @emailExists(email).then (exists) ->
       if exists then throw ERR_OLD_EMAIL
-      key = "register:#{ token }"
-      redis.hmset key,
+      dbase.register.add
+        token: token
         name: name
         email: email
         password: password
-      redis.expire key, 172800 # 48 hours
-      return token
+      # redis.expire key, 172800 # 48 hours
+      # return token
 
 
   ###
@@ -73,10 +72,9 @@ Storage =
   ###
 
   getRegistration: (token) ->
-    key = 'register:' + token
-    redis.hgetall(key).then (data) ->
+    dbase.register.get(token).then (data) ->
       throw ERR_BAD_TOKEN unless data?
-      redis.del key
+      dbase.register.remove(data.id)
       return data
 
 
@@ -85,12 +83,11 @@ Storage =
    * It will then return a new instance of the user
    *
    * - user (object) : { name, email, password }
-   * - service (string) : what service to store them under
    * > User
   ###
 
   # Add user to database and return user as instance
-  add: (user, service='native') ->
+  add: (user) ->
     @emailExists(user.email).then (exists) =>
       if exists then throw ERR_OLD_EMAIL
 
@@ -102,8 +99,6 @@ Storage =
         .fail ->
           log 'Error writing user to database!'
         .then (id) =>
-          log 'Adding email to redis', id
-          redis.hset 'users:' + service, user.email, id
           @get id
 
 
@@ -133,30 +128,25 @@ Storage =
    * Get a user by their email address
    *
    * - email (string)
-   * - [service] (string)
    * > user
   ###
 
-  getByEmail: (email, service='native') ->
-    key = 'users:' + service
-    redis.hget(key, email).then (id) =>
-      throw ERR_NO_USER if id is null
-      return @get id
-
+  getByEmail: (email) ->
+    dbase.user.find(email)
+      .then (id) =>
+        @get id
+      .fail ->
+        throw ERR_NO_USER
 
   ###
    * Check if an email address exists in the system
    *
    * - email (string)
-   * - [service] (string)
    * > boolean
   ###
 
-  emailExists: (email, service='native') ->
-    key = 'users:' + service
-    redis.hexists(key, email).then (exists) ->
-      return exists isnt 0
-
+  emailExists: (email) ->
+    dbase.user.check(email)
 
   ###
    * Completely remove a user from the system
@@ -164,21 +154,16 @@ Storage =
    * it to the database, right before we instantly delete it.
    *
    * - id (int) : the user id
-   * - [service] (string)
   ###
 
-  remove: (id, service='native') ->
+  remove: (id) ->
     log "Removing user #{ id }"
     @get(id).then (user) =>
       return unless user
       email = user.email
       @records[id].release()
       delete @records[id]
-      key = 'users:' + service
-      Q.all [
-        redis.hdel key, user.email
-        dbase.user.delete id
-      ]
+      dbase.user.delete id
 
 
   ###
@@ -239,8 +224,7 @@ Storage =
   ###
 
   checkLoginToken: (id, token) ->
-    dbase.login.exists(id, token).then (row) ->
-      return !! row.length
+    dbase.login.exists(id, token)
 
 
   ###
@@ -261,9 +245,7 @@ Storage =
   ###
 
   removeAllLoginTokens: (id) ->
-    key = 'token:' + id + ':*'
-    redis.keys(key).then (keys) ->
-      redis.del token for token in keys
+    dbase.login.removeAll(id)
 
 
   ###
@@ -272,13 +254,12 @@ Storage =
    *
    * - id (int) : the user id
    * - token (string) : the reset token
-   * > token
+   * > database reset token
   ###
 
   addResetToken: (id, token) ->
-    key = 'forgot:' + token
-    redis.setex(key, 86400, id).then ->
-      return token
+    dbase.reset.add(id, token)
+    # redis.setex(key, 86400, id).then ->
 
 
   ###
@@ -289,11 +270,8 @@ Storage =
   ###
 
   checkResetToken: (token) ->
-    key = 'forgot:' + token
-    redis.get(key).then (id) ->
-      if id is null then throw ERR_BAD_TOKEN
-      return id
-
+    dbase.reset.get(token).fail ->
+      throw ERR_BAD_TOKEN
 
   ###
    * Remove a reset token
@@ -302,26 +280,6 @@ Storage =
   ###
 
   removeResetToken: (token) ->
-    key = 'forgot:' + token
-    redis.del key
-
-
-  ###
-   * Replace an email with another one
-   * Used when a user changes their email address
-   *
-   * - id (int)
-   * - oldEmail (string)
-   * - newEmail (string)
-   * - [service] (string)
-  ###
-
-  replaceEmail: (id, oldEmail, newEmail, service='native') ->
-    key = 'users:' + service
-    Q.all [
-      redis.hdel key, oldEmail
-      redis.hset key, newEmail, id
-    ]
-
+    dbase.reset.remove(token)
 
 module.exports = Storage
