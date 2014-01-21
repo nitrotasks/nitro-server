@@ -28,6 +28,8 @@ module.exports = (done) ->
   promise
     .then ->
       connect.redis.flushdb()
-      database.truncate 'users'
+      database.deleteAll 'user'
     .then ->
       done()
+    .fail (err) ->
+      console.log 'Error: Setup', err

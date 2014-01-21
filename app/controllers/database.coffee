@@ -32,9 +32,11 @@ connected = connect.ready.then ->
 # Initialise Nitro database
 setup = ->
 
-  # Create 'users' table
-  query """
-    CREATE TABLE IF NOT EXISTS `users` (
+  log = console.log.bind(console)
+
+  # Create 'user' table
+  query("""
+    CREATE TABLE IF NOT EXISTS `user` (
      `id`            int(11)        NOT NULL    AUTO_INCREMENT,
      `name`          varchar(100)   NOT NULL,
      `email`         varchar(100)   NOT NULL,
@@ -49,8 +51,40 @@ setup = ->
      `created_at`    timestamp      NOT NULL    DEFAULT '0000-00-00 00:00:00',
      `updated_at`    timestamp      NOT NULL    DEFAULT CURRENT_TIMESTAMP       ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-  """
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+  """).fail(log)
+
+  query("""
+    CREATE TABLE IF NOT EXISTS `user_register` (
+     `id`         int(11)      NOT NULL  AUTO_INCREMENT,
+     `name`       varchar(100) NOT NULL,
+     `email`      varchar(100) NOT NULL,
+     `password`   char(60)     NOT NULL,
+     `token`      char(22)     NOT NULL,
+     `created_at` timestamp    NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+  """).fail(log)
+
+  query("""
+    CREATE TABLE IF NOT EXISTS `user_login` (
+     `user_id`    int(11)   NOT NULL,
+     `token`      char(64)  NOT NULL,
+     `created_at` timestamp NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`user_id`, `token`),
+      FOREIGN KEY (`user_id`) REFERENCES user(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  """).fail(log)
+
+  query("""
+    CREATE TABLE IF NOT EXISTS `user_reset` (
+     `user_id`    int(11)      NOT NULL,
+     `token`      char(22)     NOT NULL,
+     `created_at` timestamp    NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`user_id`, `token`),
+      FOREIGN KEY (`user_id`) REFERENCES user(`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+  """).fail(log)
 
 close = ->
   db.end()
@@ -92,7 +126,7 @@ write_user = (user, attrs) ->
         data[property] = user[property]
 
   # Write to database
-  sql = 'INSERT INTO users SET ? ON DUPLICATE KEY UPDATE ?'
+  sql = 'INSERT INTO user SET ? ON DUPLICATE KEY UPDATE ?'
   query(sql, [data, data]).then (result) ->
     id = result.insertId
     log "Wrote user #{ id }"
@@ -104,7 +138,7 @@ read_user = (uid) ->
 
   log "Fetching user #{uid}"
 
-  query('SELECT * FROM users WHERE id=?', uid).then (result) ->
+  query('SELECT * FROM user WHERE id=?', uid).then (result) ->
 
     if result.length is 0
       throw Error
@@ -120,16 +154,42 @@ read_user = (uid) ->
 
 # Get all users
 all_users = ->
-  query 'SELECT id, name, email FROM users'
+  query 'SELECT id, name, email FROM user'
 
 # Delete user data
 del_user = (uid) ->
-  query('DELETE FROM users WHERE id = ?', uid).then ->
+  query('DELETE FROM user WHERE id = ?', uid).then ->
     log 'Deleted user', uid
 
+deleteAll = (table) ->
+  query "DELETE FROM #{ table }"
 
-truncate = (table) ->
-  query "TRUNCATE #{ table }"
+
+# -----------------------------------------------------------------------------
+# Login Tokens
+# -----------------------------------------------------------------------------
+
+login_add = (user, token) ->
+  query 'INSERT INTO user_login SET ?',
+    user_id: user,
+    token: token
+
+login_exists = (user, token) ->
+  query 'SELECT * FROM user_login WHERE user_id=? AND token=?', [user, token]
+
+login_expire = ->
+  date = Date.now() - 1209600 # 60 * 60 * 24 * 14
+  query 'DELETE FROM user_login WHERE created_at < ?', date
+
+login_remove = (user, token) ->
+  query 'DELETE FROM user_login WHERE user_id=? AND token=?', [user, token]
+
+register_add = ->
+register_remove  = ->
+
+reset_add  = ->
+reset_remove  = ->
+
 
 # Remove user
 # Update user details
@@ -139,9 +199,21 @@ module.exports =
   connected: connected
   close: close
   query: query
-  truncate: truncate
+  deleteAll: deleteAll
   user:
     all: all_users
     write: write_user
     read: read_user
     delete: del_user
+  login:
+    add: login_add
+    exists: login_exists
+    expire: login_expire
+    remove: login_remove
+  register:
+    add: register_add
+    remove: register_remove
+  reset:
+    add: reset_add
+    remove: reset_remove
+

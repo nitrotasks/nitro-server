@@ -226,8 +226,7 @@ Storage =
   ###
 
   addLoginToken: (id, token) ->
-    key = 'token:' + id + ':' + token
-    redis.setex(key, 1209600, Date.now()).then ->
+    dbase.login.add(id, token).then ->
       return token
 
 
@@ -240,9 +239,8 @@ Storage =
   ###
 
   checkLoginToken: (id, token) ->
-    key = 'token:' + id + ':' + token
-    redis.exists(key).then (exists) ->
-      return exists isnt 0
+    dbase.login.exists(id, token).then (row) ->
+      return !! row.length
 
 
   ###
@@ -253,8 +251,7 @@ Storage =
   ###
 
   removeLoginToken: (id, token) ->
-    key = 'token:' + id + ':' + token
-    redis.del key
+    dbase.login.remove(id, token)
 
 
   ###

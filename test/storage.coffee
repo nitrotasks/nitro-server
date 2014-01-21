@@ -99,31 +99,38 @@ describe 'Storage API >', ->
 
   do ->
 
-    id = 200
+    user = users[0]
     token = 'hogwarts'
 
     it 'add', (done) ->
-      Storage.addLoginToken(id, token)
+      console.log 'user.id', user.id
+      Storage.addLoginToken(user.id, token)
         .then ->
           done()
         .fail(log)
 
     it 'check exists', (done) ->
-      Storage.checkLoginToken(id, token)
+      Storage.checkLoginToken(user.id, token)
         .then (exists) ->
           exists.should.be.true
           done()
         .fail(log)
 
-    it 'remove', (done) ->
-      Storage.removeLoginToken(id, token)
-        .then ->
-          Storage.checkLoginToken(id, token)
+    it 'check does not exist', (done) ->
+      Storage.checkLoginToken(user.id, token + 'x')
         .then (exists) ->
           exists.should.be.false
           done()
         .fail(log)
 
+    it 'remove', (done) ->
+      Storage.removeLoginToken(user.id, token)
+        .then ->
+          Storage.checkLoginToken(user.id, token)
+        .then (exists) ->
+          exists.should.be.false
+          done()
+        .fail(log)
 
 # -----------------------------------------------------------------------------
 # Change Email Address
@@ -293,4 +300,3 @@ describe 'Storage API >', ->
         .fail (err) ->
           err.should.equal 'err_bad_token'
           done()
-###
