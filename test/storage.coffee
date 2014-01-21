@@ -20,83 +20,89 @@ describe 'Storage API >', ->
 # Adding Users
 # -----------------------------------------------------------------------------
 
-  it 'should be able to add users', (done) ->
-    users.forEach (user, i, array) ->
-      Storage.add(user)
-        .then (data) ->
-          data.name.should.equal       user.name
-          data.email.should.equal      user.email
-          data.password.should.equal   user.password
-          if i is array.length - 1 then done()
-        .fail(log)
+  describe 'Add Users', ->
 
-  it 'should not allow duplicate email addresses', (done) ->
-    users.forEach (user, i, array) ->
-      Storage.add(user).fail (err) ->
-        err.should.equal 'err_old_email'
-        if i is array.length - 1 then done()
+    it 'should be able to add users', (done) ->
+      users.forEach (user, i, array) ->
+        Storage.add(user)
+          .then (data) ->
+            data.name.should.equal       user.name
+            data.email.should.equal      user.email
+            data.password.should.equal   user.password
+            if i is array.length - 1 then done()
+          .fail(log)
+
+    it 'should not allow duplicate email addresses', (done) ->
+      users.forEach (user, i, array) ->
+        Storage.add(user).fail (err) ->
+          err.should.equal 'err_old_email'
+          if i is array.length - 1 then done()
 
 
 # -----------------------------------------------------------------------------
 # Checking Existing Users
 # -----------------------------------------------------------------------------
 
-  it 'emailExists should return false if an email doesn\'t exist', (done) ->
+  describe 'Check Existing Users', ->
 
-    Storage.emailExists('joe@smith.com')
-      .then (exists) ->
-        exists.should.be.false
-        done()
-      .fail(log)
+    it 'emailExists should return false if an email doesn\'t exist', (done) ->
 
-  it 'emailExists should return true if an email exists', (done) ->
+      Storage.emailExists('joe@smith.com')
+        .then (exists) ->
+          exists.should.be.false
+          done()
+        .fail(log)
 
-    users.forEach (user, i, array) ->
-      Storage.emailExists(user.email).then (exists) ->
-        exists.should.be.true
-        if i is array.length - 1 then done()
+    it 'emailExists should return true if an email exists', (done) ->
+
+      users.forEach (user, i, array) ->
+        Storage.emailExists(user.email).then (exists) ->
+          exists.should.be.true
+          if i is array.length - 1 then done()
 
 
 # -----------------------------------------------------------------------------
 # Retrieve Users
 # -----------------------------------------------------------------------------
 
-  it 'should get users by email', (done) ->
+  describe 'Retrieve Users', ->
 
-    users.forEach (user, i, array) ->
-      Storage.getByEmail(user.email)
+    it 'should get users by email', (done) ->
+
+      users.forEach (user, i, array) ->
+        Storage.getByEmail(user.email)
+          .then (data) ->
+            user.email.should.equal data.email
+            # Save user ID so we can use it future tests
+            users[i].id = data.id
+            if i is array.length - 1 then done()
+          .fail(log)
+
+    it 'should fail if you try and get a non-existant user by email', (done) ->
+
+      Storage.getByEmail('john@example.com')
         .then (data) ->
-          user.email.should.equal data.email
-          # Save user ID so we can use it future tests
-          users[i].id = data.id
-          if i is array.length - 1 then done()
-        .fail(log)
+          console.log data
+        .fail (err) ->
+          done()
 
-  it 'should fail if you try and get a non-existant user by email', (done) ->
+    it 'should get users by id', (done) ->
 
-    Storage.getByEmail('john@example.com')
-      .then (data) ->
-        console.log data
-      .fail (err) ->
-        done()
-
-  it 'should get users by id', (done) ->
-
-    users.forEach (user, i, array) ->
-      Storage.get(user.id)
-        .then (_user) ->
-          user.name.should.equal          _user.name
-          user.email.should.equal         _user.email
-          user.password.should.equal  _user.password
-          if i is array.length - 1 then done()
-        .fail(log)
+      users.forEach (user, i, array) ->
+        Storage.get(user.id)
+          .then (_user) ->
+            user.name.should.equal          _user.name
+            user.email.should.equal         _user.email
+            user.password.should.equal  _user.password
+            if i is array.length - 1 then done()
+          .fail(log)
 
 
 # -----------------------------------------------------------------------------
 # Login Tokens
 # -----------------------------------------------------------------------------
 
-  do ->
+  describe 'Login Tokens', ->
 
     user = users[0]
     token = 'hogwarts'
@@ -131,12 +137,54 @@ describe 'Storage API >', ->
           done()
         .fail(log)
 
+# -----------------------------------------------------------------------------
+# Reset Password
+# -----------------------------------------------------------------------------
+
+  describe 'Reset Password', ->
+
+    user = users[0]
+    token = 'a1b2c3d4e5'
+
+    it 'create reset token', (done) ->
+      Storage.addResetToken(user.id, token).then (_token) ->
+        token = _token
+        token.should.match(/^\d+_\w+$/)
+        done()
+
+    it 'should check if a reset token exists', (done) ->
+      Storage.checkResetToken(token).then (_id) ->
+        user.id.should.equal _id
+        done()
+
+    it 'should fail if reset token does not exist', (done) ->
+      Storage.checkResetToken('12_abcd').fail (err) ->
+        err.should.equal 'err_bad_token'
+        done()
+
+    it 'should fail if reset token is corrupt', (done) ->
+      Storage.checkResetToken('random').fail (err) ->
+        err.should.equal 'err_bad_token'
+        done()
+
+    it 'should remove reset token', (done) ->
+      Storage.removeResetToken(token).then ->
+        done()
+
+    it 'should not care if reset token does not exist', (done) ->
+      Storage.removeResetToken('12_abcd').then ->
+        done()
+
+    it 'should fail if reset token is not correct', (done) ->
+      Storage.removeResetToken('random').fail ->
+        done()
+
 
 # -----------------------------------------------------------------------------
 # User Data
 # -----------------------------------------------------------------------------
 
-  do ->
+  describe 'User Data', ->
 
     tasks =
       '1':
@@ -199,42 +247,46 @@ describe 'Storage API >', ->
 # Releasing Users
 # -----------------------------------------------------------------------------
 
-  it 'should be able to release users from JS memory', (done) ->
+  describe 'Releasing Users', ->
 
-    user = users[2]
-    length = Object.keys(Storage.records).length
+    it 'should be able to release users from JS memory', (done) ->
 
-    Storage.records[user.id].should.not.equal undefined
+      user = users[2]
+      length = Object.keys(Storage.records).length
 
-    Storage.release(user.id).then ->
+      Storage.records[user.id].should.not.equal undefined
 
-      should.strictEqual Storage.records[user.id], undefined
-      Object.keys(Storage.records).should.have.length --length
-      done()
+      Storage.release(user.id).then ->
+
+        should.strictEqual Storage.records[user.id], undefined
+        Object.keys(Storage.records).should.have.length --length
+        done()
 
 
 # -----------------------------------------------------------------------------
 # Deleting Users
 # -----------------------------------------------------------------------------
 
-  it 'should be able to delete users from disk', (done) ->
+  describe 'Deleting Users', ->
 
-    users.forEach (user, i, array) ->
-      Storage.remove(user.id).then ->
-        if i is array.length - 1 then done()
+    it 'should be able to delete users from disk', (done) ->
 
-  it 'should not be able to find deleted users', (done) ->
+      users.forEach (user, i, array) ->
+        Storage.remove(user.id).then ->
+          if i is array.length - 1 then done()
 
-    users.forEach (user, i, array) ->
-      Storage.get(user.id).fail ->
-        if i is array.length - 1 then done()
+    it 'should not be able to find deleted users', (done) ->
+
+      users.forEach (user, i, array) ->
+        Storage.get(user.id).fail ->
+          if i is array.length - 1 then done()
 
 
 # -----------------------------------------------------------------------------
 # Registration
 # -----------------------------------------------------------------------------
 
-  do ->
+  describe 'Registration', ->
 
     user =
       name: 'George'
@@ -268,4 +320,3 @@ describe 'Storage API >', ->
         .fail (err) ->
           err.should.equal 'err_bad_token'
           done()
-###

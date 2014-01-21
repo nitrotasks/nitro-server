@@ -132,14 +132,24 @@ describe 'Auth API', ->
         done()
       .fail(log)
 
+# -----------------------------------------------------------------------------
+# Reset Password
+# -----------------------------------------------------------------------------
+
+  describe 'Reset Password', ->
 
     it 'should add a reset token for a user', (done) ->
 
       Auth.createResetToken(data.email)
-      .then (token) ->
-        token.should.match(/^\d+_\w+$/)
-        done()
-      .fail(log)
+        .then (token) ->
+          token.should.match(/^\d+_\w+$/)
+          done()
+        .fail(log)
+
+    it 'should fail if email does not exist', (done) ->
+      Auth.createResetToken('gibberish').fail ->
+          done()
+
 
 
 

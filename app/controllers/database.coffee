@@ -197,7 +197,7 @@ login_remove_all = (user) ->
 
 parseToken = (token) ->
   match = token.match(/^(\d+)_(\w+)$/)
-  if not match then return null
+  if match is null then return null
   return [match[1], match[2]]
 
 # -----------------------------------------------------------------------------
@@ -265,7 +265,7 @@ reset_add = (id, token) ->
 
 reset_get = (token) ->
   token = parseToken(token)
-  return Q.reject() unless token
+  return Q.reject(new Error) unless token
 
   sql = 'SELECT user_id FROM user_reset WHERE user_id=? AND token=?'
   query(sql, token).then (rows) ->
@@ -275,7 +275,7 @@ reset_get = (token) ->
 
 reset_remove = (token) ->
   token = parseToken(token)
-  return Q.reject() unless token
+  return Q.reject(new Error) unless token
 
   sql = 'DELETE FROM user_reset WHERE user_id=? AND token=?'
   query(sql, token)
