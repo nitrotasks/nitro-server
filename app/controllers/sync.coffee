@@ -152,7 +152,7 @@ class Sync
 
     # Check model exists on server
     unless @user.checkModel(classname, id)
-      log "[#{ classname }] [update] could not find #{ id }"
+      warn "[#{ classname }] [update] could not find #{ id }"
       return false
 
     return true
@@ -223,7 +223,6 @@ class Sync
     id = changes.id
 
     unless @model_update_setup(TASK, changes, timestamps)
-      warn '[task] [update] could not find', id
       return null
 
     # Check listId
@@ -238,14 +237,12 @@ class Sync
     # Set timestamps
     timestamps = @model_update_timestamps(TASK, id, changes, timestamps)
     unless timestamps
-      warn '[task] [update] timestamps is null'
       return null
 
     @model_update_save(TASK, id, changes, timestamps)
 
     changes.id = id
     return changes
-
 
 
   ###
@@ -261,13 +258,11 @@ class Sync
     id = changes.id
 
     unless @model_update_setup(LIST, changes, timestamps)
-      warn '[list] [update] could not find', id
       return null
 
     # Set timestamps
     timestamps = @model_update_timestamps(LIST, id, changes, timestamps)
     unless timestamps
-      warn '[list] [update] timestamps is null'
       return null
 
     # Handle tasks
@@ -297,7 +292,6 @@ class Sync
 
     timestamps = @model_update_timestamps(PREF, id, changes, timestamps)
     unless timestamps
-      warn '[pref] [updaet] timestamps is null'
       return null
 
     return @model_update_save(PREF, id, changes, timestamps)
@@ -311,64 +305,119 @@ class Sync
   #                                      #
   ########################################
 
+
+  ###
+   * (private) Model Destroy Setup
+   *
+   * Check that model exists, and set the timestamp for it
+   *
+   * - classname (string)
+   * - id (string)
+   * - timestamp (number)
+   * > model
+  ###
+
+  model_destroy_setup: (classname, id) =>
+
+    unless @user.checkModel(classname, id)
+      warn "[#{ classname }] [destroy] could not find #{ id }"
+      return null
+
+    # Get existing model
+    model = @user.findModel(classname, id)
+
+    return model
+
+
+  ###
+   * Model Destroy Timestamp
+   *
+   * Check that the model hasn't been updated after this event
+   *
+   * - classname (string)
+   * - id (string)
+   * - timestamp (number)
+   * > timestamp
+  ###
+
+  model_destroy_timestamp: (classname, id, timestamp) =>
+
+    timestamp ?= Date.now()
+    unless @time.check classname, id, timestamp
+      warn "[#{ classname }] [destroy] updated after delete time: #{ id }"
+      return null
+
+    return timestamp
+
+
+  ###
+   * (private) Model Destroy Save
+   *
+   * Overwrite model with deleted object template and
+   * save deleted timestamp.
+   *
+   * - classname (string)
+   * - id (string)
+   * - timestamp (number)
+   * > true
+  ###
+
+  model_destroy_save: (classname, id, timestamp) =>
+
+    @user.setModel classname, id,
+      id: id
+      deleted: yes
+
+    @time.set(classname, id, 'deleted', timestamp)
+    log "[#{ classname }] [destroy] deleted #{ id }"
+
+    return true
+
+
+  ###
+   * Destroy Task
+   *
+   * - id (string)
+   * - timestamp (number)
+  ###
+
   task_destroy: (id, timestamp) =>
 
-    unless @user.checkModel(TASK, id)
-     log '[task] [destroy] could not find:', id
-     return null
+    model = @model_destroy_setup(TASK, id)
+    return null unless model
 
-    model = @user.findModel TASK, id
-
-    # Check that the model hasn't been updated after this event
-    timestamp ?= Date.now()
-    unless @time.check TASK, id, timestamp
-      return null
+    timestamp = @model_destroy_timestamp(TASK, id, timestamp)
+    return null unless timestamp
 
     # Remove from list
     list = @user.findModel(LIST, model.listId)
     if list.tasks?
       @taskRemove id, list
 
-    # Replace task with deleted template
-    @user.setModel TASK, id,
-      id: id
-      deleted: true
+    return @model_destroy_save(TASK, id, timestamp)
 
-    # Set timestamp
-    @time.set TASK, id, 'deleted', timestamp
-    log '[task] [destroy] deleted', id
 
-    return true
+  ###
+   * Destroy List
+   *
+   * - id (string)
+   * - timestamp (number)
+  ###
 
   list_destroy: (id, timestamp) =>
 
-    console.log 'attempting to destroy list', id
+    model = @model_destroy_setup(LIST, id)
+    return null unless model
 
-    unless @user.checkModel(LIST, id)
-      log '[list] [destroy] could not find:', id
-      return null
-
-    model = @user.findModel(LIST, id)
-
-    # Check that the model hasn't been updated after this event
-    timestamp ?= Date.now()
-    unless @time.check LIST, id, timestamp
-      return null
+    timestamp = @model_destroy_timestamp(LIST, id, timestamp)
+    return null unless timestamp
 
     # Destroy all tasks within that list
     for taskId, i in model.tasks by -1
       @task_destroy taskId, timestamp
 
-    # Replace task with deleted template
-    @user.setModel LIST, id,
-      id: id
-      deleted: yes
+    return @model_destroy_save(LIST, id, timestamp)
 
-    # Set timestamp
-    @time.set LIST, id, 'deleted', timestamp
-    log '[list] [destroy] deleted:', id
-
-    return true
 
 # -----------------------------------------------------------------------------
 # Useful Task Management Methods
