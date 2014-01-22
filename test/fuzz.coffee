@@ -33,12 +33,11 @@ models =
     completed: 'completed'
 
   list:
-    id: 'id'
+    id: 'listId'
     name: 'string'
     tasks: 'ids'
 
   pref:
-    id: 'id'
     sort: 'boolean'
     night: 'string'
     language: 'string'
@@ -58,6 +57,12 @@ random =
 
   id: ->
     random.char('csx') + random.int(0, 100)
+
+  listId: ->
+    if random.int(0, 10) > 6
+      return 'inbox'
+    else
+      return random.id()
 
   ids: ->
     arr = []
@@ -108,26 +113,26 @@ random =
 
   model: (model) ->
     obj = {}
-    for key, value of model when key isnt 'id' and random.boolean()
+    for key, value of model when random.boolean()
       obj[key] = random[value]()
     return obj
 
   fullModel: (model) ->
     obj = {}
-    for key, value of model when key isnt 'id'
+    for key, value of model
       obj[key] = random[value]()
     return obj
 
   task: (event) ->
     model = models.task
     obj = if event is 'create' then random.fullModel(model) else random.model(model)
-    obj.id = random.id()
+    obj.id ?= random.id()
     return obj
 
   list: (event) ->
     model = models.list
     obj = if event is 'create' then random.fullModel(model) else random.model(model)
-    obj.id = random.id()
+    obj.id ?= random.id()
     return obj
 
   pref: ->
