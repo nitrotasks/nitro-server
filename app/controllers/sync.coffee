@@ -58,17 +58,27 @@ class Sync
   ###
    * (private) Create Model
    *
+   * Assigns an id, saves it to the database and
+   * also inits the timestamps.
+   *
    * - classname (string)
-   * - id (string)
    * - model (object)
    * - [timestamp] (number)
+   * > id
   ###
 
   model_create: (classname, model, timestamp) =>
+
+    # Assign a new ID if it hasn't already got one
     id = model.id ?= @createId classname
+
+    # Save to database
     @user.setModel classname, id, model
+
+    # Handle timestamp
     timestamp ?= Date.now()
     @time.set classname, id, '*', timestamp
+
     log "[#{ classname }] [create] created", id
     return id
 
@@ -91,12 +101,12 @@ class Sync
       warn '[task] [create] can not find listId', model.listId
       return null
 
-    # Add the task to the list
-    list = @user.findModel(LIST, model.listId)
-
     id = @model_create(TASK, model, timestamp)
 
+    # Add the task to the list
+    list = @user.findModel(LIST, model.listId)
     @taskAdd id, list
+
     return id
 
 
@@ -115,15 +125,15 @@ class Sync
       if @user.hasModel(LIST, INBOX)
         warn '[list] [create] can not recreate inbox'
         return null
+
+    # Throw away the client id
     else
       delete model.id
 
     # Make sure tasks is empty
     model.tasks = []
 
-    id = @model_create(LIST, model, timestamp)
-
-    return id
+    return @model_create(LIST, model, timestamp)
 
 
   ####################################
@@ -147,6 +157,7 @@ class Sync
 
   model_update_setup: (classname, changes, timestamps) =>
 
+    # Delete id because we don't want to overwrite it
     id = changes.id
     delete changes.id
 
@@ -172,16 +183,20 @@ class Sync
 
   model_update_timestamps: (classname, id, changes, timestamps) ->
 
-    # Set timestamp
     if timestamps
       for attr, time of timestamps
+
+        # Check timestamp is newer than the last timestamp
         old = @time.get classname, id, attr
         if old > time
           delete timestamps[attr]
           delete changes[attr]
+
+      # If we have no events left, exit
       if Object.keys(changes).length is 0
         warn "[#{ classname }] [update] all properties are old"
         return null
+
     else
       timestamps = {}
       now = Date.now()
