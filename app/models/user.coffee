@@ -188,6 +188,13 @@ class User
     return @data(classname)?[id]?
 
   ###
+   * Check if a model exists and that is not deleted
+  ###
+
+  checkModel: (classname, id) =>
+    @hasModel(classname, id) and not @data(classname)[id].deleted
+
+  ###
    * Set attributes for a model
    *
    * - classname (string)

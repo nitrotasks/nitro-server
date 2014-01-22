@@ -7,6 +7,7 @@ global.DEBUG = true
 Q       = require 'kew'
 Socket  = require '../app/controllers/socket'
 Auth    = require '../app/controllers/auth'
+Storage = require '../app/controllers/storage'
 should  = require 'should'
 setup   = require './setup'
 mockjs  = require './mockjs'
@@ -25,11 +26,11 @@ models =
   task:
     id: 'id'
     listId: 'id'
-    date: 'number'
+    date: 'date'
     name: 'string'
-    notes: 'string'
-    priority: 'number'
-    completed: 'number'
+    notes: 'notes'
+    priority: 'priority'
+    completed: 'completed'
 
   list:
     id: 'id'
@@ -56,11 +57,11 @@ random =
     string[index ... index + 1]
 
   id: ->
-    random.char('csx') + random.int(0,10)
+    random.char('csx') + random.int(0, 100)
 
   ids: ->
     arr = []
-    len = random.int(0, 20)
+    len = random.int(0, 10)
     for i in [0..len]
       arr.push random.id()
     return arr
@@ -78,7 +79,23 @@ random =
   boolean: ->
     random.int(0, 1) is 0
 
-  event: ->
+  timestamp: ->
+    random.int(0, 100000)
+
+  priority: ->
+    random.int(0, 3)
+
+  completed: ->
+    if random.boolean() then 0 else random.timestamp()
+
+  date: ->
+    if random.boolean() then 0 else random.timestamp()
+
+  notes: ->
+    if random.boolean() then '' else random.string()
+
+  event: (classname) ->
+    if classname is 'pref' then return events[1]
     index = random.int 0, events.length - 1
     events[index]
 
@@ -87,7 +104,6 @@ random =
     classnames[index]
 
   callback: ->
-    if random.boolean() then return ''
     ".fn(#{ random.int(0, 100) })"
 
   model: (model) ->
@@ -96,14 +112,21 @@ random =
       obj[key] = random[value]()
     return obj
 
-  task: ->
-    obj = random.model(models.task)
-    obj.id = random.id()
-    obj.listId = random.id()
+  fullModel: (model) ->
+    obj = {}
+    for key, value of model when key isnt 'id'
+      obj[key] = random[value]()
     return obj
 
-  list: ->
-    obj = random.model(models.list)
+  task: (event) ->
+    model = models.task
+    obj = if event is 'create' then random.fullModel(model) else random.model(model)
+    obj.id = random.id()
+    return obj
+
+  list: (event) ->
+    model = models.list
+    obj = if event is 'create' then random.fullModel(model) else random.model(model)
     obj.id = random.id()
     return obj
 
@@ -111,10 +134,10 @@ random =
     random.model(models.pref)
 
   command: ->
-    event = random.event()
     classname = random.classname()
+    event = random.event(classname)
     callback = random.callback()
-    data = random[classname]()
+    data = random[classname](event)
     json = JSON.stringify data
 
     "#{ classname }.#{ event }(#{ json })#{ callback }"
@@ -144,16 +167,8 @@ describe 'IGNORE Fuzz', ->
     deferred = Q.defer()
     console.log '\n', command
 
-    timeout = setTimeout ->
-      socket.off('message', callback)
-      deferred.resolve()
-    , 150
-
-    callback = (response) ->
-      clearTimeout timeout
-      deferred.resolve(response)
-
-    socket.once('message', callback)
+    socket.once 'message', (response) ->
+      deferred.resolve response
 
     socket.reply(command)
     return deferred.promise
@@ -177,11 +192,9 @@ describe 'IGNORE Fuzz', ->
 
   it 'should fuzz', (done) ->
 
-    @timeout 60000
-
     promise = Q.resolve()
 
-    for i in [0..200]
+    for i in [0..1000]
       promise = promise.then ->
         exec random.command()
 
@@ -190,4 +203,10 @@ describe 'IGNORE Fuzz', ->
 
     promise.fail (err) ->
       console.log err
+
+  it 'should write to server', (done) ->
+    Storage.get(user.id).then (user) ->
+      Storage.writeUser(user).then ->
+        done()
+
 

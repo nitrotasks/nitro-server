@@ -58,14 +58,16 @@ class Sync
 
   task_create: (model, timestamp) =>
 
-    unless @user.hasModel(LIST, model.listId)
+    unless @user.checkModel(LIST, model.listId)
       log 'Trying to add a task to a list that doesn\'t exist'
       return null
+
+    list = @user.findModel(LIST, model.listId)
 
     id = @createId TASK
     model.id = id
 
-    @taskAdd id, model.listId
+    @taskAdd id, list
 
     @user.setModel TASK, id, model
 
@@ -117,13 +119,18 @@ class Sync
     delete changes.id
 
     # Check model exists on server
-    unless @user.hasModel(TASK, id)
+    unless @user.checkModel(TASK, id)
       log '[task] [update] could not find', id
       return null
 
-    if @user.findModel(TASK, id).deleted
-      log '[task] [update] already deleted', id
-      return null
+    # Check listId
+    if changes.listId?
+      unless @user.checkModel(LIST, changes.listId)
+        console.log '[task] [update] could not find list', id
+        return null
+      oldTask = @user.findModel TASK, id
+      if oldTask.listId isnt changes.listId
+        @taskMove id, oldTask.listId, changes.listId
 
     # Set timestamp
     if timestamps
@@ -145,17 +152,11 @@ class Sync
       for key of changes
         timestamps[key] = now
 
-    @time.set TASK, id, timestamps
-
-    # If task has changed list
-    if changes.listId?
-      oldTask = @user.findModel TASK, id
-      if oldTask.listId isnt changes.listId
-        @taskMove id, oldTask.listId, changes.listId
-
     # Save to server
-    model = @user.updateModel TASK, id, changes
-    log '[task] updated', id, model.name
+    @time.set TASK, id, timestamps
+    @user.updateModel TASK, id, changes
+
+    log '[task] updated', id
 
     changes.id = id
     return changes
@@ -167,12 +168,8 @@ class Sync
     delete changes.id
 
     # Check model exists on server
-    unless @user.hasModel(LIST, id)
+    unless @user.checkModel(LIST, id)
       log '[list] [update] could not find', id
-      return null
-
-    if @user.findModel(LIST, id).deleted
-      log '[list] [update] already deleted', id
       return null
 
     # Set timestamp
@@ -245,15 +242,11 @@ class Sync
 
   task_destroy: (id, timestamp) =>
 
-   if not @user.hasModel(TASK, id)
+    unless @user.checkModel(TASK, id)
      log '[task] [destroy] could not find:', id
      return null
 
     model = @user.findModel TASK, id
-
-    if model.deleted
-      log '[task] [destroy] already deleted:', id
-      return null
 
     # Check that the model hasn't been updated after this event
     timestamp ?= Date.now()
@@ -261,7 +254,9 @@ class Sync
       return null
 
     # Remove from list
-    @taskRemove id, model.listId
+    list = @user.findModel(LIST, model.listId)
+    if list.tasks?
+      @taskRemove id, model.listId
 
     # Replace task with deleted template
     @user.setModel TASK, id,
@@ -270,21 +265,19 @@ class Sync
 
     # Set timestamp
     @time.set TASK, id, 'deleted', timestamp
-    log '[task] destroyed', id
+    log '[task] [destroy] deleted', id
 
     return true
 
   list_destroy: (id, timestamp) =>
 
-   if not @user.hasModel(LIST, id)
-     log '[list] [destroy] could not find:', id
-     return null
+    console.log 'attempting to destroy list', id
 
-    model = @user.findModel LIST, id
-
-    if model.deleted
-      log '[list] [destroy] already deleted:', id
+    unless @user.checkModel(LIST, id)
+      log '[list] [destroy] could not find:', id
       return null
+
+    model = @user.findModel(LIST, id)
 
     # Check that the model hasn't been updated after this event
     timestamp ?= Date.now()
@@ -312,16 +305,16 @@ class Sync
 
 
   # Add a task to a list
-  taskAdd: (taskId, listId) ->
-    tasks = @user.findModel(LIST, listId).tasks
+  taskAdd: (taskId, list) ->
+    tasks = list.tasks
     return false unless tasks
     if tasks.indexOf(taskId) < 0
       tasks.push taskId
       @user.save LIST
 
   # Remove a task from a list
-  taskRemove: (taskId, listId) ->
-    tasks = @user.findModel(LIST, listId).tasks
+  taskRemove: (taskId, list) ->
+    tasks = list.tasks
     return false unless tasks
     index = tasks.indexOf taskId
     if index >= 0
@@ -330,8 +323,10 @@ class Sync
 
   # Move a task from list to another
   taskMove: (taskId, oldListId, newListId) ->
-    @taskAdd taskId, newListId
-    @taskRemove taskId, oldListId
+    list = @user.findModel(LIST, newListId)
+    @taskAdd taskId, list
+    list = @user.findModel(LIST, oldListId)
+    @taskRemove taskId, list
 
   # Replace a task ID
   taskUpdateId: (oldId, newId, listId) ->

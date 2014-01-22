@@ -40,7 +40,7 @@ define 'Pref', 'object',
 # -----------------------------------------------------------------------------
 
 define 'CreateList', 'object',
-  required: ['id']
+  required: ['id', 'name', 'tasks']
   inherit: 'List'
 
 define 'UpdateList', 'object',
@@ -52,7 +52,7 @@ define 'DestroyList', 'object',
   inherit: 'List'
 
 define 'CreateTask', 'object',
-  required: ['id', 'listId']
+  required: ['id', 'listId', 'date', 'name', 'notes', 'priority', 'completed']
   inherit: 'Task'
 
 define 'UpdateTask', 'object',
