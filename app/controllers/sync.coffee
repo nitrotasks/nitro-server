@@ -137,6 +137,12 @@ class Sync
   ###
    * (private) Update Model
    *
+   * Setup update event
+   *
+   * - classname (string)
+   * - changes (object)
+   * - timestamps (object)
+   * > boolean
   ###
 
   model_update_setup: (classname, changes, timestamps) =>
@@ -150,6 +156,19 @@ class Sync
       return false
 
     return true
+
+
+  ###
+   * (private) Model Update Timestamps
+   *
+   * Handle timestamps for an update event
+   *
+   * - classname (string)
+   * - id (string)
+   * - changes (object)
+   * - timestamps (object)
+   * > timestamps
+  ###
 
   model_update_timestamps: (classname, id, changes, timestamps) ->
 
@@ -171,11 +190,23 @@ class Sync
 
     return timestamps
 
-  # Save to server
+
+  ###
+   * (private) Model Update Save
+   *
+   * Save model changes and timestamps
+   *
+   * - classname (string)
+   * - id (string)
+   * - changes (object)
+   * - timestamps (object)
+   * > changes
+  ###
+
   model_update_save: (classname, id, changes, timestamps) ->
+    log "[#{ classname }] [update] saved #{ id }"
     @time.set(classname, id, timestamps)
     @user.updateModel(classname, id, changes)
-    changes.id = id
     return changes
 
 
@@ -210,7 +241,11 @@ class Sync
       warn '[task] [update] timestamps is null'
       return null
 
-    return @model_update_save(TASK, id, changes, timestamps)
+    @model_update_save(TASK, id, changes, timestamps)
+
+    changes.id = id
+    return changes
+
 
 
   ###
@@ -241,36 +276,31 @@ class Sync
       delete changes.tasks
       delete timestamps.tasks
 
-    return @model_update_save(LIST, id, changes, timestamps)
+    @model_update_save(LIST, id, changes, timestamps)
+
+    changes.id = id
+    return changes
+
+
+  ###
+   * Update Pref
+   *
+   * - changes (object)
+   * - timestamps (timestamps)
+   * > changes
+  ###
 
   pref_update: (changes, timestamps) =>
 
     # Pref id is always s0
     id = PREF_ID
 
-    # Set timestamp
-    if timestamps
-      for attr, time of timestamps
-        old = @time.get PREF, id, attr
-        if old > time
-          delete timestamps[attr]
-          delete changes[attr]
-      if Object.keys(changes).length is 0
-        warn '[pref] [update] old event', id
-        return null
-    else
-      timestamps = {}
-      now = Date.now()
-      for key of changes
-        timestamps[key] = now
+    timestamps = @model_update_timestamps(PREF, id, changes, timestamps)
+    unless timestamps
+      warn '[pref] [updaet] timestamps is null'
+      return null
 
-    @time.set PREF, id, timestamps
-
-    # Save to server
-    model = @user.updateModel PREF, id, changes
-    log '[pref] updated', changes
-
-    return changes
+    return @model_update_save(PREF, id, changes, timestamps)
 
 
 
