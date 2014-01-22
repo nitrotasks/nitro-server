@@ -383,10 +383,9 @@ class UserSocket extends Socket
 
           when CREATE
 
-            if xType.get('array')(list.tasks)
-              tasks = list.tasks
-              for taskId, i in tasks by -1 when taskId[0] isnt SERVER_PREFIX
-                tasks.splice(i, 1)
+            tasks = list.tasks
+            for taskId, i in tasks by -1 when taskId[0] isnt SERVER_PREFIX
+              tasks.splice(i, 1)
 
             list.id = id
             lists[id] = @list_create(list, null, time)

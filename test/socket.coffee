@@ -386,7 +386,6 @@ describe '[Socket]', ->
 
       it 'update existing items', (done) ->
 
-
         client.list.create make.list id: 'c0', name: 'List 1'
         client.task.create make.task id: 'c1', name: 'Task 1', listId: 's0'
         client.task.create make.task id: 'c2', name: 'Task 2', listId: 's0'

@@ -16,6 +16,7 @@ Time    = require '../utils/time'
 
 log      = Log 'Sync', 'cyan'
 logEvent = Log 'Sync Event', 'yellow'
+warn     = Log 'Sync', 'red'
 
 # CONSTANTS
 
@@ -87,7 +88,7 @@ class Sync
 
     # Check that the list exists
     unless @user.checkModel(LIST, model.listId)
-      log 'Trying to add a task to a list that doesn\'t exist'
+      warn '[task] [create] can not find listId', model.listId
       return null
 
     # Add the task to the list
@@ -112,6 +113,7 @@ class Sync
     # Handle inbox list
     if model.id is INBOX
       if @user.hasModel(LIST, INBOX)
+        warn '[list] [create] can not recreate inbox'
         return null
     else
       delete model.id
@@ -131,99 +133,115 @@ class Sync
   #                                  #
   ####################################
 
-  generic_update: (changes, timestamps) =>
 
-    # Handles generic code for updating a model
+  ###
+   * (private) Update Model
+   *
+  ###
 
-  task_update: (changes, timestamps) =>
+  model_update_setup: (classname, changes, timestamps) =>
 
-    # id is a required field
     id = changes.id
     delete changes.id
 
     # Check model exists on server
-    unless @user.checkModel(TASK, id)
-      log '[task] [update] could not find', id
+    unless @user.checkModel(classname, id)
+      log "[#{ classname }] [update] could not find #{ id }"
+      return false
+
+    return true
+
+  model_update_timestamps: (classname, id, changes, timestamps) ->
+
+    # Set timestamp
+    if timestamps
+      for attr, time of timestamps
+        old = @time.get classname, id, attr
+        if old > time
+          delete timestamps[attr]
+          delete changes[attr]
+      if Object.keys(changes).length is 0
+        warn "[#{ classname }] [update] all properties are old"
+        return null
+    else
+      timestamps = {}
+      now = Date.now()
+      for key of changes
+        timestamps[key] = now
+
+    return timestamps
+
+  # Save to server
+  model_update_save: (classname, id, changes, timestamps) ->
+    @time.set(classname, id, timestamps)
+    @user.updateModel(classname, id, changes)
+    changes.id = id
+    return changes
+
+
+  ###
+   * Update Task
+   *
+   * - changes (object)
+   * - timestamps
+   * > changes
+  ###
+
+  task_update: (changes, timestamps) =>
+
+    id = changes.id
+
+    unless @model_update_setup(TASK, changes, timestamps)
+      warn '[task] [update] could not find', id
       return null
 
     # Check listId
     if changes.listId?
       unless @user.checkModel(LIST, changes.listId)
-        console.log '[task] [update] could not find list', id
+        warn '[task] [update] could not find listId', changes.listId
         return null
-      oldTask = @user.findModel TASK, id
+      oldTask = @user.findModel(TASK, id)
       if oldTask.listId isnt changes.listId
-        @taskMove id, oldTask.listId, changes.listId
+        @taskMove(id, oldTask.listId, changes.listId)
 
-    # Set timestamp
-    if timestamps
-      for attr, time of timestamps
-        old = @time.get TASK, id, attr
-        if old > time
-          log '[task] [update] old prop', attr,
-            time: time
-            old: old
-            diff: old - time
-          delete timestamps[attr]
-          delete changes[attr]
-      if Object.keys(changes).length is 0
-        log '[task] [update] old event', id
-        return null
-    else
-      timestamps = {}
-      now = Date.now()
-      for key of changes
-        timestamps[key] = now
+    # Set timestamps
+    timestamps = @model_update_timestamps(TASK, id, changes, timestamps)
+    unless timestamps
+      warn '[task] [update] timestamps is null'
+      return null
 
-    # Save to server
-    @time.set TASK, id, timestamps
-    @user.updateModel TASK, id, changes
+    return @model_update_save(TASK, id, changes, timestamps)
 
-    log '[task] updated', id
 
-    changes.id = id
-    return changes
+  ###
+   * Update List
+   *
+   * - changes (object)
+   * - timestamps (object)
+   * > changes
+  ###
 
   list_update: (changes, timestamps) =>
 
-    # id is a required field
     id = changes.id
-    delete changes.id
 
-    # Check model exists on server
-    unless @user.checkModel(LIST, id)
-      log '[list] [update] could not find', id
+    unless @model_update_setup(LIST, changes, timestamps)
+      warn '[list] [update] could not find', id
       return null
 
-    # Set timestamp
-    if timestamps
-      for attr, time of timestamps
-        old = @time.get LIST, id, attr
-        if old > time
-          delete timestamps[attr]
-          delete changes[attr]
-      if Object.keys(changes).length is 0
-        log '[list] [update] old event', id
-        return null
-    else
-      timestamps = {}
-      now = Date.now()
-      for key of changes
-        timestamps[key] = now
+    # Set timestamps
+    timestamps = @model_update_timestamps(LIST, id, changes, timestamps)
+    unless timestamps
+      warn '[list] [update] timestamps is null'
+      return null
 
+    # Handle tasks
     if changes.tasks
-      console.log 'WE CAN NOT HANDLE THIS YET!!!!'
+      warn '[list] [update] TODO: Handle list.tasks'
       delete changes.tasks
       delete timestamps.tasks
 
-    @time.set LIST, id, timestamps
-
-    # Save to server
-    model = @user.updateModel LIST, id, changes
-    log '[list] updated', id
-
-    changes.id = id
-    return changes
+    return @model_update_save(LIST, id, changes, timestamps)
 
   pref_update: (changes, timestamps) =>
 
@@ -238,7 +256,7 @@ class Sync
           delete timestamps[attr]
           delete changes[attr]
       if Object.keys(changes).length is 0
-        log '[pref] [update] old event', id
+        warn '[pref] [update] old event', id
         return null
     else
       timestamps = {}
