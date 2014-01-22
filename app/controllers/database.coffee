@@ -162,7 +162,7 @@ del_user = (uid) ->
     log 'Deleted user', uid
 
 deleteAll = (table) ->
-  query "DELETE FROM #{ table }"
+  query 'DELETE FROM ' + table
 
 
 # -----------------------------------------------------------------------------

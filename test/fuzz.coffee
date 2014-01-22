@@ -41,7 +41,7 @@ models =
     sort: 'boolean'
     night: 'string'
     language: 'string'
-    weekstart: 'number'
+    weekStart: 'number'
     dateFormat: 'string'
     confirmDelete: 'boolean'
     completedDuration: 'string'
@@ -91,28 +91,24 @@ random =
     ".fn(#{ random.int(0, 100) })"
 
   model: (model) ->
-    obj = id: random.id()
+    obj = {}
     for key, value of model when key isnt 'id' and random.boolean()
       obj[key] = random[value]()
     return obj
 
   task: ->
-    random.model(models.task)
+    obj = random.model(models.task)
+    obj.id = random.id()
+    obj.listId = random.id()
+    return obj
 
   list: ->
-    random.model(models.list)
+    obj = random.model(models.list)
+    obj.id = random.id()
+    return obj
 
   pref: ->
     random.model(models.pref)
-
-  timestamp: ->
-    return random.int(0, 10000000)
-
-  timestamps: (obj) ->
-    time = {}
-    for key of obj
-      time[key] = random.timestamp()
-    return time
 
   command: ->
     event = random.event()
@@ -121,12 +117,7 @@ random =
     data = random[classname]()
     json = JSON.stringify data
 
-    if event is 'update'
-      timestamp = JSON.stringify random.timestamps(data)
-    else
-      timestamp = random.timestamp()
-
-    "#{ classname }.#{ event }(#{ json },#{ timestamp })#{ callback }"
+    "#{ classname }.#{ event }(#{ json })#{ callback }"
 
 
 # -----------------------------------------------------------------------------
@@ -143,12 +134,11 @@ describe 'IGNORE Fuzz', ->
     email: 'fred@gmail.com'
     pass: 'xkcd'
 
-  before ->
-    setup()
-
+  before (done) ->
     Socket.init(null, mockjs)
     socket = mockjs.createSocket()
     client.socket = null
+    setup(done)
 
   exec = (command) ->
     deferred = Q.defer()
@@ -182,7 +172,7 @@ describe 'IGNORE Fuzz', ->
   it 'should login the user', (done) ->
     auth = client.user.auth(user.id, user.token)
     exec(auth).then (message) ->
-      message.should.equal 'Jandal.fn_1(null,true)'
+      message.should.equal 'Jandal.fn_0(null,true)'
       done()
 
   it 'should fuzz', (done) ->
@@ -191,7 +181,7 @@ describe 'IGNORE Fuzz', ->
 
     promise = Q.resolve()
 
-    for i in [0..400]
+    for i in [0..200]
       promise = promise.then ->
         exec random.command()
 
