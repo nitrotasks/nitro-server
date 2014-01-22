@@ -11,6 +11,36 @@ client  = require './mock_client'
 
 describe '[Socket]', ->
 
+  make =
+
+    _list:
+      id: 'c0'
+      name: 'list'
+      tasks: []
+
+    _task:
+      id: 'c0'
+      name: 'task'
+      listId: 'inbox'
+      date: 0
+      completed: 0
+      notes: ''
+      priority: 0
+
+    _model: (parent, child) ->
+      for key, value of parent
+        child[key] ?= value
+      id = child.id
+      delete child.id
+      child.id = id
+      return child
+
+    task: (info) ->
+      make._model(make._task, info)
+
+    list: (info) ->
+      make._model(make._list, info)
+
   socket = null
 
   user =
@@ -87,7 +117,7 @@ describe '[Socket]', ->
       socket.on 'message', (message) ->
         message.should.equal 'Jandal.fn_2(null,"inbox")'
         done()
-      client.list.create
+      client.list.create make.list
         id: 'inbox'
         name: 'Inbox'
 
@@ -95,32 +125,31 @@ describe '[Socket]', ->
       socket.on 'message', (message) ->
         message.should.equal 'Jandal.fn_2(true)'
         done()
-      client.list.create
+      client.list.create make.list
         id: 'inbox'
         name: 'Inbox'
-
 
     it 'should create user data', (done) ->
       socket.on 'message', (message) ->
         message.should.equal 'Jandal.fn_2(null,"s0")'
         done()
-      client.task.create
+      client.task.create make.task
         id: 'c2'
         name: 'something'
         listId: 'inbox'
 
-
     it 'should fetch user data', (done) ->
-
       socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2(null,[{"id":"s0","name":"something","listId":"inbox"}])'
+        message.should.equal 'Jandal.fn_2(null,[{' +
+            '"name":"something","listId":"inbox",' +
+            '"date":0,"completed":0,"notes":"","priority":0,' +
+            '"id":"s0"' +
+          '}])'
         done()
 
       client.task.fetch()
 
-
     it 'should destroy user data', (done) ->
-
       socket.on 'message', (message) ->
         switch message[10]
           when '2'
@@ -174,28 +203,30 @@ describe '[Socket]', ->
 
       it 'should create a task', (done) ->
 
-        testBroadcast done, ->
-          client.task.create
-            id: 's1'
-            listId: 'inbox'
-            name: 'A brand new task'
-
-        client.task.create
+        model = make.task
           id: 'c1'
           listId: 'inbox'
           name: 'A brand new task'
 
+        testBroadcast done, ->
+          delete model.id
+          model.id = 's1'
+          client.task.create model
+
+        client.task.create model
+
       it 'should create a list', (done) ->
 
-        testBroadcast done, ->
-          client.list.create
-            id: 's0'
-            name: 'A brand new list'
-            tasks: []
-
-        client.list.create
+        model = make.list
           id: 'c1'
           name: 'A brand new list'
+
+        testBroadcast done, ->
+          delete model.id
+          model.id = 's0'
+          client.list.create model
+
+        client.list.create model
 
       it 'should update a task', (done) ->
 
@@ -276,6 +307,17 @@ describe '[Socket]', ->
           done()
 
       test = (input, output, done) ->
+
+        # Fix input
+        for id, event of input.list
+          if event[0] is 0 then event[1] = make.list event[1]
+        for id, event of input.task
+          if event[0] is 0 then event[1] = make.task event[1]
+
+        # Fix output
+        output.list.map (item) -> make.list item
+        output.task.map (item) -> make.task item
+
         socket.on 'message', (message) ->
           # 17 = "Jandal.fn_2(null,".length
           # -1 = ")"
@@ -293,14 +335,20 @@ describe '[Socket]', ->
         input =
 
           list:
-            c20: [CREATE, {name: 'list 1', tasks: ['c12', 'c13']}, now]
-            c33: [CREATE, {name: 'list 2', tasks: ['c14', 'c15']}, now]
+            c20: [CREATE, {
+              id: 'c20', name: 'list 1', tasks: ['c12', 'c13'] }, now]
+            c33: [CREATE, {
+              id: 'c33', name: 'list 2', tasks: ['c14', 'c15'] }, now]
 
           task:
-            c12: [CREATE, {name: 'task 1', listId: 'c20'}, now]
-            c13: [CREATE, {name: 'task 2', listId: 'c20'}, now]
-            c14: [CREATE, {name: 'task 3', listId: 'c33'}, now]
-            c15: [CREATE, {name: 'task 4', listId: 'c33'}, now]
+            c12: [CREATE, {
+              id: 'c12', name: 'task 1', listId: 'c20' }, now]
+            c13: [CREATE, {
+              id: 'c13', name: 'task 2', listId: 'c20' }, now]
+            c14: [CREATE, {
+              id: 'c14', name: 'task 3', listId: 'c33' }, now]
+            c15: [CREATE, {
+              id: 'c15', name: 'task 4', listId: 'c33' }, now]
 
         output =
 
@@ -338,31 +386,32 @@ describe '[Socket]', ->
 
       it 'update existing items', (done) ->
 
-        now = Date.now() + 10
 
-        client.list.create id: 'c0', name: 'List 1', tasks: []
-        client.task.create id: 'c1', name: 'Task 1', listId: 's0'
-        client.task.create id: 'c2', name: 'Task 2', listId: 's0'
-        client.task.create id: 'c3', name: 'Task 3', listId: 's0'
+        client.list.create make.list id: 'c0', name: 'List 1'
+        client.task.create make.task id: 'c1', name: 'Task 1', listId: 's0'
+        client.task.create make.task id: 'c2', name: 'Task 2', listId: 's0'
+        client.task.create make.task id: 'c3', name: 'Task 3', listId: 's0'
+
+        now = Date.now() + 100
 
         input =
 
           task:
             s0: [ UPDATE,
-              { name: 'Task 1 - Updated', listId: 'c1' },
+              { id: 's0', name: 'Task 1 - Updated', listId: 'c1' },
               { name: now, listId: now }]
             s1: [ UPDATE,
-              { name: 'Task 2 - Updated' },
+              { id: 's1', name: 'Task 2 - Updated' },
               { name: now }]
             s2: [ UPDATE,
-              { name: 'Task 3 - Updated', listId: 'c1' },
+              { id: 's2', name: 'Task 3 - Updated', listId: 'c1' },
               { name: now, listId: now }]
 
           list:
             s0: [ UPDATE,
-              { name: 'List 1 - Updated' },
+              { id: 's0', name: 'List 1 - Updated' },
               { name: now }]
-            c1: [CREATE, {name: 'List 2'}, now]
+            c1: [CREATE, { id: 'c1', name: 'List 2' }, now]
 
 
         output =
@@ -398,10 +447,10 @@ describe '[Socket]', ->
 
         now = Date.now() + 10
 
-        client.list.create id: 'c0', name: 'List 1', tasks: []
-        client.task.create id: 'c1', name: 'Task 1', listId: 's0'
-        client.task.create id: 'c2', name: 'Task 2', listId: 's0'
-        client.task.create id: 'c3', name: 'Task 3', listId: 's0'
+        client.list.create make.list id: 'c0', name: 'List 1'
+        client.task.create make.task id: 'c1', name: 'Task 1', listId: 's0'
+        client.task.create make.task id: 'c2', name: 'Task 2', listId: 's0'
+        client.task.create make.task id: 'c3', name: 'Task 3', listId: 's0'
 
         input =
 
@@ -409,28 +458,30 @@ describe '[Socket]', ->
             s0: [DESTROY, {id: 's0'}, now]
             s1: [DESTROY, {id: 's1'}, now]
             s2: [DESTROY, {id: 's2'}, now]
-            c1: [CREATE, {name: 'Task 4', listId: 'c1'}, now]
+            c1: [CREATE, { id: 'c1', name: 'Task 4', listId: 'c1' }, now]
 
           list:
-            s0: [UPDATE, {name: 'List 1 - Updated'}, {name: now}]
-            c1: [CREATE, {name: 'List 2', tasks: []}, now]
+            s0: [UPDATE,
+              { id: 's0', name: 'List 1 - Updated' },
+              { name: now }]
+            c1: [CREATE, {name: 'List 2'}, now]
 
         output =
 
           list: [
-            id: 's0'
             name: 'List 1 - Updated'
             tasks: []
+            id: 's0'
           ,
-            id: 's1'
             name: 'List 2'
             tasks: [ 's3' ]
+            id: 's1'
           ]
 
           task: [
-            id: "s3"
-            name: "Task 4"
-            listId: "s1"
+            id: 's3'
+            name: 'Task 4'
+            listId: 's1'
           ]
 
         test input, output, done

@@ -1,7 +1,7 @@
 {define, defineFn} = require 'xtype'
 
 # ----------------------------------------------------------------------------
-# Models
+# Flexible Models
 # ----------------------------------------------------------------------------
 
 define 'Task', 'object',
@@ -36,7 +36,7 @@ define 'Pref', 'object',
 
 
 # -----------------------------------------------------------------------------
-# Strict Tasks
+# Strict Models
 # -----------------------------------------------------------------------------
 
 define 'CreateList', 'object',
@@ -71,6 +71,7 @@ define 'DestroyTask', 'object',
 define 'Timestamps', 'object',
   all: 'number'
 
+
 define 'CreateEvent', 'array',
   keys:
     2: 'number'
@@ -84,30 +85,62 @@ define 'DestroyEvent', 'array',
     2: 'number'
 
 
-define 'QueueEvent', 'array',
-  inherit: ['CreateEvent', 'UpdateEvent', 'DestroyEvent']
+define 'TaskCreateEvent', 'array',
+  inherit: 'CreateEvent'
+  keys:
+    1: 'CreateTask'
+
+define 'TaskUpdateEvent', 'array',
+  inherit: 'UpdateEvent'
+  keys:
+    1: 'UpdateTask'
+
+define 'TaskDestroyEvent', 'array',
+  inherit: 'DestroyEvent'
+  keys:
+    1: 'DestroyTask'
+
+
+define 'ListCreateEvent', 'array',
+  inherit: 'CreateEvent'
+  keys:
+    1: 'CreateList'
+
+define 'ListUpdateEvent', 'array',
+  inherit: 'UpdateEvent'
+  keys:
+    1: 'UpdateList'
+
+define 'ListDestroyEvent', 'array',
+  inherit: 'DestroyEvent'
+  keys:
+    1: 'DestroyList'
+
+
+define 'TaskQueueEvent', 'array',
+  inherit: ['TaskCreateEvent', 'TaskUpdateEvent', 'TaskDestroyEvent']
+  check: (arr) -> arr[0]
+
+define 'ListQueueEvent', 'array',
+  inherit: ['ListCreateEvent', 'ListUpdateEvent', 'ListDestroyEvent']
   check: (arr) -> arr[0]
 
 
 define 'TaskEvent', 'array',
-  inherit: 'QueueEvent'
-  keys:
-    0: 'number'
-    1: 'Task'
+  inherit: 'TaskQueueEvent'
+  keys: 0: 'number'
   required: [0,1,2]
 
 define 'ListEvent', 'array',
-  inherit: 'QueueEvent'
-  keys:
-    0: 'number'
-    1: 'List'
+  inherit: 'ListQueueEvent'
+  keys: 0: 'number'
   required: [0,1,2]
 
 define 'PrefEvent', 'array',
-  inherit: 'QueueEvent'
   keys:
     0: 'number'
     1: 'Pref'
+    2: 'Timestamps'
   required: [0,1,2]
 
 
@@ -119,7 +152,6 @@ define 'ListQueue', 'object',
 
 define 'PrefQueue', 'object',
   all: 'PrefEvent'
-
 
 
 define 'Queue', 'object',
