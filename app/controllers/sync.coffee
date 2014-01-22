@@ -54,51 +54,74 @@ class Sync
   #                                   #
   #####################################
 
+  ###
+   * (private) Create Model
+   *
+   * - classname (string)
+   * - id (string)
+   * - model (object)
+   * - [timestamp] (number)
+  ###
 
+  model_create: (classname, model, timestamp) =>
+    id = model.id ?= @createId classname
+    @user.setModel classname, id, model
+    timestamp ?= Date.now()
+    @time.set classname, id, '*', timestamp
+    log "[#{ classname }] [create] created", id
+    return id
+
+
+  ###
+   * Create Task
+   *
+   * - model (object)
+   * - timestamp (number)
+   * > id (number)
+  ###
 
   task_create: (model, timestamp) =>
 
+    # Throw away client id
+    delete model.id
+
+    # Check that the list exists
     unless @user.checkModel(LIST, model.listId)
       log 'Trying to add a task to a list that doesn\'t exist'
       return null
 
+    # Add the task to the list
     list = @user.findModel(LIST, model.listId)
 
-    id = @createId TASK
-    model.id = id
+    id = @model_create(TASK, model, timestamp)
 
     @taskAdd id, list
-
-    @user.setModel TASK, id, model
-
-    timestamp ?= Date.now()
-    @time.set TASK, id, '*', timestamp
-
-    log '[task] Created', id, model.name
-
     return id
+
+
+  ###
+   * Create List
+   *
+   * - model (object)
+   * - timestamp (number)
+   * > id (number)
+  ###
 
   list_create: (model, timestamp) =>
 
+    # Handle inbox list
     if model.id is INBOX
-      id = INBOX
-      if @user.hasModel(LIST, INBOX) then return null
-      log '[list] [create] made inbox'
+      if @user.hasModel(LIST, INBOX)
+        return null
     else
-      id = @createId LIST
-      model.id = id
+      delete model.id
 
+    # Make sure tasks is empty
     model.tasks = []
 
-    @user.setModel LIST, id, model
-
-    timestamp ?= Date.now()
-    @time.set LIST, id, '*', timestamp
-
-    log '[list] Created', id, model.name
+    id = @model_create(LIST, model, timestamp)
 
     return id
-
 
 
   ####################################
@@ -256,7 +279,7 @@ class Sync
     # Remove from list
     list = @user.findModel(LIST, model.listId)
     if list.tasks?
-      @taskRemove id, model.listId
+      @taskRemove id, list
 
     # Replace task with deleted template
     @user.setModel TASK, id,
