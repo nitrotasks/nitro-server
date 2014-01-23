@@ -1,6 +1,8 @@
-query = null
+Table = require '../controllers/table'
 
-module.exports =
+class Task extends Table
+
+  table: 'task'
 
   ###
    * Setup
@@ -8,11 +10,9 @@ module.exports =
    * Create table
   ###
 
-  setup: (_query) ->
+  setup: ->
 
-    query = _query
-
-    query """
+    @query """
       CREATE TABLE IF NOT EXISTS `task` (
         `id`          int(11)         unsigned   NOT NULL    AUTO_INCREMENT,
         `user_id`     int(11)         unsigned   NOT NULL,
@@ -24,45 +24,11 @@ module.exports =
         `date`        bigint(20)      unsigned   NOT NULL,
         PRIMARY KEY (`id`,`user_id`),
         CONSTRAINT `task_user_id` FOREIGN KEY (`user_id`)
-        REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+        REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT `task_list_id` FOREIGN KEY (`list_id`)
+        REFERENCES `list` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
     """
 
-  ###
-   * Create
-   *
-   * Create a new row
-  ###
-
-  create: (task) ->
-
-    sql = 'INSERT INTO task SET ?'
-    query sql, task
-
-
-
-  ###
-   * Update
-   *
-   * Update an existing row
-  ###
-
-  update: (task) ->
-
-    sql = 'UPDATE task SET ?'
-    query sql, task
-
-
-  ###
-   * Destroy
-   *
-   * Destroy an existing row
-  ###
-
-  destroy: (id) ->
-
-    sql = 'DELETE FROM task WHERE id=?'
-    query sql, id
-
-
+module.exports = Task
 

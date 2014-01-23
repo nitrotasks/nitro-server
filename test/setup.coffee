@@ -22,7 +22,7 @@ module.exports = (done) ->
 
   database.connected
     .then ->
-      database.util.clear 'user'
+      database.query 'DELETE FROM user'
     .then ->
       done()
     .fail (err) ->

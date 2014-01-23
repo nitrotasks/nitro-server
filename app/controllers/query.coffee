@@ -5,18 +5,21 @@ Log      = require '../utils/log'
 log = Log 'Database', 'blue'
 warn = Log 'Database', 'red'
 
-# Modules
-modules = module.exports =
-  task: require '../database/task'
+# tables
+tables =
   user: require '../database/user'
-  util: require '../database/util'
+  list: require '../database/list'
+  task: require '../database/task'
 
-modules.connected = connect.ready.then ->
+connected = connect.ready.then ->
 
   log 'Connecting to MySQL'
 
   db = connect.mysql
   query = Q.bindPromise db.query, db
+
+  # Export query
+  module.exports.query = query
 
   deferred = Q.defer()
 
@@ -27,9 +30,14 @@ modules.connected = connect.ready.then ->
 
     log 'Connected to MySQL server'
 
-    for name, mod of modules when mod.setup?
-      mod.setup(query)
+    for name, Table of tables
+      table = new Table(query)
+      table.setup()
+      module.exports[name] = table
 
     deferred.resolve()
 
   return deferred.promise
+
+module.exports =
+  connected: connected
