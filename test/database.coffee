@@ -8,7 +8,11 @@ should  = require 'should'
 
 describe 'Database', ->
 
-  user = {}
+  user =
+    name: 'Jimmy'
+    email: 'jimmy@gmail.com'
+    password: 'blah'
+    pro: 0
 
   before setup
 
@@ -24,16 +28,9 @@ describe 'Database', ->
 
     it 'should create a new user', (done) ->
 
-      model =
-        name: 'Jimmy'
-        email: 'jimmy@gmail.com'
-        password: 'blah'
-        pro: 0
-
-      database.user.create(model).then (id) ->
+      database.user.create(user).then (id) ->
         user.id = id
         done()
-
 
     it 'should fetch a users information', (done) ->
 
@@ -41,16 +38,35 @@ describe 'Database', ->
         info.id.should.equal user.id
         done()
 
-
     it 'should update an existing user', (done) ->
 
-      model =
-        name: 'James'
+      model = name: 'James'
+      database.user.update(user.id, model).then -> done()
 
-      database.user.update(model).then -> done()
+    it 'should delete an existing user', (done) ->
+
+      database.user.destroy(user.id).then -> done()
+
+    it 'should fail when fetching a user that does not exist', (done) ->
+
+      database.user.read(user.id).fail -> done()
+
+    it 'should fail when updating a user that does not exist', (done) ->
+
+      model = email: 'james@gmail.com'
+      database.user.update(user.id, model).fail -> done()
+
+    it 'should fail when destroying a user that does not exist', (done) ->
+
+      database.user.destroy(user.id).fail -> done()
 
 
   describe '#task', ->
+
+    before (done) ->
+      database.user.create(user).then (id) ->
+        user.id = id
+        done()
 
     it 'should create a new task', (done) ->
 
@@ -58,8 +74,7 @@ describe 'Database', ->
         user_id: user.id
         name: 'Task 1'
 
-      database.task.create(model)
-        .then -> done()
-        .fail (err) -> console.log err
+      database.task.create(model).then (id) ->
+        done()
 
 
