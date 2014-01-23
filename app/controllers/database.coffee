@@ -32,59 +32,90 @@ connected = connect.ready.then ->
 # Initialise Nitro database
 setup = ->
 
-  log = console.log.bind(console)
-
-  # Create 'user' table
-  query("""
+  query """
     CREATE TABLE IF NOT EXISTS `user` (
-     `id`            int(11)        NOT NULL    AUTO_INCREMENT,
-     `name`          varchar(100)   NOT NULL,
-     `email`         varchar(100)   NOT NULL,
-     `password`      char(60)       NOT NULL,
-     `pro`           tinyint(1)     NOT NULL,
-     `data_task`     mediumblob     NOT NULL,
-     `data_list`     mediumblob     NOT NULL,
-     `data_pref`     mediumblob     NOT NULL,
-     `data_time`     mediumblob     NOT NULL,
-     `index_task`    int(11)        NOT NULL    DEFAULT '0',
-     `index_list`    int(11)        NOT NULL    DEFAULT '0',
-     `created_at`    timestamp      NOT NULL    DEFAULT '0000-00-00 00:00:00',
-     `updated_at`    timestamp      NOT NULL    DEFAULT CURRENT_TIMESTAMP       ON UPDATE CURRENT_TIMESTAMP,
+      `id`           int(11)        unsigned   NOT NULL    AUTO_INCREMENT,
+      `name`         varchar(100)              NOT NULL,
+      `email`        varchar(100)              NOT NULL,
+      `password`     char(60)                  NOT NULL,
+      `pro`          tinyint(1)     unsigned   NOT NULL,
+      `created_at`   timestamp                 NOT NULL     DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
-  """).fail(log)
-
-  query("""
-    CREATE TABLE IF NOT EXISTS `user_register` (
-     `id`         int(11)      NOT NULL  AUTO_INCREMENT,
-     `token`      char(22)     NOT NULL,
-     `name`       varchar(100) NOT NULL,
-     `email`      varchar(100) NOT NULL,
-     `password`   char(60)     NOT NULL,
-     `created_at` timestamp    NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`id`, `token`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
-  """).fail(log)
-
-  query("""
-    CREATE TABLE IF NOT EXISTS `user_login` (
-     `user_id`    int(11)   NOT NULL,
-     `token`      char(64)  NOT NULL,
-     `created_at` timestamp NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`user_id`, `token`),
-      FOREIGN KEY (`user_id`) REFERENCES user(`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-  """).fail(log)
+  """
 
-  query("""
-    CREATE TABLE IF NOT EXISTS `user_reset` (
-     `user_id`    int(11)      NOT NULL,
-     `token`      char(22)     NOT NULL,
-     `created_at` timestamp    NOT NULL  DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`user_id`, `token`),
-      FOREIGN KEY (`user_id`) REFERENCES user(`id`) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
-  """).fail(log)
+  query """
+    CREATE TABLE IF NOT EXISTS `task` (
+      `id`          int(11)         unsigned   NOT NULL    AUTO_INCREMENT,
+      `user_id`     int(11)         unsigned   NOT NULL,
+      `list_id`     int(11)         unsigned   NOT NULL,
+      `name`        varchar(150)               NOT NULL    DEFAULT '',
+      `notes`       varchar(400)               NOT NULL    DEFAULT '',
+      `priority`    tinyint(4)      unsigned   NOT NULL,
+      `completed`   bigint(20)      unsigned   NOT NULL,
+      `date`        bigint(20)      unsigned   NOT NULL,
+      PRIMARY KEY (`id`,`user_id`),
+      CONSTRAINT `task_user_id` FOREIGN KEY (`user_id`)
+      REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  """
+
+  query """
+    CREATE TABLE IF NOT EXISTS `list` (
+      `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `user_id` int(11) unsigned NOT NULL,
+      `name` varchar(150) NOT NULL DEFAULT '',
+      PRIMARY KEY (`id`),
+      CONSTRAINT `list_user_id` FOREIGN KEY (`user_id`)
+      REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  """
+
+  query """
+    CREATE TABLE IF NOT EXISTS `list_tasks` (
+      `list_id` int(11) unsigned NOT NULL,
+      `task_id` int(11) unsigned NOT NULL,
+      PRIMARY KEY (`list_id`,`task_id`),
+      CONSTRAINT `list_tasks_task_id` FOREIGN KEY (`task_id`)
+      REFERENCES `task` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT `list_tasks_list_id` FOREIGN KEY (`list_id`)
+      REFERENCES `list` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  """
+
+  query """
+    CREATE TABLE IF NOT EXISTS `register` (
+      `id`           int(11)        unsigned   NOT NULL    AUTO_INCREMENT,
+      `token`        char(22)                  NOT NULL,
+      `name`         varchar(100)              NOT NULL,
+      `email`        varchar(100)              NOT NULL,
+      `password`     char(60)                  NOT NULL,
+      `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`,`token`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  """
+
+  query """
+    CREATE TABLE IF NOT EXISTS `login` (
+      `user_id`      int(11)        unsigned   NOT NULL,
+      `token`        char(64)                  NOT NULL,
+      `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`user_id`,`token`),
+      CONSTRAINT `login_user_id` FOREIGN KEY (`user_id`)
+      REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  """
+
+  query """
+    CREATE TABLE IF NOT EXISTS `reset` (
+      `user_id`      int(11)        unsigned   NOT NULL,
+      `token`        char(22)                  NOT NULL,
+      `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`user_id`,`token`),
+      CONSTRAINT `reset_user_id` FOREIGN KEY (`user_id`)
+      REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  """
 
 close = ->
   db.end()
@@ -170,25 +201,25 @@ deleteAll = (table) ->
 # -----------------------------------------------------------------------------
 
 login_add = (user, token) ->
-  sql = 'INSERT INTO user_login (user_id, token) VALUES (?, ?)'
+  sql = 'INSERT INTO login (user_id, token) VALUES (?, ?)'
   query(sql, [user, token])
 
 login_exists = (user, token) ->
-  sql = 'SELECT user_id FROM user_login WHERE user_id=? AND token=?'
+  sql = 'SELECT user_id FROM login WHERE user_id=? AND token=?'
   query(sql, [user, token]).then (row) ->
     return !! row.length
 
 login_expire = ->
   date = Date.now() - 1209600 # 60 * 60 * 24 * 14
-  sql = 'DELETE FROM user_login WHERE created_at < ?'
+  sql = 'DELETE FROM login WHERE created_at < ?'
   query(sql, date)
 
 login_remove = (user, token) ->
-  sql = 'DELETE FROM user_login WHERE user_id=? AND token=?'
+  sql = 'DELETE FROM login WHERE user_id=? AND token=?'
   query(sql, [user, token])
 
 login_remove_all = (user) ->
-  sql = 'DELETE FROM user_login WHERE user_id=?'
+  sql = 'DELETE FROM login WHERE user_id=?'
   query(sql, user)
 
 # -----------------------------------------------------------------------------
@@ -216,7 +247,7 @@ parseToken = (token) ->
 ###
 
 register_add = (info) ->
-  sql = 'INSERT INTO user_register SET ?'
+  sql = 'INSERT INTO register SET ?'
   query(sql, info).then (data) ->
     return data.insertId + '_' + info.token
 
@@ -237,7 +268,7 @@ register_get = (token) ->
   return Q.resolve() unless match
   [id, token] = match
 
-  sql = 'SELECT id, name, email, password FROM user_register WHERE id=? AND token=?'
+  sql = 'SELECT id, name, email, password FROM register WHERE id=? AND token=?'
   query(sql, [id, token]).then (rows) ->
     return unless rows.length
     return rows[0]
@@ -250,7 +281,7 @@ register_get = (token) ->
 ###
 
 register_remove = (id) ->
-  sql = 'DELETE FROM user_register WHERE id=?'
+  sql = 'DELETE FROM register WHERE id=?'
   query(sql, id)
 
 
@@ -259,7 +290,7 @@ register_remove = (id) ->
 # -----------------------------------------------------------------------------
 
 reset_add = (id, token) ->
-  sql = 'INSERT INTO user_reset (user_id, token) VALUES (?, ?)'
+  sql = 'INSERT INTO reset (user_id, token) VALUES (?, ?)'
   query(sql, [id, token]).then ->
     return id + '_' + token
 
@@ -267,7 +298,7 @@ reset_get = (token) ->
   token = parseToken(token)
   return Q.reject(new Error) unless token
 
-  sql = 'SELECT user_id FROM user_reset WHERE user_id=? AND token=?'
+  sql = 'SELECT user_id FROM reset WHERE user_id=? AND token=?'
   query(sql, token).then (rows) ->
     throw new Error() unless rows.length
     return rows[0].user_id
@@ -277,7 +308,7 @@ reset_remove = (token) ->
   token = parseToken(token)
   return Q.reject(new Error) unless token
 
-  sql = 'DELETE FROM user_reset WHERE user_id=? AND token=?'
+  sql = 'DELETE FROM reset WHERE user_id=? AND token=?'
   query(sql, token)
 
 
