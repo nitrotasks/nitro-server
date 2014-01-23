@@ -1,4 +1,6 @@
-DB      = require '../app/controllers/database'
+should = require 'should'
+database = require '../app/controllers/query'
+
 setup   = require './setup'
 should  = require 'should'
 
@@ -6,43 +8,58 @@ should  = require 'should'
 
 describe 'Database', ->
 
+  user = {}
+
   before setup
 
-  user =
-    name: 'George Czabania'
-    email: 'george@czabania.com'
-    password: 'password'
-    pro: 1
-    data_task:
-      name: 'nitro sync'
-    data_list:
-      hello: 'world'
-    data_time:
-      some: 'timestamps'
-    data_pref:
-      moar: 'stuff'
-    index_task: 2
-    index_list: 100
-    created_at: new Date()
+  describe '#setup', ->
 
-  it 'should add a user', (done) ->
+    it 'should have access to lists, tasks, etc.', ->
+      database.task.should.be.ok
+      database.user.should.be.ok
+      database.util.should.be.ok
 
-    DB.user.write(user).then (_uid) ->
-      user.id = _uid
-      done()
 
-  it 'should read the data back', (done) ->
+  describe '#user', ->
 
-    DB.user.read(user.id).then (user) ->
-      for k, v of user
-        if v instanceof Date
-          v.should.eql user[k]
-        else if typeof v is 'object'
-          v.should.eql user[k]
-        else
-          v.should.eql user[k]
-      done()
+    it 'should create a new user', (done) ->
 
-  it 'should delete the user data', (done) ->
+      model =
+        name: 'Jimmy'
+        email: 'jimmy@gmail.com'
+        password: 'blah'
+        pro: 0
 
-    DB.user.delete(user.id).then -> done()
+      database.user.create(model).then (id) ->
+        user.id = id
+        done()
+
+
+    it 'should fetch a users information', (done) ->
+
+      database.user.read(user.id).then (info) ->
+        info.id.should.equal user.id
+        done()
+
+
+    it 'should update an existing user', (done) ->
+
+      model =
+        name: 'James'
+
+      database.user.update(model).then -> done()
+
+
+  describe '#task', ->
+
+    it 'should create a new task', (done) ->
+
+      model =
+        user_id: user.id
+        name: 'Task 1'
+
+      database.task.create(model)
+        .then -> done()
+        .fail (err) -> console.log err
+
+

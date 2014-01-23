@@ -2,7 +2,7 @@
   "name": "Nitro-Sync",
   "version": "2.1.0",
   "scripts": {
-    "test": "mocha --compilers coffee:coffee-script --invert --grep IGNORE test/"
+    "test": "mocha -R spec --compilers coffee:coffee-script test/"
   },
   "dependencies": {
     "mysql": "2.0.0-rc1",

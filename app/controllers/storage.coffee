@@ -1,5 +1,5 @@
 Q         = require 'kew'
-dbase     = require '../controllers/database'
+dbase     = require '../controllers/query'
 Log       = require '../utils/log'
 
 log = Log 'Storage', 'green'

@@ -1,3 +1,4 @@
+query = null
 
 module.exports =
 
@@ -7,8 +8,21 @@ module.exports =
    * Create table
   ###
 
-  setup: ->
+  setup: (_query) ->
 
+    query = _query
+
+    query """
+      CREATE TABLE IF NOT EXISTS `user` (
+        `id`           int(11)        unsigned   NOT NULL    AUTO_INCREMENT,
+        `name`         varchar(100)              NOT NULL,
+        `email`        varchar(100)              NOT NULL,
+        `password`     char(60)                  NOT NULL,
+        `pro`          tinyint(1)     unsigned   NOT NULL,
+        `created_at`   timestamp                 NOT NULL     DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+    """
 
   ###
    * Create
@@ -16,7 +30,31 @@ module.exports =
    * Create a new row
   ###
 
-  create: ->
+  create: (user) ->
+
+    sql = 'INSERT INTO user SET ?'
+    query(sql, user).then (info) ->
+      return info.insertId
+
+
+  ###
+   * Read
+   *
+   * Read a row
+  ###
+
+  read: (id, attrs='*') ->
+
+    if attrs is '*'
+      sql = 'SELECT * FROM user WHERE id=?'
+      args = id
+
+    else
+      sql = 'SELECT ? FROM user WHERE id=?'
+      args = [attrs, id]
+
+    query(sql, args).then (rows) ->
+      return rows[0]
 
 
   ###
@@ -25,7 +63,10 @@ module.exports =
    * Update an existing row
   ###
 
-  update: ->
+  update: (user) ->
+
+    sql = 'UPDATE user SET ?'
+    query sql, user
 
 
   ###
@@ -34,7 +75,10 @@ module.exports =
    * Destroy an existing row
   ###
 
-  destroy: ->
+  destroy: (id) ->
+
+    sql = 'DELETE FROM user WHERE id=?'
+    query sql, id
 
 
 

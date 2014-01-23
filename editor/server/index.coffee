@@ -6,15 +6,15 @@ folder = '../../app/'
 express  = require 'express'
 config   = require folder + 'config'
 Log      = require folder + 'utils/log'
-database = require folder + 'controllers/database'
+database = require folder + 'controllers/query'
 connect  = require folder + 'controllers/connect'
 
 log = Log 'Editor', 'white'
 
 # Config
 PORT = 8001
-# config.use 'testing'
-config.use 'development'
+config.use 'testing'
+# config.use 'development'
 
 # Create a new express web server
 app = express()

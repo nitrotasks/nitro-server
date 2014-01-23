@@ -9,7 +9,7 @@ config.use 'testing'
 global.DEBUG = true
 
 # Load controllers
-database = require '../app/controllers/database'
+database = require '../app/controllers/query'
 connect  = require '../app/controllers/connect'
 Storage  = require '../app/controllers/storage'
 
@@ -20,14 +20,9 @@ module.exports = (done) ->
 
   Storage.releaseAll()
 
-  promise = Q.all [
-    connect.ready
-    database.connected
-  ]
-
-  promise
+  database.connected
     .then ->
-      database.deleteAll 'user'
+      database.util.clear 'user'
     .then ->
       done()
     .fail (err) ->
