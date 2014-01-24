@@ -1,6 +1,5 @@
 Q      = require 'kew'
 url    = require 'url'
-mysql  = require 'mysql'
 config = require '../config'
 
 connect =
@@ -13,12 +12,19 @@ connect =
 
   init: () ->
 
-    # Connect to MySQL
+    # Connect to SQL database
     @engine = config.database.engine
-    if @engine is "mysql"
-      @db = mysql.createConnection config.database
-    else if @engine is "mssql"
-      @db = config.database
+
+    switch @engine
+
+      when 'mysql'
+        mysql = require 'mysql'
+        @db = mysql.createConnection config.database
+
+      when 'mssql'
+        mssql = require 'mssql'
+        @db = conect: (fn) ->
+          new mssql.Connection config.database, fn
 
     @ready.resolve()
 

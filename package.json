@@ -5,20 +5,22 @@
     "test": "mocha -R spec --compilers coffee:coffee-script test/"
   },
   "dependencies": {
-    "mysql": "2.0.0-rc1",
-    "bcrypt": "0.7.x",
     "coffee-script": "1.6.x",
-    "oauth": "0.9.x",
+
     "express": "3.4.x",
-    "msgpack": "0.2.x",
-    "nodemailer": "0.5.x",
-    "forever": "0.10.x",
-    "http-proxy": "0.10.x",
+    "bcrypt": "0.7.x",
+    "nodemailer": "0.6.x",
+
+    "mysql": "2.0.0-rc1",
+    "mssql": "~0.4.5",
+
     "kew": "0.3.x",
     "sockjs": "0.3.x",
     "cors": "2.1.x",
     "jandal": "0.0.10",
-    "xtype": "0.0.7"
+    "xtype": "0.0.7",
+
+    "forever": "0.10.x"
   },
   "devDependencies": {
     "supertest": "0.8.x",
