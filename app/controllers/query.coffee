@@ -39,7 +39,6 @@ connected = connect.ready.then ->
       # Export query
       module.exports.query = query
 
-
       db.connect  (err) ->
         if err
           warn 'Could not connect to database!'

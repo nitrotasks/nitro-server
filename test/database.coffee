@@ -19,6 +19,15 @@ describe 'Database', ->
     user_id: null
     name: 'List 1'
 
+  task =
+    user_id: null
+    list_id: null
+    name: 'Task 1'
+    notes: 'Some notes'
+    priority: 2
+    date: 0
+    completed: 0
+
   before setup
 
   describe '#user', ->
@@ -134,15 +143,6 @@ describe 'Database', ->
 
   describe '#task', ->
 
-    task =
-      user_id: null
-      list_id: null
-      name: 'Task 1'
-      notes: 'Some notes'
-      priority: 2
-      date: 0
-      completed: 0
-
     before ->
       task.user_id = user.id
       task.list_id = list.id
@@ -175,10 +175,12 @@ describe 'Database', ->
 
       database.task.destroy(task.id).then -> done()
 
+    it 'should create another task', (done) ->
 
-  describe '#login', ->
-
-    token = null
+      delete task.id
+      database.task.create(task).then (id) ->
+        task.id = id
+        done()
 
 
   describe '#register', ->
@@ -230,18 +232,88 @@ describe 'Database', ->
         done()
 
 
+
   describe '#pref', ->
 
-    pref = {}
+    pref =
+      user_id: null
+      sort: 0
+      night: 0
+      language: 'en-NZ'
+      weekStart: 1
+      dateFormat: 'dd/mm/yy'
+      confirmDelete: 1
+      moveCompleted: 1
 
-    it 'should create a new pref'
+    before ->
+      pref.user_id = user.id
 
-    it 'should update a pref'
+    it 'should create a new pref', (done) ->
 
-    it 'should destroy a pref'
+      database.pref.create(pref).then (id) ->
+        id.should.equal pref.user_id
+        done()
+
+    it 'should only allow one pref per user', (done) ->
+
+      database.pref.create(pref).fail -> done()
+
+    it 'should update a pref', (done) ->
+
+      pref.sort = 1
+      changes = sort: pref.sort
+
+      database.pref.update(user.id, changes).then ->
+        done()
+
+    it 'should read from a pref', (done) ->
+
+      database.pref.read(user.id).then (info) ->
+        info.should.eql pref
+        done()
+
+    it 'should destroy a pref', (done) ->
+
+      database.pref.destroy(user.id).then ->
+        done()
+
 
 
   describe '#list_tasks', ->
+
+    it 'should add a task to a list', (done) ->
+
+      database.listTasks.create(list.id, task.id).then -> done()
+
+    it 'should read all tasks from a list', (done) ->
+
+      database.listTasks.read(list.id).then (tasks) ->
+        tasks.should.eql [ task.id ]
+        done()
+
+    it 'should remove a task from a list', (done) ->
+
+      database.listTasks.destroy(list.id, task.id).then -> done()
+
+    it 'should return an empty array when there are no tasks', (done) ->
+
+      database.listTasks.read(list.id).then (tasks) ->
+        tasks.should.eql []
+        done()
+
+    it 'should add the same task to the same list again', (done) ->
+
+      database.listTasks.create(list.id, task.id).then -> done()
+
+    it 'should remove all tasks from a list', (done) ->
+
+      database.listTasks.destroyAll(list.id)
+        .then ->
+          database.listTasks.read(list.id)
+        .then (tasks) ->
+          tasks.should.eql []
+          done()
+
 
 
   describe '#login', ->

@@ -32,66 +32,6 @@ connected = connect.ready.then ->
 # Initialise Nitro database
 setup = ->
 
-
-
-
-  query """
-    CREATE TABLE IF NOT EXISTS `list` (
-      `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `user_id` int(11) unsigned NOT NULL,
-      `name` varchar(150) NOT NULL DEFAULT '',
-      PRIMARY KEY (`id`),
-      CONSTRAINT `list_user_id` FOREIGN KEY (`user_id`)
-      REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-  """
-
-  query """
-    CREATE TABLE IF NOT EXISTS `list_tasks` (
-      `list_id` int(11) unsigned NOT NULL,
-      `task_id` int(11) unsigned NOT NULL,
-      PRIMARY KEY (`list_id`,`task_id`),
-      CONSTRAINT `list_tasks_task_id` FOREIGN KEY (`task_id`)
-      REFERENCES `task` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-      CONSTRAINT `list_tasks_list_id` FOREIGN KEY (`list_id`)
-      REFERENCES `list` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-  """
-
-  query """
-    CREATE TABLE IF NOT EXISTS `register` (
-      `id`           int(11)        unsigned   NOT NULL    AUTO_INCREMENT,
-      `token`        char(22)                  NOT NULL,
-      `name`         varchar(100)              NOT NULL,
-      `email`        varchar(100)              NOT NULL,
-      `password`     char(60)                  NOT NULL,
-      `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`id`,`token`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-  """
-
-  query """
-    CREATE TABLE IF NOT EXISTS `login` (
-      `user_id`      int(11)        unsigned   NOT NULL,
-      `token`        char(64)                  NOT NULL,
-      `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`user_id`,`token`),
-      CONSTRAINT `login_user_id` FOREIGN KEY (`user_id`)
-      REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-  """
-
-  query """
-    CREATE TABLE IF NOT EXISTS `reset` (
-      `user_id`      int(11)        unsigned   NOT NULL,
-      `token`        char(22)                  NOT NULL,
-      `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (`user_id`,`token`),
-      CONSTRAINT `reset_user_id` FOREIGN KEY (`user_id`)
-      REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-  """
-
 close = ->
   db.end()
 
