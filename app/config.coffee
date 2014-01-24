@@ -8,15 +8,20 @@ config =
 
   production:
 
-    url: 'http://sync.nitrotasks.com:443'
+    url: 'http://sync.nitrotasks.com'
     port: process.env.PORT || 8080
 
     mysql:
-      host: keychain 'sql_host'
-      port: keychain 'sql_port'
-      user: keychain 'sql_user'
-      password: keychain 'sql_pass'
-      database: keychain 'sql_db'
+      host: process.env.NITRO_SQL_HOST
+      port: process.env.NITRO_SQL_PORT
+      user: process.env.NITRO_SQL_USER
+      password: process.env.NITRO_SQL_PASS
+      database: process.env.NITRO_SQL_DB
+      # host: keychain 'sql_host'
+      # port: keychain 'sql_port'
+      # user: keychain 'sql_user'
+      # password: keychain 'sql_pass'
+      # database: keychain 'sql_db'
 
   development:
 
