@@ -46,6 +46,8 @@ describe 'Database', ->
     it 'should fetch all user information', (done) ->
 
       database.user.read(user.id).then (info) ->
+        console.log info
+        console.log user
         info.should.eql user
         done()
 
@@ -182,4 +184,101 @@ describe 'Database', ->
 
       database.task.destroy(task.id).then -> done()
 
+
+  describe '#login', ->
+
+    token = null
+
+
+  describe '#register', ->
+
+    token = null
+
+    it 'should create a new entry', (done) ->
+
+      entry =
+        token: 'reddit'
+        name: user.name
+        email: user.email
+        password: user.password
+
+      database.register.create(entry).then (_token) ->
+        token = _token
+        token.should.match /^\d+_\w+$/
+        done()
+
+    it 'should read an existing entry', (done) ->
+
+      database.register.read(token).then (info) ->
+        info.should.eql
+          name: user.name
+          email: user.email
+          password: user.password
+        done()
+
+    it 'should fail when it cannot find a registration', (done) ->
+
+      database.register.read(user.id + '_gibberish').fail (err) ->
+        err.should.equal 'err_no_row'
+        done()
+
+    it 'should fail when it cannot parse a token', (done) ->
+
+      database.register.read('nonsense').fail (err) ->
+        err.should.equal 'err_invalid_token'
+        done()
+
+    it 'should destroy an existing token', (done) ->
+
+      database.register.destroy(token).then -> done()
+
+    it 'should fail when destroying a token that does not exist', (done) ->
+
+      database.register.destroy(user.id + '_gibberish').fail (err) ->
+        err.should.equal 'err_no_row'
+        done()
+
+
+  describe '#login', ->
+
+    login =
+      user_id: null
+      token: 'battery-horse-staple'
+
+    before ->
+      login.user_id = user.id
+
+    it 'should create a new entry', (done) ->
+
+      database.login.create(login).then ->
+        done()
+
+    it 'should read the date the login token was created', (done) ->
+
+      database.login.read(login, 'created_at').then (info) ->
+        login.created_at = info.created_at
+        login.created_at.should.be.an.instanceOf Date
+        done()
+
+    it 'should read an existing entry', (done) ->
+
+      database.login.read(login).then (info) ->
+        info.should.eql login
+        done()
+
+    it 'should check if a login exists', (done) ->
+
+      database.login.exists(login).then (exists) ->
+        exists.should.equal true
+        done()
+
+    it 'should destroy an existing entry', (done) ->
+
+      database.login.destroy(login).then -> done()
+
+    it 'should check if a login does not exist', (done) ->
+
+      database.login.exists(login).then (exists) ->
+        exists.should.equal false
+        done()
 

@@ -10,6 +10,8 @@ tables =
   user: require '../database/user'
   list: require '../database/list'
   task: require '../database/task'
+  login: require '../database/login'
+  register: require '../database/register'
 
 connected = connect.ready.then ->
 

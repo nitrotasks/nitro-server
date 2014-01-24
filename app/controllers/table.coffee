@@ -3,6 +3,8 @@ class Table
 
   table: null
 
+  ERR_NO_ROW: 'err_no_row'
+
   constructor: (@query) ->
 
   setup: ->
@@ -43,8 +45,8 @@ class Table
 
     sql = "SELECT #{ columns } FROM #{ @table } WHERE id=?"
 
-    @query(sql, id).then (rows) ->
-      unless rows.length then throw new Error 'err_no_row'
+    @query(sql, id).then (rows) =>
+      unless rows.length then throw @ERR_NO_ROW
       return rows[0]
 
 
@@ -63,8 +65,8 @@ class Table
 
     sql = "UPDATE #{ @table } SET ? WHERE id=?"
 
-    @query(sql, [data, id]).then (info) ->
-      unless info.affectedRows then throw new Error 'err_no_row'
+    @query(sql, [data, id]).then (info) =>
+      unless info.affectedRows then throw @ERR_NO_ROW
       return info.insertId
 
 
@@ -82,8 +84,8 @@ class Table
 
     sql = "DELETE FROM #{ @table } WHERE id=?"
 
-    @query(sql, id).then (info) ->
-      unless info.affectedRows then throw new Error 'err_no_row'
+    @query(sql, id).then (info) =>
+      unless info.affectedRows then throw @ERR_NO_ROW
       return true
 
 

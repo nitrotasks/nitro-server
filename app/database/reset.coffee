@@ -1,40 +1,7 @@
+Table = require '../controllers/table'
 
-module.exports =
+class Reset extends Table
 
-  ###
-   * Setup
-   *
-   * Create table
-  ###
+  table: 'reset'
 
-  setup: ->
-
-
-  ###
-   * Create
-   *
-   * Create a new row
-  ###
-
-  create: ->
-
-
-  ###
-   * Update
-   *
-   * Update an existing row
-  ###
-
-  update: ->
-
-
-  ###
-   * Destroy
-   *
-   * Destroy an existing row
-  ###
-
-  destroy: ->
-
-
-
+module.exports = Reset
