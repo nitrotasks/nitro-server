@@ -1,3 +1,4 @@
+Q = require 'kew'
 should = require 'should'
 database = require '../app/controllers/query'
 
@@ -20,14 +21,6 @@ describe 'Database', ->
 
   before setup
 
-  describe '#setup', ->
-
-    it 'should have access to lists, tasks, etc.', ->
-      database.task.should.be.ok
-      database.list.should.be.ok
-      database.user.should.be.ok
-
-
   describe '#user', ->
 
     it 'should create a new user', (done) ->
@@ -46,8 +39,6 @@ describe 'Database', ->
     it 'should fetch all user information', (done) ->
 
       database.user.read(user.id).then (info) ->
-        console.log info
-        console.log user
         info.should.eql user
         done()
 
@@ -239,6 +230,20 @@ describe 'Database', ->
         done()
 
 
+  describe '#pref', ->
+
+    pref = {}
+
+    it 'should create a new pref'
+
+    it 'should update a pref'
+
+    it 'should destroy a pref'
+
+
+  describe '#list_tasks', ->
+
+
   describe '#login', ->
 
     login =
@@ -250,8 +255,7 @@ describe 'Database', ->
 
     it 'should create a new entry', (done) ->
 
-      database.login.create(login).then ->
-        done()
+      database.login.create(login).then -> done()
 
     it 'should read the date the login token was created', (done) ->
 
@@ -280,5 +284,89 @@ describe 'Database', ->
 
       database.login.exists(login).then (exists) ->
         exists.should.equal false
+        done()
+
+    it 'should fail when reading an entry that does not exist', (done) ->
+
+      database.login.read(login).fail (err) ->
+        err.should.equal 'err_no_row'
+        done()
+
+    it 'should create another login token', (done) ->
+
+      database.login.create(login)
+      .then ->
+        database.login.create
+          user_id: user.id
+          token: 'temp'
+      .then ->
+        database.login.create
+          user_id: user.id
+          token: 'orary'
+      .then ->
+        done()
+
+    it 'should delete all login token', (done) ->
+
+      Q.all([
+        database.login.exists(login)
+        database.login.exists user_id: user.id, token: 'temp'
+        database.login.exists user_id: user.id, token: 'orary'
+
+        database.login.destroyAll(user.id)
+
+        database.login.exists(login)
+        database.login.exists user_id: user.id, token: 'temp'
+        database.login.exists user_id: user.id, token: 'orary'
+      ]).then ([a, b, c, _, x, y, z]) ->
+        a.should.equal true
+        b.should.equal true
+        c.should.equal true
+        x.should.equal false
+        y.should.equal false
+        z.should.equal false
+        done()
+      .fail (err) ->
+        console.log err
+
+
+  describe '#reset', ->
+
+    token = null
+
+    reset =
+      user_id: null
+      token: 'actually'
+
+    before ->
+      reset.user_id = user.id
+
+    it 'should create a reset token' , (done) ->
+
+      database.reset.create(reset).then (_token) ->
+        token = _token
+        token.should.match /^\d+_\w+$/
+        done()
+
+    it 'should read a reset token', (done) ->
+
+      database.reset.read(token).then (id) ->
+        id.should.equal reset.user_id
+        done()
+
+    it 'should fail when using an invalid token', (done) ->
+
+      database.reset.read('blah').fail (err) ->
+        err.should.equal 'err_invalid_token'
+        done()
+
+    it 'should destroy a reset token', (done) ->
+
+      database.reset.destroy(token).then -> done()
+
+    it 'should fail when reading a token that does not exist', (done) ->
+
+      database.reset.read(token).fail (err) ->
+        err.should.equal 'err_no_row'
         done()
 

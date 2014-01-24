@@ -1,40 +1,7 @@
+Table = require '../controllers/table'
 
-module.exports =
+class ListTasks extends Table
 
-  ###
-   * Setup
-   *
-   * Create table
-  ###
+  table: 'list_tasks'
 
-  setup: ->
-
-
-  ###
-   * Create
-   *
-   * Create a new row
-  ###
-
-  create: ->
-
-
-  ###
-   * Update
-   *
-   * Update an existing row
-  ###
-
-  update: ->
-
-
-  ###
-   * Destroy
-   *
-   * Destroy an existing row
-  ###
-
-  destroy: ->
-
-
-
+module.exports = ListTasks

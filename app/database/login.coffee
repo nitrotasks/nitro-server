@@ -51,6 +51,7 @@ class Login extends Table
 
 
   update: ->
+
     throw new Error 'Cannot update login row'
 
 
@@ -61,6 +62,11 @@ class Login extends Table
 
     @query sql, args
 
-  destroyAll: Table::destroy
+  destroyAll: (id) ->
+
+    sql = "DELETE FROM #{ @table } WHERE user_id=?"
+    args = [id]
+
+    @query sql, args
 
 module.exports = Login
