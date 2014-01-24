@@ -26,12 +26,12 @@ define 'List', 'object',
 define 'Pref', 'object',
   keys:
     sort: 'boolean'
-    night: 'string'
+    night: 'number'
     language: 'string'
     weekStart: 'number'
     dateFormat: 'string'
     confirmDelete: 'boolean'
-    completedDuration: 'string'
+    moveCompleted: 'number'
 
 
 

@@ -8,14 +8,14 @@ class Pref extends Table
 
     @query """
       CREATE TABLE IF NOT EXISTS `pref` (
-        `id`                int(11)     unsigned NOT NULL      AUTO_INCREMENT,
-        `sort`              tinyint(1)  unsigned DEFAULT NULL,
-        `night`             tinyint(1)  unsigned DEFAULT NULL,
-        `language`          varchar(5)           DEFAULT '',
-        `weekStart`         tinyint(1)  unsigned DEFAULT NULL,
-        `dateFormat`        char(8)              DEFAULT NULL,
-        `comfirmDelete`     tinyint(1)  unsigned DEFAULT NULL,
-        `completedDuration` tinyint(1)  unsigned DEFAULT NULL,
+        `id`            int(11)    unsigned NOT NULL      AUTO_INCREMENT,
+        `sort`          tinyint(1) unsigned DEFAULT NULL,
+        `night`         tinyint(1) unsigned DEFAULT NULL,
+        `language`      varchar(5)          DEFAULT '',
+        `weekStart`     tinyint(1) unsigned DEFAULT NULL,
+        `dateFormat`    char(8)             DEFAULT NULL,
+        `comfirmDelete` tinyint(1) unsigned DEFAULT NULL,
+        `moveCompleted` tinyint(1) unsigned DEFAULT NULL,
         PRIMARY KEY (`id`)
       ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
     """
