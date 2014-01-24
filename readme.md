@@ -3,7 +3,7 @@
 ## Requirements ##
 - Node.js and NPM
 - Coffeescript
-- MySQL Server
+- Microsoft SQL Server or MySQL Server
 
 ## To install and run ##
 - `npm install` to install the dependencies
@@ -19,17 +19,17 @@
 - `mocha --compilers coffee:coffee-script test/<filename>.coffee` - to test
   only some things.
 
-# About Nitro Sync  
-    
+# About Nitro Sync
+
 ## Module Layout
 
 ![Modules](module_layout.jpg)
 
 ## Storage
 
-All data is stored in a MySQL database
+All data is stored in a SQL database
 
-Data stored on MySQL includes
+Data stored on SQL includes
 
 - All user data
     - ID

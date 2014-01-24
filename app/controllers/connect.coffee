@@ -14,7 +14,11 @@ connect =
   init: () ->
 
     # Connect to MySQL
-    @mysql = mysql.createConnection config.mysql
+    @engine = config.database.engine
+    if @engine is "mysql"
+      @db = mysql.createConnection config.database
+    else if @engine is "mssql"
+      @db = config.database
 
     @ready.resolve()
 

@@ -1,4 +1,5 @@
 Q        = require 'kew'
+mssql    = require 'mssql'
 connect  = require '../controllers/connect'
 Log      = require '../utils/log'
 
@@ -13,29 +14,54 @@ tables =
 
 connected = connect.ready.then ->
 
-  log 'Connecting to MySQL'
+  log "Connecting to #{connect.engine}"
 
-  db = connect.mysql
-  query = Q.bindPromise db.query, db
+  if connect.engine is "mysql"
 
-  # Export query
-  module.exports.query = query
+    db = connect.db
+    query = Q.bindPromise db.query, db
 
-  deferred = Q.defer()
+    # Export query
+    module.exports.query = query
 
-  db.connect  (err) ->
-    if err
-      warn 'Could not connect to MySQL database!'
-      return deferred.reject err
+    deferred = Q.defer()
 
-    log 'Connected to MySQL server'
+    db.connect  (err) ->
+      if err
+        warn 'Could not connect to database!'
+        return deferred.reject err
 
-    for name, Table of tables
-      table = new Table(query)
-      table.setup()
-      module.exports[name] = table
+      log 'Connected to MySQL server'
 
-    deferred.resolve()
+      for name, Table of tables
+        table = new Table(query)
+        table.setup()
+        module.exports[name] = table
+
+      deferred.resolve()
+
+  else if connect.engine is "mssql"
+
+    db = new mssql.Connection connect.db, (err) ->
+      if err
+        warn 'Could not connect to database!'
+        return deferred.reject err
+
+      log 'Connected to Microsoft SQL Server'
+
+      query = Q.bindPromise db.request().query, db
+
+      # Export query
+      module.exports.query = query
+
+      deferred = Q.defer()
+
+      for name, Table of tables
+        table = new Table(query)
+        table.setup()
+        module.exports[name] = table
+
+      deferred.resolve()
 
   return deferred.promise
 
