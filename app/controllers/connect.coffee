@@ -23,7 +23,7 @@ connect =
 
       when 'mssql'
         mssql = require 'mssql'
-        @db = conect: (fn) ->
+        @db = connect: (fn) ->
           new mssql.Connection config.database, fn
 
     @ready.resolve()
