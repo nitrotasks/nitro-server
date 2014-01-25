@@ -6,21 +6,43 @@ class Pref extends Table
 
   setup: ->
 
-    @query """
-      CREATE TABLE IF NOT EXISTS `pref` (
-        `user_id`       int(11)    unsigned NOT NULL      AUTO_INCREMENT,
-        `sort`          tinyint(1) unsigned DEFAULT NULL,
-        `night`         tinyint(1) unsigned DEFAULT NULL,
-        `language`      varchar(5)          DEFAULT '',
-        `weekStart`     tinyint(1) unsigned DEFAULT NULL,
-        `dateFormat`    char(8)             DEFAULT NULL,
-        `confirmDelete` tinyint(1) unsigned DEFAULT NULL,
-        `moveCompleted` tinyint(1) unsigned DEFAULT NULL,
-        PRIMARY KEY (`user_id`),
-        CONSTRAINT `pref_user_id` FOREIGN KEY (`user_id`)
-        REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-    """
+    @createTable (table) =>
+
+      table.integer('user_id').unsigned()
+        .primary()
+        .references('id').inTable('user')
+        .onDelete('cascade')
+        .onUpdate('cascade')
+
+      table.boolean('sort').unsigned()
+
+      table.boolean('night').unsigned()
+
+      table.string('language', 5)
+
+      table.boolean('weekStart').unsigned()
+
+      table.string('dateFormat', 8)
+
+      table.boolean('confirmDelete').unsigned()
+
+      table.boolean('moveCompleted').unsigned()
+
+      console.log table.toString()
+
+      # CREATE TABLE IF NOT EXISTS `pref` (
+      #   `user_id`       int(11)    unsigned NOT NULL      AUTO_INCREMENT,
+      #   `sort`          tinyint(1) unsigned DEFAULT NULL,
+      #   `night`         tinyint(1) unsigned DEFAULT NULL,
+      #   `language`      varchar(5)          DEFAULT '',
+      #   `weekStart`     tinyint(1) unsigned DEFAULT NULL,
+      #   `dateFormat`    char(8)             DEFAULT NULL,
+      #   `confirmDelete` tinyint(1) unsigned DEFAULT NULL,
+      #   `moveCompleted` tinyint(1) unsigned DEFAULT NULL,
+      #   PRIMARY KEY (`user_id`),
+      #   CONSTRAINT `pref_user_id` FOREIGN KEY (`user_id`)
+      #   REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+      # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
   ###
@@ -34,14 +56,14 @@ class Pref extends Table
    * ! err_no_row : row cannot be found
   ###
 
-  read: (id, columns='*') ->
+  read: (id, columns) ->
 
-    if typeof columns is 'array'
-      columns = columns.join ', '
+    promise = @exec @query(@table)
+      .select()
+      .column(columns)
+      .where('user_id', id)
 
-    sql = "SELECT #{ columns } FROM #{ @table } WHERE user_id=?"
-
-    @query(sql, id).then (rows) =>
+    promise.then (rows) =>
       unless rows.length then throw @ERR_NO_ROW
       return rows[0]
 
@@ -59,11 +81,13 @@ class Pref extends Table
 
   update: (id, data) ->
 
-    sql = "UPDATE #{ @table } SET ? WHERE user_id=?"
+    promise = @exec @query(@table)
+      .where('user_id', id)
+      .update(data)
 
-    @query(sql, [data, id]).then (info) =>
-      unless info.affectedRows then throw @ERR_NO_ROW
-      return info.insertId
+    promise.then (rows) =>
+      unless rows then throw @ERR_NO_ROW
+      return rows
 
 
   ###
@@ -78,10 +102,12 @@ class Pref extends Table
 
   destroy: (id) ->
 
-    sql = "DELETE FROM #{ @table } WHERE user_id=?"
+    promise = @exec @query(@table)
+      .where('user_id', id)
+      .del()
 
-    @query(sql, id).then (info) =>
-      unless info.affectedRows then throw @ERR_NO_ROW
+    promise.then (rows) =>
+      unless rows then throw @ERR_NO_ROW
       return true
 
 

@@ -61,5 +61,6 @@ config =
       user: 'nodejs'
       password: 'nodejs'
       database: 'Nitro_Test'
+      charset: 'utf8'
 
 module.exports = config

@@ -6,21 +6,18 @@
   },
   "dependencies": {
     "coffee-script": "1.6.x",
-
     "express": "3.4.x",
     "bcrypt": "0.7.x",
     "nodemailer": "0.6.x",
-
     "mysql": "2.0.0-rc1",
     "mssql": "~0.4.5",
-
     "kew": "0.3.x",
     "sockjs": "0.3.x",
     "cors": "2.1.x",
     "jandal": "0.0.10",
     "xtype": "0.0.7",
-
-    "forever": "0.10.x"
+    "forever": "0.10.x",
+    "knex": "~0.5.4"
   },
   "devDependencies": {
     "supertest": "0.8.x",

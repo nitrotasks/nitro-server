@@ -35,6 +35,7 @@ describe 'Database', ->
     it 'should create a new user', (done) ->
 
       database.user.create(user).then (id) ->
+        id.should.be.a.Number
         user.id = id
         done()
 
@@ -82,7 +83,9 @@ describe 'Database', ->
     it 'should fail when updating a user that does not exist', (done) ->
 
       model = email: 'james@gmail.com'
-      database.user.update(user.id, model).fail -> done()
+      database.user.update(user.id, model).fail (err) ->
+        err.should.equal 'err_no_row'
+        done()
 
     it 'should fail when destroying a user that does not exist', (done) ->
 
@@ -250,9 +253,7 @@ describe 'Database', ->
 
     it 'should create a new pref', (done) ->
 
-      database.pref.create(pref).then (id) ->
-        id.should.equal pref.user_id
-        done()
+      database.pref.create(pref).then -> done()
 
     it 'should only allow one pref per user', (done) ->
 
@@ -319,77 +320,76 @@ describe 'Database', ->
   describe '#login', ->
 
     login =
-      user_id: null
+      id: null
       token: 'battery-horse-staple'
 
     before ->
-      login.user_id = user.id
+      login.id = user.id
 
     it 'should create a new entry', (done) ->
 
-      database.login.create(login).then -> done()
+      database.login.create(login.id, login.token).then -> done()
 
     it 'should read the date the login token was created', (done) ->
 
-      database.login.read(login, 'created_at').then (info) ->
+      database.login.read(login.id, login.token, 'created_at').then (info) ->
         login.created_at = info.created_at
         login.created_at.should.be.an.instanceOf Date
         done()
 
     it 'should read an existing entry', (done) ->
 
-      database.login.read(login).then (info) ->
-        info.should.eql login
+      database.login.read(login.id, login.token).then (info) ->
+        info.should.eql
+          user_id: login.id
+          token: login.token
+          created_at: login.created_at
         done()
 
     it 'should check if a login exists', (done) ->
 
-      database.login.exists(login).then (exists) ->
+      database.login.exists(login.id, login.token).then (exists) ->
         exists.should.equal true
         done()
 
     it 'should destroy an existing entry', (done) ->
 
-      database.login.destroy(login).then -> done()
+      database.login.destroy(login.id, login.token).then -> done()
 
     it 'should check if a login does not exist', (done) ->
 
-      database.login.exists(login).then (exists) ->
+      database.login.exists(login.id, login.token).then (exists) ->
         exists.should.equal false
         done()
 
     it 'should fail when reading an entry that does not exist', (done) ->
 
-      database.login.read(login).fail (err) ->
+      database.login.read(login.id, login.token).fail (err) ->
         err.should.equal 'err_no_row'
         done()
 
     it 'should create another login token', (done) ->
 
-      database.login.create(login)
+      database.login.create(login.id, login.token)
       .then ->
-        database.login.create
-          user_id: user.id
-          token: 'temp'
+        database.login.create(login.id, 'temp')
       .then ->
-        database.login.create
-          user_id: user.id
-          token: 'orary'
+        database.login.create(login.id, 'orary')
       .then ->
         done()
 
     it 'should delete all login token', (done) ->
 
       Q.all([
-        database.login.exists(login)
-        database.login.exists user_id: user.id, token: 'temp'
-        database.login.exists user_id: user.id, token: 'orary'
+        database.login.exists login.id, login.token
+        database.login.exists user.id, 'temp'
+        database.login.exists user.id, 'orary'
 
         database.login.destroyAll(user.id)
 
-        database.login.exists(login)
-        database.login.exists user_id: user.id, token: 'temp'
-        database.login.exists user_id: user.id, token: 'orary'
+        database.login.exists login.id, login.token
+        database.login.exists user.id, 'temp'
+        database.login.exists user.id, 'orary'
       ]).then ([a, b, c, _, x, y, z]) ->
         a.should.equal true
         b.should.equal true
@@ -407,15 +407,15 @@ describe 'Database', ->
     token = null
 
     reset =
-      user_id: null
+      id: null
       token: 'actually'
 
     before ->
-      reset.user_id = user.id
+      reset.id = user.id
 
     it 'should create a reset token' , (done) ->
 
-      database.reset.create(reset).then (_token) ->
+      database.reset.create(reset.id, reset.token).then (_token) ->
         token = _token
         token.should.match /^\d+_\w+$/
         done()
@@ -423,7 +423,7 @@ describe 'Database', ->
     it 'should read a reset token', (done) ->
 
       database.reset.read(token).then (id) ->
-        id.should.equal reset.user_id
+        id.should.equal reset.id
         done()
 
     it 'should fail when using an invalid token', (done) ->

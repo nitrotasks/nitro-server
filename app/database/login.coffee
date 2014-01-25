@@ -6,16 +6,36 @@ class Login extends Table
 
   setup: ->
 
-    @query """
-      CREATE TABLE IF NOT EXISTS `login` (
-        `user_id`      int(11)        unsigned   NOT NULL,
-        `token`        char(64)                  NOT NULL,
-        `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (`user_id`,`token`),
-        CONSTRAINT `login_user_id` FOREIGN KEY (`user_id`)
-        REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-    """
+    @createTable (table) =>
+
+      table.primary(['user_id', 'token'])
+
+      table.integer('user_id').unsigned()
+        .references('id').inTable('user')
+        .onDelete('cascade')
+        .onUpdate('cascade')
+
+      table.string('token', 64)
+
+      table.timestamp('created_at').defaultTo @query.raw 'now()'
+
+      console.log table.toString()
+
+      # CREATE TABLE IF NOT EXISTS `login` (
+      #   `user_id`      int(11)        unsigned   NOT NULL,
+      #   `token`        char(64)                  NOT NULL,
+      #   `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
+      #   PRIMARY KEY (`user_id`,`token`),
+      #   CONSTRAINT `login_user_id` FOREIGN KEY (`user_id`)
+      #   REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+      # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+  create: (id, token) ->
+
+    super
+      user_id: id
+      token: token
+
 
   ###
    * Read
@@ -28,25 +48,29 @@ class Login extends Table
    * ! err_no_row : row cannot be found
   ###
 
-  read: (info, columns='*') ->
+  read: (id, token, columns) ->
 
-    if typeof columns is 'array'
-      columns = columns.join ', '
+    promise = @exec @query(@table)
+      .select()
+      .column(columns)
+      .where
+        user_id: id
+        token: token
 
-    sql = "SELECT #{ columns } FROM #{ @table } WHERE user_id=? AND token=?"
-    args = [info.user_id, info.token]
-
-    @query(sql, args).then (rows) =>
+    promise.then (rows) =>
       unless rows.length then throw @ERR_NO_ROW
       return rows[0]
 
 
-  exists: (info) ->
+  exists: (id, token) ->
 
-    sql = "SELECT user_id FROM #{ @table } WHERE user_id=? AND token=?"
-    args = [info.user_id, info.token]
+    promise = @exec @query(@table)
+      .select('user_id')
+      .where
+        user_id: id
+        token: token
 
-    @query(sql, args).then (rows) =>
+    promise.then (rows) ->
       return rows.length isnt 0
 
 
@@ -55,18 +79,20 @@ class Login extends Table
     throw new Error 'Cannot update login row'
 
 
-  destroy: (info) ->
+  destroy: (id, token) ->
 
-    sql = "DELETE FROM #{ @table } WHERE user_id=? and token=?"
-    args = [info.user_id, info.token]
+    @exec @query(@table)
+      .del()
+      .where
+        user_id: id
+        token: token
 
-    @query sql, args
 
   destroyAll: (id) ->
 
-    sql = "DELETE FROM #{ @table } WHERE user_id=?"
-    args = [id]
+    @exec @query(@table)
+      .del()
+      .where('user_id', id)
 
-    @query sql, args
 
 module.exports = Login

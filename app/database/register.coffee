@@ -12,17 +12,31 @@ class Register extends Table
 
   setup: ->
 
-    @query """
-      CREATE TABLE IF NOT EXISTS `register` (
-        `id`           int(11)        unsigned   NOT NULL    AUTO_INCREMENT,
-        `token`        char(22)                  NOT NULL,
-        `name`         varchar(100)              NOT NULL,
-        `email`        varchar(100)              NOT NULL,
-        `password`     char(60)                  NOT NULL,
-        `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (`id`,`token`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-    """
+    @createTable (table) =>
+
+      table.increments('id').unsigned()
+
+      table.string('token', 22)
+
+      table.string('name', 100)
+
+      table.string('email', 100)
+
+      table.string('password', 60)
+
+      table.timestamp('created_at').defaultTo @query.raw 'now()'
+
+      console.log table.toString()
+
+      # CREATE TABLE IF NOT EXISTS `register` (
+      #   `id`           int(11)        unsigned   NOT NULL    AUTO_INCREMENT,
+      #   `token`        char(22)                  NOT NULL,
+      #   `name`         varchar(100)              NOT NULL,
+      #   `email`        varchar(100)              NOT NULL,
+      #   `password`     char(60)                  NOT NULL,
+      #   `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
+      #   PRIMARY KEY (`id`,`token`)
+      # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
   create: (data) ->
 
@@ -35,9 +49,13 @@ class Register extends Table
     match = parseToken(token)
     unless match then return Q.reject('err_invalid_token')
 
-    sql = 'SELECT name, email, password FROM register WHERE id=? AND token=?'
+    promise = @exec @query(@table)
+      .select('name', 'email', 'password')
+      .where
+        id: match[0]
+        token: match[1]
 
-    @query(sql, match).then (rows) =>
+    promise.then (rows) =>
       unless rows.length then throw @ERR_NO_ROW
       return rows[0]
 
@@ -45,6 +63,7 @@ class Register extends Table
   update: ->
 
     throw new Error 'Cannot update registration'
+
 
   destroy: (token) ->
 

@@ -6,32 +6,48 @@ class ListTasks extends Table
 
   setup: ->
 
-    @query """
-      CREATE TABLE IF NOT EXISTS `list_tasks` (
-        `list_id` int(11) unsigned NOT NULL,
-        `task_id` int(11) unsigned NOT NULL,
-        PRIMARY KEY (`list_id`,`task_id`),
-        CONSTRAINT `list_tasks_task_id` FOREIGN KEY (`task_id`)
-        REFERENCES `task` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-        CONSTRAINT `list_tasks_list_id` FOREIGN KEY (`list_id`)
-        REFERENCES `list` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-    """
+    @createTable (table) =>
+
+      table.primary(['list_id', 'task_id'])
+
+      table.integer('list_id').unsigned()
+        .references('id').inTable('list')
+        .onDelete('cascade')
+        .onUpdate('cascade')
+
+      table.integer('task_id').unsigned()
+        .references('id').inTable('task')
+        .onDelete('cascade')
+        .onUpdate('cascade')
+
+      console.log table.toString()
+
+      # CREATE TABLE IF NOT EXISTS `list_tasks` (
+      #   `list_id` int(11) unsigned NOT NULL,
+      #   `task_id` int(11) unsigned NOT NULL,
+      #   PRIMARY KEY (`list_id`,`task_id`),
+      #   CONSTRAINT `list_tasks_task_id` FOREIGN KEY (`task_id`)
+      #   REFERENCES `task` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+      #   CONSTRAINT `list_tasks_list_id` FOREIGN KEY (`list_id`)
+      #   REFERENCES `list` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+      # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
   create: (list, task) ->
 
-    sql = "INSERT INTO #{ @table } (list_id, task_id) VALUES (?, ?)"
-    args = [list, task]
+    @exec @query(@table)
+      .insert
+        list_id: list
+        task_id: task
 
-    @query sql, args
 
   read: (list) ->
 
-    sql = "SELECT task_id FROM #{ @table } WHERE list_id=?"
-    args = list
+    promise = @exec @query(@table)
+      .select('task_id')
+      .where('list_id', list)
 
-    @query(sql, args).then (rows) ->
+    promise.then (rows) ->
       rows.map (row) -> row.task_id
 
 
@@ -42,17 +58,18 @@ class ListTasks extends Table
 
   destroy: (list, task) ->
 
-    sql = "DELETE FROM #{ @table } WHERE list_id=? AND task_id=?"
-    args = [list, task]
-
-    @query sql, args
+    @exec @query(@table)
+      .del()
+      .where
+        list_id: list
+        task_id: task
 
 
   destroyAll: (list) ->
 
-    sql = "DELETE FROM #{ @table } WHERE list_id=?"
-    args = list
+    @exec @query(@table)
+      .del()
+      .where 'list_id', list
 
-    @query sql, args
 
 module.exports = ListTasks

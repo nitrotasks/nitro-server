@@ -1,5 +1,6 @@
 Q      = require 'kew'
 url    = require 'url'
+Knex   = require 'knex'
 config = require '../config'
 
 connect =
@@ -12,19 +13,25 @@ connect =
 
   init: () ->
 
-    # Connect to SQL database
-    @engine = config.database.engine
+    console.log 'intializing'
 
-    switch @engine
+    @db = Knex.initialize
+      client: config.database.engine
+      connection: config.database
 
-      when 'mysql'
-        mysql = require 'mysql'
-        @db = mysql.createConnection config.database
-
-      when 'mssql'
-        mssql = require 'mssql'
-        @db = connect: (fn) ->
-          new mssql.Connection config.database, fn
+    # # Connect to SQL database
+    # @engine = config.database.engine
+    #
+    # switch @engine
+    #
+    #   when 'mysql'
+    #     mysql = require 'mysql'
+    #     @db = mysql.createConnection config.database
+    #
+    #   when 'mssql'
+    #     mssql = require 'mssql'
+    #     @db = connect: (fn) ->
+    #       new mssql.Connection config.database, fn
 
     @ready.resolve()
 

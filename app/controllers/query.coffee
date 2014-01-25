@@ -17,60 +17,62 @@ tables =
   listTasks: require '../database/list_tasks'
 
 initiateTables = (queryFn) ->
+  promises = []
   for name, Table of tables
     table = new Table(queryFn)
-    table.setup()
+    promises.push table.setup()
     module.exports[name] = table
+  return Q.all promises
 
 
 connected = connect.ready.then ->
 
-  log "Connecting to database: #{ connect.engine }"
+  module.exports.query = connect.db
+  # deferred = Q.defer()
 
-  db = connect.db
-  deferred = Q.defer()
+  return initiateTables(connect.db)
 
-  switch connect.engine
+  # switch connect.engine
 
-    when 'mysql'
+  #   when 'mysql'
 
-      query = Q.bindPromise db.query, db
+  #     query = Q.bindPromise db.query, db
 
-      # Export query
-      module.exports.query = query
+  #     # Export query
+  #     module.exports.query = query
 
-      db.connect  (err) ->
-        if err
-          warn 'Could not connect to database!'
-          return deferred.reject err
+  #     db.connect  (err) ->
+  #       if err
+  #         warn 'Could not connect to database!'
+  #         return deferred.reject err
 
-        log 'Connected to MySQL server'
+  #       log 'Connected to MySQL server'
 
-        initiateTables(query)
+  #       initiateTables(query)
 
-        deferred.resolve()
+  #       deferred.resolve()
 
 
-    when 'mssql'
+  #   when 'mssql'
 
-      db.connect (err) ->
+  #     db.connect (err) ->
 
-        if err
-          warn 'Could not connect to database!'
-          return deferred.reject err
+  #       if err
+  #         warn 'Could not connect to database!'
+  #         return deferred.reject err
 
-        log 'Connected to Microsoft SQL Server'
+  #       log 'Connected to Microsoft SQL Server'
 
-        query = Q.bindPromise db.request().query, db
+  #       query = Q.bindPromise db.request().query, db
 
-        # Export query
-        module.exports.query = query
+  #       # Export query
+  #       module.exports.query = query
 
-        initiateTables(query)
+  #       initiateTables(query)
 
-        deferred.resolve()
+  #       deferred.resolve()
 
-  return deferred.promise
+  # return deferred.promise
 
 module.exports =
   connected: connected

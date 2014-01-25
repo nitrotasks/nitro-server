@@ -1,3 +1,4 @@
+Q = require 'kew'
 
 class Table
 
@@ -9,6 +10,20 @@ class Table
 
   setup: ->
 
+  exec: (fn) ->
+
+    deferred = Q.defer()
+    fn.exec deferred.makeNodeResolver()
+    return deferred.promise
+
+
+  createTable: (fn) ->
+
+    promise = @exec @query.schema.hasTable(@table)
+
+    promise.then (exists) =>
+      return if exists
+      @exec @query.schema.createTable(@table, fn)
 
   ###
    * Create
@@ -21,10 +36,10 @@ class Table
 
   create: (data) ->
 
-    sql = "INSERT INTO #{ @table } SET ?"
+    promise = @exec @query(@table).insert(data)
 
-    @query(sql, data).then (info) ->
-      return info.insertId
+    promise.then (id) ->
+      return id[0]
 
 
   ###
@@ -38,14 +53,11 @@ class Table
    * ! err_no_row : row cannot be found
   ###
 
-  read: (id, columns='*') ->
+  read: (id, columns) ->
 
-    if typeof columns is 'array'
-      columns = columns.join ', '
+    promise = @exec @query(@table).column(columns).where('id', id).select()
 
-    sql = "SELECT #{ columns } FROM #{ @table } WHERE id=?"
-
-    @query(sql, id).then (rows) =>
+    promise.then (rows) =>
       unless rows.length then throw @ERR_NO_ROW
       return rows[0]
 
@@ -63,11 +75,11 @@ class Table
 
   update: (id, data) ->
 
-    sql = "UPDATE #{ @table } SET ? WHERE id=?"
+    promise = @exec @query(@table).where('id', id).update(data)
 
-    @query(sql, [data, id]).then (info) =>
-      unless info.affectedRows then throw @ERR_NO_ROW
-      return info.insertId
+    promise.then (rows) =>
+      unless rows then throw @ERR_NO_ROW
+      return rows
 
 
   ###
@@ -82,10 +94,10 @@ class Table
 
   destroy: (id) ->
 
-    sql = "DELETE FROM #{ @table } WHERE id=?"
+    promise = @exec @query(@table).where('id', id).del()
 
-    @query(sql, id).then (info) =>
-      unless info.affectedRows then throw @ERR_NO_ROW
+    promise.then (rows) =>
+      unless rows then throw @ERR_NO_ROW
       return true
 
 
