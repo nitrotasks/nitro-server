@@ -11,14 +11,11 @@ global.DEBUG = true
 # Load controllers
 database = require '../app/controllers/query'
 connect  = require '../app/controllers/connect'
-Storage  = require '../app/controllers/storage'
 
 # Connect to databases
 connect.init()
 
 module.exports = (done) ->
-
-  Storage.releaseAll()
 
   database.connected
     .then ->

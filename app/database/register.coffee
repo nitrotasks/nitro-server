@@ -37,7 +37,7 @@ class Register extends Table
     match = @_parseToken(token)
     unless match then return Q.reject('err_invalid_token')
 
-    promise = @_search ['name', 'email', 'password'],
+    promise = @_search ['id', 'name', 'email', 'password'],
       id: match[0]
       token: match[1]
 
@@ -48,16 +48,6 @@ class Register extends Table
   update: ->
 
     throw new Error 'Cannot update registration'
-
-
-  destroy: (token) ->
-
-    match = @_parseToken(token)
-    unless match then return Q.reject('err_invalid_token')
-
-    id = match[0]
-    super(id)
-
 
 
 module.exports = Register

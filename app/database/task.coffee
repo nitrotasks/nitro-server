@@ -21,11 +21,13 @@ class Task extends Table
         .references('id').inTable('user')
         .onDelete('cascade')
         .onUpdate('cascade')
+        .notNullable()
 
       table.integer('list_id').unsigned()
         .references('id').inTable('list')
         .onDelete('cascade')
         .onUpdate('cascade')
+        .notNullable()
 
       table.string('name', 150)
       table.string('notes', 400)

@@ -1,8 +1,10 @@
-Q         = require 'kew'
-dbase     = require '../controllers/query'
-Log       = require '../utils/log'
+Q    = require 'kew'
+db   = require '../controllers/query'
+Log  = require '../utils/log'
+User = require '../models/user'
 
 log = Log 'Storage', 'green'
+
 
 # -----------------------------------------------------------------------------
 # Constants
@@ -14,28 +16,10 @@ ERR_NO_USER   = 'err_no_user'
 
 
 # -----------------------------------------------------------------------------
-# User Factory
-# -----------------------------------------------------------------------------
-
-User = null
-
-createUser = (attrs) ->
-  User ?= require '../models/user'
-  return new User attrs
-
-
-# -----------------------------------------------------------------------------
 # Storage Controller
 # -----------------------------------------------------------------------------
 
 Storage =
-
-  ###
-   * This object holds all of the user instances
-   * that are currently stored in memory.
-  ###
-
-  records: {}
 
   ###
    * This will store user data in a temporary key until
@@ -51,7 +35,7 @@ Storage =
   register: (token, name, email, password) ->
     @emailExists(email).then (exists) ->
       if exists then throw ERR_OLD_EMAIL
-      dbase.register.add
+      db.register.create
         token: token
         name: name
         email: email
@@ -72,10 +56,12 @@ Storage =
   ###
 
   getRegistration: (token) ->
-    dbase.register.get(token).then (data) ->
-      throw ERR_BAD_TOKEN unless data?
-      dbase.register.remove(data.id)
-      return data
+    db.register.read(token)
+      .then (data) ->
+        db.register.destroy(data.id)
+        return data
+      .fail ->
+        throw ERR_BAD_TOKEN
 
 
   ###
@@ -92,14 +78,9 @@ Storage =
       if exists then throw ERR_OLD_EMAIL
 
       user.pro = 0
-      user.created_at = new Date()
 
       # Add user to database
-      dbase.user.write(user)
-        .fail ->
-          log 'Error writing user to database!'
-        .then (id) =>
-          @get id
+      db.user.create(user).then @get
 
 
   ###
@@ -115,14 +96,8 @@ Storage =
   ###
 
   get: (id) ->
-    user = @records[id]
-    if user then return Q.resolve(user)
-    dbase.user.read(id)
-      .fail ->
-        throw ERR_NO_USER
-      .then (data) =>
-        @records[id] = createUser(data)
-
+    db.user.read(id, 'id').then ->
+      return new User(id)
 
   ###
    * Get a user by their email address
@@ -132,11 +107,8 @@ Storage =
   ###
 
   getByEmail: (email) ->
-    dbase.user.find(email)
-      .then (id) =>
-        @get id
-      .fail ->
-        throw ERR_NO_USER
+    db.user.search(email)
+      .then @get, -> throw ERR_NO_USER
 
   ###
    * Check if an email address exists in the system
@@ -146,7 +118,11 @@ Storage =
   ###
 
   emailExists: (email) ->
-    dbase.user.check(email)
+    db.user.search(email)
+      .then ->
+        return true
+      .fail ->
+        return false
 
   ###
    * Completely remove a user from the system
@@ -156,49 +132,9 @@ Storage =
    * - id (int) : the user id
   ###
 
-  remove: (id) ->
+  destroy: (id) ->
     log "Removing user #{ id }"
-    @get(id).then (user) =>
-      return unless user
-      email = user.email
-      @records[id].release()
-      delete @records[id]
-      dbase.user.delete id
-
-
-  ###
-   * Write user to database
-   *
-   * - user (user)
-  ###
-
-  writeUser: (user, attrs) ->
-    log "Writing user: #{ user.id } with keys:", attrs
-    dbase.user.write user, attrs
-
-
-  ###
-   * Remove a record from Node.js memory.
-   * The user is still stored in the database though.
-   * References to the instance will still be readable, but changes to them
-   * won't be saved.
-   * A user should only be released when they no longed logged in.
-   *
-   * - id (int) : the user id
-  ###
-
-  release: (id) ->
-    log "Releasing user #{ id } from memory"
-    user = @records[id]
-    promise = @writeUser user
-    user.release()
-    delete @records[id]
-    return promise
-
-
-  releaseAll: ->
-    @release id for id of @records
-    @records = {}
+    db.user.destroy id
 
 
   ###
@@ -211,7 +147,7 @@ Storage =
   ###
 
   addLoginToken: (id, token) ->
-    dbase.login.add(id, token).then ->
+    db.login.create(id, token).then ->
       return token
 
 
@@ -224,7 +160,7 @@ Storage =
   ###
 
   checkLoginToken: (id, token) ->
-    dbase.login.exists(id, token)
+    db.login.exists(id, token)
 
 
   ###
@@ -234,8 +170,8 @@ Storage =
    * - token (string) : the login token
   ###
 
-  removeLoginToken: (id, token) ->
-    dbase.login.remove(id, token)
+  destroyLoginToken: (id, token) ->
+    db.login.destroy(id, token)
 
 
   ###
@@ -244,8 +180,8 @@ Storage =
    * - id (int) : the user id
   ###
 
-  removeAllLoginTokens: (id) ->
-    dbase.login.removeAll(id)
+  destroyAllLoginTokens: (id) ->
+    db.login.destroyAll(id)
 
 
   ###
@@ -258,7 +194,7 @@ Storage =
   ###
 
   addResetToken: (id, token) ->
-    dbase.reset.add(id, token)
+    db.reset.create(id, token)
     # redis.setex(key, 86400, id).then ->
 
 
@@ -270,16 +206,16 @@ Storage =
   ###
 
   checkResetToken: (token) ->
-    dbase.reset.get(token).fail ->
+    db.reset.read(token).fail ->
       throw ERR_BAD_TOKEN
 
   ###
-   * Remove a reset token
+   * Destroy a reset token
    *
    * - token (string) : the reset token
   ###
 
-  removeResetToken: (token) ->
-    dbase.reset.remove(token)
+  destroyResetToken: (token) ->
+    db.reset.destroy(token)
 
 module.exports = Storage

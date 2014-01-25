@@ -142,14 +142,12 @@ class Table
 
   read: (id, columns) ->
 
-    promise = @wrap @query(@table)
-      .column(columns)
-      .where('id', id)
-      .select()
+    promise = @_search columns,
+      id: id
 
-    promise.then (rows) =>
-      unless rows.length then throw @ERR_NO_ROW
+    promise.then (rows) ->
       return rows[0]
+
 
 
   ###
@@ -165,13 +163,8 @@ class Table
 
   update: (id, data) ->
 
-    promise = @wrap @query(@table)
-      .update(data)
-      .where('id', id)
-
-    promise.then (rows) =>
-      unless rows then throw @ERR_NO_ROW
-      return rows
+    @_update data,
+      id: id
 
 
   ###
@@ -186,13 +179,8 @@ class Table
 
   destroy: (id) ->
 
-    promise = @wrap @query(@table)
-      .del()
-      .where('id', id)
-
-    promise.then (rows) =>
-      unless rows then throw @ERR_NO_ROW
-      return true
+    @_delete
+      id: id
 
 
 module.exports = Table

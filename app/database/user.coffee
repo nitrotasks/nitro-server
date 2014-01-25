@@ -31,4 +31,15 @@ class User extends Table
       #   PRIMARY KEY (`id`)
       # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+
+  search: (email) ->
+
+    promise = @_search 'id',
+      email: email
+
+    promise.then (rows) ->
+      return rows[0].id
+
+
+
 module.exports = User

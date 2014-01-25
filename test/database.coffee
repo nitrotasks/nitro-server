@@ -442,3 +442,47 @@ describe 'Database', ->
         err.should.equal 'err_no_row'
         done()
 
+
+
+  describe '#task_and_lists', ->
+
+    it 'should require tasks to have a list', (done) ->
+
+      model =
+        user_id: user.id
+        list_id: 2000
+        name: 'Task 2'
+
+      database.task.create(model).fail -> done()
+
+    it 'should deleting a task should remove it from a list', (done) ->
+
+      task =
+        id: null
+        user_id: user.id
+        list_id: list.id
+        name: 'Task 3'
+
+      # Create a new task
+      database.task.create(task)
+      .then (id) ->
+        task.id = id
+
+      # Add the task to the list
+        database.listTasks.create(list.id, task.id)
+      .then ->
+
+      # Check that we have added the task
+        database.listTasks.read(list.id)
+      .then (tasks) ->
+        tasks.should.eql [ task.id ]
+
+      # Destroy the task
+        database.task.destroy(task.id)
+      .then ->
+
+      # Check that the task is no longer in the list
+        database.listTasks.read(list.id)
+      .then (tasks) ->
+        tasks.should.eql []
+        done()

@@ -25,10 +25,10 @@ describe 'Storage API >', ->
     it 'should be able to add users', (done) ->
       users.forEach (user, i, array) ->
         Storage.add(user)
-          .then (data) ->
-            data.name.should.equal       user.name
-            data.email.should.equal      user.email
-            data.password.should.equal   user.password
+          .then (user) ->
+            user.id.should.be.a.Number
+            # Save user ID so we can use it future tests
+            users[i].id = user.id
             if i is array.length - 1 then done()
           .fail(log)
 
@@ -53,6 +53,7 @@ describe 'Storage API >', ->
           done()
         .fail(log)
 
+
     it 'emailExists should return true if an email exists', (done) ->
 
       users.forEach (user, i, array) ->
@@ -69,33 +70,34 @@ describe 'Storage API >', ->
 
     it 'should get users by email', (done) ->
 
-      users.forEach (user, i, array) ->
-        Storage.getByEmail(user.email)
-          .then (data) ->
-            user.email.should.equal data.email
-            # Save user ID so we can use it future tests
-            users[i].id = data.id
+      users.forEach (data, i, array) ->
+        Storage.getByEmail(data.email).then (user) ->
+
+          user.info().then (info) ->
+            info.should.eql
+              name: data.name
+              email: data.email
+              password: data.password
             if i is array.length - 1 then done()
-          .fail(log)
+
+        .fail(log)
 
     it 'should fail if you try and get a non-existant user by email', (done) ->
 
       Storage.getByEmail('john@example.com')
-        .then (data) ->
-          console.log data
         .fail (err) ->
           done()
 
     it 'should get users by id', (done) ->
 
-      users.forEach (user, i, array) ->
-        Storage.get(user.id)
-          .then (_user) ->
-            user.name.should.equal          _user.name
-            user.email.should.equal         _user.email
-            user.password.should.equal  _user.password
+      users.forEach (data, i, array) ->
+        Storage.get(data.id).then (user) ->
+          user.info().then (info) ->
+            info.should.eql
+              name: data.name
+              email: data.email
+              password: data.password
             if i is array.length - 1 then done()
-          .fail(log)
 
 
 # -----------------------------------------------------------------------------
@@ -108,7 +110,6 @@ describe 'Storage API >', ->
     token = 'hogwarts'
 
     it 'add', (done) ->
-      console.log 'user.id', user.id
       Storage.addLoginToken(user.id, token)
         .then ->
           done()
@@ -129,7 +130,7 @@ describe 'Storage API >', ->
         .fail(log)
 
     it 'remove', (done) ->
-      Storage.removeLoginToken(user.id, token)
+      Storage.destroyLoginToken(user.id, token)
         .then ->
           Storage.checkLoginToken(user.id, token)
         .then (exists) ->
@@ -168,15 +169,15 @@ describe 'Storage API >', ->
         done()
 
     it 'should remove reset token', (done) ->
-      Storage.removeResetToken(token).then ->
+      Storage.destroyResetToken(token).then ->
         done()
 
-    it 'should not care if reset token does not exist', (done) ->
-      Storage.removeResetToken('12_abcd').then ->
+    it 'should fail if reset token does not exist', (done) ->
+      Storage.destroyResetToken('12_abcd').fail ->
         done()
 
     it 'should fail if reset token is not correct', (done) ->
-      Storage.removeResetToken('random').fail ->
+      Storage.destroyResetToken('random').fail ->
         done()
 
 
@@ -186,80 +187,67 @@ describe 'Storage API >', ->
 
   describe 'User Data', ->
 
-    tasks =
-      '1':
-        name: 'Task 1'
-        date: 1355863711107
-        priority: '2'
-        notes: 'Just some notes'
-      '2':
-        name: 'Task 2'
-        date: 1355863711407
-        priority: '1'
-        notes: 'Not many notes'
+    tasks = [
+      name: 'Task 1'
+      date: 1355863711107
+      priority: '2'
+      notes: 'Just some notes'
+      completed: 0
+    ,
+      name: 'Task 2'
+      date: 1355863711407
+      priority: '1'
+      notes: 'Not many notes'
+      completed: 0
+    ]
 
-    lists =
-      '1':
-        name: 'list 1'
-      '2':
-        name: 'list 2'
+    lists = [
+      name: 'list 1'
+    ,
+      name: 'list 2'
+    ]
 
     user = users[1]
 
-    it 'should save user data to disk', (done) ->
-
+    before (done) ->
       Storage.get(user.id).then (_user) ->
-        _user.data 'task', tasks
-        _user.data 'list', lists
-
-        tasks.should.equal _user.data 'task'
-        lists.should.equal _user.data 'list'
-
-        _user.save('task', 'list')
-          .then ->
-            done()
-          .fail(log)
-
-    it 'should release users from memory', (done) ->
-
-      Storage.release(user.id)
-        .then ->
-          Storage.get(user.id)
-        .then (_user) ->
-          tasks.should.eql _user.data 'task'
-          _user.data('task')[1].name = 'task 1 - Changed'
-          done()
-
-    it 'should handle data indexes properly', (done) ->
-
-      Storage.get(user.id)
-        .then (_user) ->
-          index = _user.index 'tasks'
-          index.should.equal 0
-          (++index).should.equal _user.incrIndex 'tasks'
-          (++index).should.equal _user.incrIndex 'tasks'
-          index.should.equal _user.index 'tasks'
-          done()
-        .fail(log)
+        user = _user
+        done()
 
 
-# -----------------------------------------------------------------------------
-# Releasing Users
-# -----------------------------------------------------------------------------
+    it 'should create the first list', (done) ->
 
-  describe 'Releasing Users', ->
+      list = lists[0]
 
-    it 'should be able to release users from JS memory', (done) ->
+      user.createList(list).then (id) ->
+        list.id = id
+        done()
 
-      user = users[2]
-      length = Object.keys(Storage.records).length
+    it 'should create the second list', (done) ->
 
-      Storage.records[user.id].should.not.equal undefined
+      list = lists[1]
 
-      Storage.release(user.id).then ->
+      user.createList(list).then (id) ->
+        list.id = id
+        done()
 
-        should.strictEqual Storage.records[user.id], undefined
-        Object.keys(Storage.records).should.have.length --length
+
+    it 'should create the first task', (done) ->
+
+      task = tasks[0]
+      task.listId = lists[0].id
+
+      user.createTask(task).then (id) ->
+        task.id = id
+        done()
+
+    it 'should create the second task', (done) ->
+
+      task = tasks[1]
+      task.listId = lists[1].id
+
+      user.createTask(task).then (id) ->
+        task.id = id
         done()
 
 
@@ -272,7 +260,7 @@ describe 'Storage API >', ->
     it 'should be able to delete users from disk', (done) ->
 
       users.forEach (user, i, array) ->
-        Storage.remove(user.id).then ->
+        Storage.destroy(user.id).then ->
           if i is array.length - 1 then done()
 
     it 'should not be able to find deleted users', (done) ->
@@ -299,7 +287,7 @@ describe 'Storage API >', ->
 
       Storage.register(token, user.name, user.email, user.password)
         .then (_token) ->
-          _token.match(/\d+_(\d+)/)[1].should.equal token
+          _token.match(/\d+_(\w+)/)[1].should.equal token
           token = _token
           done()
         .fail(log)
