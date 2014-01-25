@@ -6,7 +6,7 @@ class Login extends Table
 
   setup: ->
 
-    @createTable (table) =>
+    @_createTable (table) =>
 
       table.primary(['user_id', 'token'])
 
@@ -16,10 +16,7 @@ class Login extends Table
         .onUpdate('cascade')
 
       table.string('token', 64)
-
       table.timestamp('created_at').defaultTo @query.raw 'now()'
-
-      console.log table.toString()
 
       # CREATE TABLE IF NOT EXISTS `login` (
       #   `user_id`      int(11)        unsigned   NOT NULL,
@@ -29,6 +26,7 @@ class Login extends Table
       #   CONSTRAINT `login_user_id` FOREIGN KEY (`user_id`)
       #   REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
       # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 
   create: (id, token) ->
 
@@ -50,28 +48,25 @@ class Login extends Table
 
   read: (id, token, columns) ->
 
-    promise = @exec @query(@table)
-      .select()
-      .column(columns)
-      .where
-        user_id: id
-        token: token
+    promise = @_search columns,
+      user_id: id
+      token: token
 
-    promise.then (rows) =>
-      unless rows.length then throw @ERR_NO_ROW
+    promise.then (rows) ->
       return rows[0]
 
 
   exists: (id, token) ->
 
-    promise = @exec @query(@table)
-      .select('user_id')
-      .where
-        user_id: id
-        token: token
+    promise = @_search 'user_id',
+      user_id: id
+      token: token
 
-    promise.then (rows) ->
-      return rows.length isnt 0
+    promise
+      .then (rows) ->
+        return true
+      .fail ->
+        return false
 
 
   update: ->
@@ -81,18 +76,15 @@ class Login extends Table
 
   destroy: (id, token) ->
 
-    @exec @query(@table)
-      .del()
-      .where
-        user_id: id
-        token: token
+    @_delete
+      user_id: id
+      token: token
 
 
   destroyAll: (id) ->
 
-    @exec @query(@table)
-      .del()
-      .where('user_id', id)
+    @_delete
+      user_id: id
 
 
 module.exports = Login

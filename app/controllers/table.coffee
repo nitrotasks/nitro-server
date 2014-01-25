@@ -2,28 +2,114 @@ Q = require 'kew'
 
 class Table
 
+  ###
+   * Table (string)
+   *
+   * This should store the table name
+  ###
+
   table: null
+
+  ###
+   * Constants
+  ###
 
   ERR_NO_ROW: 'err_no_row'
 
+
+  ###
+   * Table Constructor
+   *
+   * - query (function) : the Knex builder
+  ###
+
   constructor: (@query) ->
+
+
+  ###
+   * Setup
+   *
+   * This will be called after initialization to setup the table.
+   * It should return a promise so that we can tell when all the tables
+   * are ready.
+   *
+   * > Promise
+  ###
 
   setup: ->
 
-  exec: (fn) ->
+
+  ###
+   * Wrap
+   *
+   * Converts the Knex builder into a Kew promise
+   *
+   * - fn (Knex) : The knex builder
+  ###
+
+  wrap: (fn) ->
 
     deferred = Q.defer()
     fn.exec deferred.makeNodeResolver()
     return deferred.promise
 
 
-  createTable: (fn) ->
+  ###
+   * (private) Create Table
+   *
+   * Creates a table if it does not already exist
+   *
+   * - fn (function) : will be passed to knex.schema.createTable
+  ###
 
-    promise = @exec @query.schema.hasTable(@table)
+  _createTable: (fn) ->
+
+    promise = @wrap @query.schema.hasTable(@table)
 
     promise.then (exists) =>
       return if exists
-      @exec @query.schema.createTable(@table, fn)
+      @wrap @query.schema.createTable(@table, fn)
+
+
+  _parseToken: (token) ->
+    match = token.match(/^(\d+)_(\w+)$/)
+    if match is null then return null
+    return [match[1], match[2]]
+
+
+  _search: (columns, data) ->
+
+    promise = @wrap @query(@table)
+      .select()
+      .column(columns)
+      .where(data)
+
+    promise.then (rows) =>
+      unless rows.length then throw @ERR_NO_ROW
+      return rows
+
+
+  _update: (data, where) ->
+
+    promise = @wrap @query(@table)
+      .update(data)
+      .where(where)
+
+    promise.then (rows) =>
+      unless rows then throw @ERR_NO_ROW
+      return rows
+
+
+  _delete: (data) ->
+
+    promise = @wrap @query(@table)
+      .del()
+      .where(data)
+
+    promise.then (rows) =>
+      unless rows then throw @ERR_NO_ROW
+      return true
+
 
   ###
    * Create
@@ -36,7 +122,8 @@ class Table
 
   create: (data) ->
 
-    promise = @exec @query(@table).insert(data)
+    promise = @wrap @query(@table)
+      .insert(data)
 
     promise.then (id) ->
       return id[0]
@@ -55,7 +142,10 @@ class Table
 
   read: (id, columns) ->
 
-    promise = @exec @query(@table).column(columns).where('id', id).select()
+    promise = @wrap @query(@table)
+      .column(columns)
+      .where('id', id)
+      .select()
 
     promise.then (rows) =>
       unless rows.length then throw @ERR_NO_ROW
@@ -75,7 +165,9 @@ class Table
 
   update: (id, data) ->
 
-    promise = @exec @query(@table).where('id', id).update(data)
+    promise = @wrap @query(@table)
+      .update(data)
+      .where('id', id)
 
     promise.then (rows) =>
       unless rows then throw @ERR_NO_ROW
@@ -94,7 +186,9 @@ class Table
 
   destroy: (id) ->
 
-    promise = @exec @query(@table).where('id', id).del()
+    promise = @wrap @query(@table)
+      .del()
+      .where('id', id)
 
     promise.then (rows) =>
       unless rows then throw @ERR_NO_ROW

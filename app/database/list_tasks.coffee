@@ -6,7 +6,7 @@ class ListTasks extends Table
 
   setup: ->
 
-    @createTable (table) =>
+    @_createTable (table) =>
 
       table.primary(['list_id', 'task_id'])
 
@@ -19,8 +19,6 @@ class ListTasks extends Table
         .references('id').inTable('task')
         .onDelete('cascade')
         .onUpdate('cascade')
-
-      console.log table.toString()
 
       # CREATE TABLE IF NOT EXISTS `list_tasks` (
       #   `list_id` int(11) unsigned NOT NULL,
@@ -35,20 +33,21 @@ class ListTasks extends Table
 
   create: (list, task) ->
 
-    @exec @query(@table)
-      .insert
-        list_id: list
-        task_id: task
+    super
+      list_id: list
+      task_id: task
 
 
   read: (list) ->
 
-    promise = @exec @query(@table)
-      .select('task_id')
-      .where('list_id', list)
+    promise = @_search 'task_id',
+      list_id: list
 
-    promise.then (rows) ->
-      rows.map (row) -> row.task_id
+    promise
+      .then (rows) ->
+        rows.map (row) -> row.task_id
+      .fail ->
+        return []
 
 
   update: ->
@@ -58,18 +57,14 @@ class ListTasks extends Table
 
   destroy: (list, task) ->
 
-    @exec @query(@table)
-      .del()
-      .where
-        list_id: list
-        task_id: task
+    @_delete
+      list_id: list
+      task_id: task
 
 
   destroyAll: (list) ->
 
-    @exec @query(@table)
-      .del()
-      .where 'list_id', list
-
+    @_delete
+      list_id: list
 
 module.exports = ListTasks

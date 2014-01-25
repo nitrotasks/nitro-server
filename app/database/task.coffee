@@ -12,7 +12,7 @@ class Task extends Table
 
   setup: ->
 
-    @createTable (table) =>
+    @_createTable (table) =>
 
       table.increments('id').unsigned()
 
@@ -28,17 +28,10 @@ class Task extends Table
         .onUpdate('cascade')
 
       table.string('name', 150)
-
       table.string('notes', 400)
-
-      table.boolean('priority').unsigned()
-
+      table.integer('priority').unsigned()
       table.bigInteger('completed').unsigned()
-
       table.bigInteger('date').unsigned()
-
-      console.log table.toString()
-
 
       # CREATE TABLE IF NOT EXISTS `task` (
       #   `id`          int(11)         unsigned   NOT NULL    AUTO_INCREMENT,

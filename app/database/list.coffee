@@ -6,7 +6,7 @@ class List extends Table
 
   setup: ->
 
-    @createTable (table) =>
+    @_createTable (table) =>
 
       table.increments('id').unsigned()
 
@@ -17,9 +17,6 @@ class List extends Table
         .onUpdate('cascade')
 
       table.string('name', 150)
-
-      console.log table.toString()
-
 
       # CREATE TABLE IF NOT EXISTS `list` (
       #   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,

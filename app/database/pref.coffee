@@ -6,7 +6,7 @@ class Pref extends Table
 
   setup: ->
 
-    @createTable (table) =>
+    @_createTable (table) =>
 
       table.integer('user_id').unsigned()
         .primary()
@@ -15,20 +15,12 @@ class Pref extends Table
         .onUpdate('cascade')
 
       table.boolean('sort').unsigned()
-
-      table.boolean('night').unsigned()
-
+      table.integer('night').unsigned()
       table.string('language', 5)
-
-      table.boolean('weekStart').unsigned()
-
+      table.integer('weekStart').unsigned()
       table.string('dateFormat', 8)
-
       table.boolean('confirmDelete').unsigned()
-
-      table.boolean('moveCompleted').unsigned()
-
-      console.log table.toString()
+      table.integer('moveCompleted').unsigned()
 
       # CREATE TABLE IF NOT EXISTS `pref` (
       #   `user_id`       int(11)    unsigned NOT NULL      AUTO_INCREMENT,
@@ -58,13 +50,10 @@ class Pref extends Table
 
   read: (id, columns) ->
 
-    promise = @exec @query(@table)
-      .select()
-      .column(columns)
-      .where('user_id', id)
+    promise = @_search columns,
+      user_id: id
 
     promise.then (rows) =>
-      unless rows.length then throw @ERR_NO_ROW
       return rows[0]
 
 
@@ -81,13 +70,8 @@ class Pref extends Table
 
   update: (id, data) ->
 
-    promise = @exec @query(@table)
-      .where('user_id', id)
-      .update(data)
-
-    promise.then (rows) =>
-      unless rows then throw @ERR_NO_ROW
-      return rows
+    @_update data,
+      user_id: id
 
 
   ###
@@ -102,13 +86,8 @@ class Pref extends Table
 
   destroy: (id) ->
 
-    promise = @exec @query(@table)
-      .where('user_id', id)
-      .del()
-
-    promise.then (rows) =>
-      unless rows then throw @ERR_NO_ROW
-      return true
+    @_delete
+      user_id: id
 
 
 module.exports = Pref

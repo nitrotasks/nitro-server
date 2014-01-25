@@ -1,32 +1,20 @@
 Q = require 'kew'
 Table = require '../controllers/table'
 
-parseToken = (token) ->
-  match = token.match(/^(\d+)_(\w+)$/)
-  if match is null then return null
-  return [match[1], match[2]]
-
 class Register extends Table
 
   table: 'register'
 
   setup: ->
 
-    @createTable (table) =>
+    @_createTable (table) =>
 
       table.increments('id').unsigned()
-
       table.string('token', 22)
-
       table.string('name', 100)
-
       table.string('email', 100)
-
       table.string('password', 60)
-
       table.timestamp('created_at').defaultTo @query.raw 'now()'
-
-      console.log table.toString()
 
       # CREATE TABLE IF NOT EXISTS `register` (
       #   `id`           int(11)        unsigned   NOT NULL    AUTO_INCREMENT,
@@ -46,17 +34,14 @@ class Register extends Table
 
   read: (token) ->
 
-    match = parseToken(token)
+    match = @_parseToken(token)
     unless match then return Q.reject('err_invalid_token')
 
-    promise = @exec @query(@table)
-      .select('name', 'email', 'password')
-      .where
-        id: match[0]
-        token: match[1]
+    promise = @_search ['name', 'email', 'password'],
+      id: match[0]
+      token: match[1]
 
-    promise.then (rows) =>
-      unless rows.length then throw @ERR_NO_ROW
+    promise.then (rows) ->
       return rows[0]
 
 
@@ -67,7 +52,7 @@ class Register extends Table
 
   destroy: (token) ->
 
-    match = parseToken(token)
+    match = @_parseToken(token)
     unless match then return Q.reject('err_invalid_token')
 
     id = match[0]
