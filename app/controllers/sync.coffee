@@ -25,8 +25,7 @@ PREF = 'pref'
 TASK = 'task'
 INBOX = 'inbox'
 
-SERVER_PREFIX = 's'
-PREF_ID = SERVER_PREFIX + '0'
+ERR_INVALID_MODEL = 'err_invalid_model'
 
 
 # Does all the useful stuff
@@ -34,18 +33,6 @@ class Sync
 
   constructor: (@user) ->
     @time = new Time(@user)
-
-
-  ###
-   * Create a new ID for a model
-   *
-   * - classname (string)
-   * > int
-  ###
-
-  createId: (classname) ->
-    id = @user.incrIndex classname
-    return SERVER_PREFIX + (id - 1)
 
 
   #####################################
@@ -69,9 +56,6 @@ class Sync
 
   model_create: (classname, model, timestamp) =>
 
-    # Assign a new ID if it hasn't already got one
-    id = model.id ?= @createId classname
-
     # Save to database
     @user.setModel classname, id, model
 
@@ -91,23 +75,22 @@ class Sync
    * > id (number)
   ###
 
-  task_create: (model, timestamp) =>
-
-    # Throw away client id
-    delete model.id
+  task_create: (task, timestamp) =>
 
     # Check that the list exists
-    unless @user.checkModel(LIST, model.listId)
-      warn '[task] [create] can not find listId', model.listId
-      return null
+    @user.checkList(task.listId)
+      .then (exists) =>
 
-    id = @model_create(TASK, model, timestamp)
+        unless exists
+          warn '[task] [create] can not find listId', task.listId
+          throw ERR_INVALID_MODEL
 
-    # Add the task to the list
-    list = @user.findModel(LIST, model.listId)
-    @taskAdd id, list
+        @user.createTask(task)
 
-    return id
+      .then (id) =>
+
+        # Add the task to the list
+        @user.addTaskToList(id, task.listId).then -> return id
 
 
   ###
@@ -118,22 +101,29 @@ class Sync
    * > id (number)
   ###
 
-  list_create: (model, timestamp) =>
+  list_create: (list, timestamp) =>
 
-    # Handle inbox list
-    if model.id is INBOX
-      if @user.hasModel(LIST, INBOX)
-        warn '[list] [create] can not recreate inbox'
-        return null
+    if list.id is INBOX
+      return @inbox_create
 
-    # Throw away the client id
-    else
-      delete model.id
+    @user.createList(list).then (id) ->
+      return id
 
-    # Make sure tasks is empty
-    model.tasks = []
+  inbox_create: (model, timestamp) ->
 
-    return @model_create(LIST, model, timestamp)
+    @user.getInbox()
+      .then (id) ->
+
+        if id isnt null
+          warn '[list] [create] can not recreate inbox'
+          throw ERR_INVALID_MODEL
+
+        @list_create(model, timestamp)
+
+      .then (id) ->
+        @user.setInbox(id)
+
+
 
 
   ####################################
@@ -162,7 +152,7 @@ class Sync
     delete changes.id
 
     # Check model exists on server
-    unless @user.checkModel(classname, id)
+    @user.checkModel(classname, id).then (exists) ->
       warn "[#{ classname }] [update] could not find #{ id }"
       return false
 
@@ -236,28 +226,23 @@ class Sync
   task_update: (changes, timestamps) =>
 
     id = changes.id
+    delete changes.id
 
-    unless @model_update_setup(TASK, changes, timestamps)
-      return null
+    # Make sure that the task exists and that the user owns it
+    @user.shouldOwnTask(id)
+      .then =>
 
-    # Check listId
-    if changes.listId?
-      unless @user.checkModel(LIST, changes.listId)
-        warn '[task] [update] could not find listId', changes.listId
-        return null
-      oldTask = @user.findModel(TASK, id)
-      if oldTask.listId isnt changes.listId
-        @taskMove(id, oldTask.listId, changes.listId)
+        # Set timestamps
+        # timestamps = @model_update_timestamps(TASK, id, changes, timestamps)
+        # unless timestamps
+        #   return null
 
-    # Set timestamps
-    timestamps = @model_update_timestamps(TASK, id, changes, timestamps)
-    unless timestamps
-      return null
+        @user.updateTask(id, changes)
 
-    @model_update_save(TASK, id, changes, timestamps)
+      .then ->
 
-    changes.id = id
-    return changes
+        changes.id = id
+        return changes
 
 
   ###
@@ -268,28 +253,37 @@ class Sync
    * > changes
   ###
 
+  inbox_update: (changes, timestamps) =>
+
+    console.log 'TODO: implement inbox_update'
+
   list_update: (changes, timestamps) =>
 
     id = changes.id
 
-    unless @model_update_setup(LIST, changes, timestamps)
-      return null
+    if id is INBOX
+      return @inbox_update(changes, timestamps)
 
-    # Set timestamps
-    timestamps = @model_update_timestamps(LIST, id, changes, timestamps)
-    unless timestamps
-      return null
+    @user.shouldOwnList(id)
+      .then =>
 
-    # Handle tasks
-    if changes.tasks
-      warn '[list] [update] TODO: Handle list.tasks'
-      delete changes.tasks
-      delete timestamps.tasks
+        # # Set timestamps
+        # timestamps = @model_update_timestamps(LIST, id, changes, timestamps)
+        # unless timestamps
+        #   return null
 
-    @model_update_save(LIST, id, changes, timestamps)
+        # Handle tasks
+        if changes.tasks
+          warn '[list] [update] TODO: Handle list.tasks'
+          delete changes.tasks
+          delete timestamps.tasks
 
-    changes.id = id
-    return changes
+        @user.updateList(id, changes)
+
+      .then ->
+
+        changes.id = id
+        return changes
 
 
   ###
@@ -302,14 +296,13 @@ class Sync
 
   pref_update: (changes, timestamps) =>
 
-    # Pref id is always s0
-    id = PREF_ID
+    # timestamps = @model_update_timestamps(PREF, id, changes, timestamps)
+    # unless timestamps
+    #   return null
 
-    timestamps = @model_update_timestamps(PREF, id, changes, timestamps)
-    unless timestamps
-      return null
+    # return @model_update_save(PREF, id, changes, timestamps)
 
-    return @model_update_save(PREF, id, changes, timestamps)
+    @user.updatePref(changes)
 
 
 
@@ -398,18 +391,18 @@ class Sync
 
   task_destroy: (id, timestamp) =>
 
-    model = @model_destroy_setup(TASK, id)
-    return null unless model
+    @user.shouldOwnTask(id).then =>
+      @user.destroyTask id
 
-    timestamp = @model_destroy_timestamp(TASK, id, timestamp)
-    return null unless timestamp
+    # timestamp = @model_destroy_timestamp(TASK, id, timestamp)
+    # return null unless timestamp
 
     # Remove from list
-    list = @user.findModel(LIST, model.listId)
-    if list.tasks?
-      @taskRemove id, list
+    # list = @user.findModel(LIST, model.listId)
+    # if list.tasks?
+    #   @taskRemove id, list
 
-    return @model_destroy_save(TASK, id, timestamp)
+    # return @model_destroy_save(TASK, id, timestamp)
 
 
   ###
@@ -421,17 +414,20 @@ class Sync
 
   list_destroy: (id, timestamp) =>
 
-    model = @model_destroy_setup(LIST, id)
-    return null unless model
+    @user.shouldOwnList(id).then =>
+      @user.destroyList id
 
-    timestamp = @model_destroy_timestamp(LIST, id, timestamp)
-    return null unless timestamp
+    # model = @model_destroy_setup(LIST, id)
+    # return null unless model
 
-    # Destroy all tasks within that list
-    for taskId, i in model.tasks by -1
-      @task_destroy taskId, timestamp
+    # timestamp = @model_destroy_timestamp(LIST, id, timestamp)
+    # return null unless timestamp
 
-    return @model_destroy_save(LIST, id, timestamp)
+    # # Destroy all tasks within that list
+    # for taskId, i in model.tasks by -1
+    #   @task_destroy taskId, timestamp
+
+    # return @model_destroy_save(LIST, id, timestamp)
 
 
 # -----------------------------------------------------------------------------

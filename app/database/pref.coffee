@@ -61,17 +61,20 @@ class Pref extends Table
    * Update
    *
    * Update attributes in an existing row.
+   * Does not care if the row does not exist
    *
-   * - id (number) : the id of the row
+   * - id (number) : the id of the user
    * - data (object) : attributes to set in the row
    * > id (number)
-   * ! err_no_row : row cannot be found
   ###
 
   update: (id, data) ->
 
-    @_update data,
+    promise = @_update data,
       userId: id
+
+    promise.then (-> id), (-> id)
+
 
 
   ###

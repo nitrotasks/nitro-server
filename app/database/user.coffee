@@ -19,6 +19,7 @@ class User extends Table
       table.string('email', 100)
       table.string('password', 60)
       table.boolean('pro').unsigned()
+      table.integer('inbox').unsigned()
       table.timestamp('created_at').defaultTo @query.raw 'now()'
 
       # CREATE TABLE IF NOT EXISTS `user` (

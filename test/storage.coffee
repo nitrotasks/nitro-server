@@ -233,6 +233,12 @@ describe 'Storage API >', ->
           name: list.name
         done()
 
+    it 'should own first the list', (done) ->
+
+      list = lists[0]
+
+      user.shouldOwnList(list.id).then -> done()
+
     it 'should create the second list', (done) ->
 
       list = lists[1]

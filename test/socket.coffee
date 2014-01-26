@@ -73,8 +73,10 @@ describe '[Socket]', ->
         user.id = id
         user.token = token
         done()
+      .fail (err) ->
+        console.log err
 
-
+###
   describe '[auth]', ->
 
     it 'should try to auth', (done) ->
@@ -484,3 +486,4 @@ describe '[Socket]', ->
           ]
 
         test input, output, done
+###

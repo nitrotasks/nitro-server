@@ -13,6 +13,7 @@ describe 'Database', ->
     name: 'Jimmy'
     email: 'jimmy@gmail.com'
     password: 'blah'
+    inbox: null
     pro: 0
 
   list =
@@ -499,3 +500,6 @@ describe 'Database', ->
       .then (tasks) ->
         tasks.should.eql []
         done()
+
+      .fail (err) ->
+        console.log err

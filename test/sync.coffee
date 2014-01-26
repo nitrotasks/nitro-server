@@ -15,6 +15,9 @@ describe 'Sync API', ->
   user = null
   sync = null
 
+  lists = []
+  tasks = []
+
 
   before (done) -> setup ->
     Auth.register('George', 'mail@example.com', 'password')
@@ -31,91 +34,166 @@ describe 'Sync API', ->
     sync = new Sync(user)
 
 
-  it 'should add lists and tasks', ->
+  it 'should add lists and tasks', (done) ->
 
     # Create three lists
-    sync.list_create {name: 'List 1'}
-    sync.list_create {name: 'List 2'}
-    sync.list_create {name: 'List 3'}
+    promise = Q.all [
+      sync.list_create name: 'List 1'
+      sync.list_create name: 'List 2'
+      sync.list_create name: 'List 3'
+    ]
 
-    # Check lists exist
-    lists = sync.user.data(LIST)
-    lists.should.eql
-      s0: name: 'List 1', tasks: [], id: 's0'
-      s1: name: 'List 2', tasks: [], id: 's1'
-      s2: name: 'List 3', tasks: [], id: 's2'
+    promise.then (_lists) ->
 
-    # Create three tasks
-    sync.task_create {name: 'Task 1', listId: 's0'}
-    sync.task_create {name: 'Task 2', listId: 's0'}
-    sync.task_create {name: 'Task 3', listId: 's0'}
+      # Save list ids
+      lists = _lists
 
-    # Check tasks exist
-    tasks = sync.user.data(TASK)
-    tasks.should.eql
-      s0: name: 'Task 1', listId: 's0', id: 's0'
-      s1: name: 'Task 2', listId: 's0', id: 's1'
-      s2: name: 'Task 3', listId: 's0', id: 's2'
+      # Check lists exist
+      user.exportLists()
 
-    # Should add tasks to lists
-    lists.s0.tasks.should.eql ['s0', 's1', 's2']
+    .then (_lists) ->
 
+      _lists.should.eql [
+        { name: 'List 1', tasks: [], id: lists[0] }
+        { name: 'List 2', tasks: [], id: lists[1] }
+        { name: 'List 3', tasks: [], id: lists[2] }
+      ]
 
-  it 'should handle task and list updates', ->
+      # Create three tasks
+      Q.all [
+        sync.task_create name: 'Task 1', listId: lists[0]
+        sync.task_create name: 'Task 2', listId: lists[0]
+        sync.task_create name: 'Task 3', listId: lists[0]
+      ]
 
-    tasks = sync.user.data(TASK)
-    lists = sync.user.data(LIST)
-    pref = sync.user.data(PREF)
+    .then (_tasks) ->
+
+      # Save task ids
+      tasks = _tasks
+
+      # Check tasks exists
+      user.exportTasks()
+
+    .then (_tasks) ->
+
+      _tasks.should.eql [{
+        name: 'Task 1', listId: lists[0], id: tasks[0],
+        notes: null, priority: null, completed: null, date: null
+      }, {
+        name: 'Task 2', listId: lists[0], id: tasks[1],
+        notes: null, priority: null, completed: null, date: null
+      }, {
+        name: 'Task 3', listId: lists[0], id: tasks[2],
+        notes: null, priority: null, completed: null, date: null
+      }]
+
+      # Should add tasks to lists
+      user.readListTasks lists[0]
+
+    .then (_tasks) ->
+      _tasks.should.eql tasks
+      done()
+
+    .fail (err) ->
+      console.log err
+
+  it 'should handle task and list updates', (done) ->
 
     # Update task names
-    sync.task_update {id: 's0', name: 'Task 1 has been renamed'}
-    sync.task_update {id: 's1', name: 'Task 2 has been renamed'}
-    sync.task_update {id: 's2', name: 'Task 3 has been renamed'}
+    promise = Q.all [
+      sync.task_update id: tasks[0], name: 'Task 1 has been renamed'
+      sync.task_update id: tasks[1], name: 'Task 2 has been renamed'
+      sync.task_update id: tasks[2], name: 'Task 3 has been renamed'
+    ]
 
-    # Check names have been updated
-    tasks.s0.name.should.equal 'Task 1 has been renamed'
-    tasks.s1.name.should.equal 'Task 2 has been renamed'
-    tasks.s2.name.should.equal 'Task 3 has been renamed'
+    promise.then ->
 
-    # Update list names
-    sync.list_update {id: 's0', name: 'List 1 has been renamed'}
-    sync.list_update {id: 's1', name: 'List 2 has been renamed'}
-    sync.list_update {id: 's2', name: 'List 3 has been renamed'}
+      user.exportTasks()
 
-    # Check names have been updated
-    lists.s0.name.should.equal 'List 1 has been renamed'
-    lists.s1.name.should.equal 'List 2 has been renamed'
-    lists.s2.name.should.equal 'List 3 has been renamed'
+    .then (_tasks) ->
 
-    # Update pref
-    sync.pref_update
-      id: 's0',
-      sort: true
-      language: 'en-US'
+      # Check names have been updated
+      _tasks[0].name.should.equal 'Task 1 has been renamed'
+      _tasks[1].name.should.equal 'Task 2 has been renamed'
+      _tasks[2].name.should.equal 'Task 3 has been renamed'
 
-    pref.s0.sort.should.equal true
-    pref.s0.language.should.equal 'en-US'
+      # Update list names
+      Q.all [
+        sync.list_update id: lists[0], name: 'List 1 has been renamed'
+        sync.list_update id: lists[1], name: 'List 2 has been renamed'
+        sync.list_update id: lists[2], name: 'List 3 has been renamed'
+      ]
+
+    .then ->
+
+      user.exportLists()
+
+    .then (_lists) ->
+
+      # Check names have been updated
+      _lists[0].name.should.equal 'List 1 has been renamed'
+      _lists[1].name.should.equal 'List 2 has been renamed'
+      _lists[2].name.should.equal 'List 3 has been renamed'
+
+      # Update pref
+      sync.pref_update
+        sort: 1
+        language: 'en-US'
+
+    .then ->
+
+      user.exportPref()
+
+    .then (_prefs) ->
+
+      _prefs.sort.should.equal 1
+      _prefs.language.should.equal 'en-US'
+
+      done()
+
+    .fail (err) ->
+      console.log err
+      console.log err.stack
 
 
-  it 'should move a task to another list', ->
+  it 'should move a task to another list', (done) ->
 
-    tasks = sync.user.data(TASK)
-    lists = sync.user.data(LIST)
+    promise = Q.all [
+      user.exportLists()
+      user.exportTasks()
+    ]
 
-    # Check current status
-    tasks.s0.listId.should.equal 's0'
-    lists.s0.tasks.should.eql ['s0', 's1', 's2']
-    lists.s1.tasks.should.eql []
+    promise.then ([_lists, _tasks]) ->
 
-    # Move task
-    sync.task_update {id: 's0', listId: 's1'}
+      _tasks[0].listId.should.equal lists[0]
+      _lists[0].tasks.should.eql tasks
+      _lists[1].tasks.should.eql []
 
-    # Check task has been moved
-    tasks.s0.listId.should.equal 's1'
-    lists.s0.tasks.should.eql ['s1', 's2']
-    lists.s1.tasks.should.eql ['s0']
+      # Move task
+      sync.task_update
+        id: tasks[0]
+        listId: lists[1]
 
+    .then ->
 
+      Q.all [
+        user.exportLists()
+        user.exportTasks()
+      ]
+
+    .then ([_lists, _tasks]) ->
+
+      # Check task has been moved
+      _tasks[0].listId.should.equal lists[1]
+      _lists[0].tasks.should.eql [tasks[1], tasks[2]]
+      _lists[1].tasks.should.eql [tasks[0]]
+
+      done()
+
+    .fail (err) ->
+      console.log err
+
+  ###
   it 'should respect update timestamps', ->
 
     # Travel 10 seconds back in time!
@@ -138,62 +216,91 @@ describe 'Sync API', ->
     }, {
       sort: now
     })
+  ###
 
 
-  it 'should not fail when trying to update a model that does not exist', ->
+  it 'should fail when updating a non-existant task', (done) ->
 
-    # Tasks that don't exist
-    should.equal null, sync.task_update {id: 's4', name: 'Task 4'}
+    promise = sync.task_update
+      id: tasks[2] + 10
+      name: 'Task 4'
 
-    # Lists that don't exist
-    should.equal null, sync.list_update {id: 's4', name: 'List 4'}
+    promise.fail -> done()
+
+  it 'should fail when updating a non-existant list', (done) ->
+
+    promise = sync.list_update
+      id: lists[2] + 10
+      name: 'List 4'
+
+    promise.fail -> done()
+
+  it 'should handle task and list destruction', (done) ->
+
+    user.readListTasks(lists[1])
+    .then (tasks) ->
+
+      # Check that task is in the list
+      tasks.should.eql [ tasks[0] ]
+
+      sync.task_destroy tasks[0]
+
+    .then ->
+
+      # Check that the task has been deleted
+      user.readTask tasks[0]
+
+    .fail (err) ->
+
+      err.should.equal 'err_no_row'
+      user.readListTasks lists[1]
+
+    .then (tasks) ->
+
+      tasks.should.eql []
+
+      # Destroy two lists
+      Q.all [
+        sync.list_destroy lists[1]
+        sync.list_destroy lists[2]
+      ]
+
+    .then ->
+
+      # Check that the lists have been deleted
+      user.readList lists[1]
+    .fail (err) ->
+      err.should.equal 'err_no_row'
+      user.readList lists[2]
+    .fail (err) ->
+      err.should.equal 'err_no_row'
+
+      # Destroy the last list that still has tasks in it
+      sync.list_destroy lists[0]
+
+    .then ->
+
+      # Check that everything has been deleted
+      user.readList lists[0]
+    .fail (err) ->
+      err.should.equal 'err_no_row'
+      user.readTask tasks[1]
+    .fail (err) ->
+      err.should.equal 'err_no_row'
+      user.readTask tasks[2]
+    .fail (err) ->
+      err.should.equal 'err_no_row'
+
+      done()
+
+    .fail (err) ->
+      console.log err
 
 
-  it 'should handle task and list destruction', ->
+  it 'should fail when destroying a non-existant task', (done) ->
 
-    # Fetch data
-    tasks = sync.user.data(TASK)
-    lists = sync.user.data(LIST)
+    sync.task_destroy(tasks[3] + 10).fail -> done()
 
-    # Check that task is in the list
-    lists.s1.tasks.should.eql ['s0']
+  it 'should fail when destroying a non-existant list', (done) ->
 
-    # Destroy a task
-    sync.task_destroy 's0'
-
-    # Check that the task has been deleted
-    tasks.s0.should.eql id: 's0', deleted: true
-    lists.s1.tasks.should.eql []
-
-    # Destroy some lists
-    sync.list_destroy 's1'
-    sync.list_destroy 's2'
-
-    # Check that the lists have been deleted
-    lists.s1.should.eql id: 's1', deleted: true
-    lists.s2.should.eql id: 's2', deleted: true
-
-    # Destroy a list that still has tasks in it
-    sync.list_destroy 's0'
-
-    # Check that everything has been deleted
-    lists.s0.should.eql id: 's0', deleted: true
-    tasks.s1.should.eql id: 's1', deleted: true
-    tasks.s2.should.eql id: 's2', deleted: true
-
-
-  it 'should not fail when destroying a model that does not exist', ->
-
-    # Models that have never existed
-    should.equal null, sync.task_destroy 's4'
-    should.equal null, sync.list_destroy 's4'
-
-    # Models that exist but are deleted
-    should.equal null, sync.task_destroy 's0'
-    should.equal null, sync.list_destroy 's0'
-
-  it 'should not fail when updating a model that has been deleted', ->
-
-    # Models that exist but are deleted
-    should.equal null, sync.task_update {id: 's0', name: 'test'}
-    should.equal null, sync.list_update {id: 's0', name: 'test'}
+    sync.list_destroy(lists[3] + 10).fail -> done()

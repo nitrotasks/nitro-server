@@ -80,7 +80,10 @@ Storage =
       user.pro = 0
 
       # Add user to database
-      db.user.create(user).then @get
+      db.user.create(user).then (id) =>
+
+        # Create a prefs entry for them
+        db.pref.create(userId: id).then => @get(id)
 
 
   ###

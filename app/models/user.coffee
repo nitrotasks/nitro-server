@@ -1,3 +1,4 @@
+Q = require 'kew'
 db = require '../controllers/query'
 
 
@@ -18,7 +19,19 @@ class User
   Storage = require '../controllers/storage'
 
   info: ->
-    db.user.read(@id, ['name', 'email', 'password'])
+    db.user.read @id, ['name', 'email', 'password']
+
+  ###
+   * Get Inbox
+  ###
+
+  getInbox: ->
+    db.user.read @id, 'inbox'
+
+  setInbox: (id) ->
+    db.user.update(@id, inbox: id).then ->
+      return id
+
 
 
   ###
@@ -80,6 +93,41 @@ class User
       moveCompleted: pref.moveCompleted
 
 
+  addTaskToList: (taskId, listId) ->
+    db.listTasks.create(listId, taskId)
+
+  removeTaskFromList: (taskId, listId) ->
+    db.listTasks.destroy(listId, taskId)
+
+  readListTasks: (listId) ->
+    db.listTasks.read(listId)
+
+
+  shouldOwnModel: (classname, id) ->
+    db[classname]._search 'id',
+      id: id
+      userId: @id
+
+  shouldOwnTask: (id) ->
+    @shouldOwnModel('task', id)
+
+  shouldOwnList: (id) ->
+    @shouldOwnModel('list', id)
+
+
+  checkModel: (classname, id) ->
+    db[classname].exists(id)
+
+  checkList: (id) ->
+    @checkModel('list', id)
+
+  checkTask: (id) ->
+    @checkModel('task', id)
+
+  checkPref: (id) ->
+    @checkModel('pref', id)
+
+
   readModel: (classname, id, columns) ->
     db[classname].read(id, columns).then (obj) ->
       delete obj.userId
@@ -98,89 +146,44 @@ class User
   updateModel: (classname, id, changes) ->
     db[classname].update(id, changes)
 
-  updateTask: (id, changes) ->
-    @updateModel('task', id, changes)
-
   updateList: (id, changes) ->
     @updateModel('list', id, changes)
 
-  updatePref: (id, changes) ->
-    @updateModel('pref', id, changes)
+  updateTask: (id, changes) ->
+
+    # Check listId
+    if changes.listId?
+      @shouldOwnList(changes.listId)
+        .then =>
+          @readTask(id, 'listId')
+        .then (old) =>
+          return if old.listId is changes.listId
+          @removeTaskFromList id, old.listId
+        .then =>
+          @addTaskToList id, changes.listId
+        .fail ->
+          delete changes.listId
+        .then =>
+          @updateModel('task', id, changes)
+    else
+      @updateModel('task', id, changes)
+
+  updatePref: (changes) ->
+    @updateModel('pref', @id, changes)
 
 
   destroyModel: (classname, id) ->
     db[classname].destroy(id)
 
-  destroyTask: (id) ->
-    @destroyModel('task', id)
-
   destroyList: (id) ->
     @destroyModel('list', id)
+
+  destroyTask: (id) ->
+    @destroyModel('task', id)
 
   destroyPref: ->
     @destroyModel('pref', @id)
 
-
-  ###
-   * Get a model by an id for a class.
-   * If the model doesn't exist, it will be created as an empty object
-   *
-   * - classname (string)
-   * - id (int)
-   * > object
-  ###
-
-  findModel: (classname, id) =>
-    db[classname].read(id, '*')
-
-
-  ###
-   * Check if a model exists
-   *
-   * - classname (string)
-   * - id (int)
-   * > boolean
-  ###
-
-  hasModel: (classname, id) =>
-    db[classname].read(id, 'id')
-
-  ###
-   * Check if a model exists and that is not deleted
-  ###
-
-  checkModel: (classname, id) =>
-    @hasModel(classname, id) and not @data(classname)[id].deleted
-
-  ###
-   * Set attributes for a model
-   *
-   * - classname (string)
-   * - id (int)
-   * - attributes (object)
-   * > object
-  ###
-
-  updateModel: (classname, id, attributes) =>
-    model = @findModel(classname, id)
-    model[key] = value for key, value of attributes
-    @save classname
-    return model
-
-
-  ###
-   * Replace the attributes for a model
-   *
-   * - classname (string)
-   * - id (int)
-   * - attributes (object)
-   > attributes
-  ###
-
-  setModel: (classname, id, attributes) =>
-    @data(classname)[id] = attributes
-    @save classname
-    return attributes
 
   ###
    * Get an array of all the active models in a class
@@ -189,10 +192,30 @@ class User
    * > object
   ###
 
-  exportModel: (classname) =>
+  exportModel: (classname) ->
     models = []
     data = @data classname
     return models unless data
     for id, model of data when not model.deleted
       models.push model
     return models
+
+
+  exportTasks: ->
+    db.task._search('*', userId: @id).then (tasks) ->
+      for task in tasks
+        delete task.userId
+      return tasks
+
+  exportLists: ->
+    db.list._search('*', userId: @id)
+      .then (lists) ->
+        promises = []
+        lists.forEach (list) ->
+          delete list.userId
+          promises.push db.listTasks.read(list.id).then (tasks) ->
+            list.tasks = tasks
+        Q.all(promises).then -> return lists
+
+  exportPref: ->
+    db.pref.read(@id, '*')
