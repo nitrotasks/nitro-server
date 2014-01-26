@@ -8,14 +8,14 @@ class ListTasks extends Table
 
     @_createTable (table) =>
 
-      table.primary(['list_id', 'task_id'])
+      table.primary(['listId', 'taskId'])
 
-      table.integer('list_id').unsigned()
+      table.integer('listId').unsigned()
         .references('id').inTable('list')
         .onDelete('cascade')
         .onUpdate('cascade')
 
-      table.integer('task_id').unsigned()
+      table.integer('taskId').unsigned()
         .references('id').inTable('task')
         .onDelete('cascade')
         .onUpdate('cascade')
@@ -34,18 +34,18 @@ class ListTasks extends Table
   create: (list, task) ->
 
     super
-      list_id: list
-      task_id: task
+      listId: list
+      taskId: task
 
 
   read: (list) ->
 
-    promise = @_search 'task_id',
-      list_id: list
+    promise = @_search 'taskId',
+      listId: list
 
     promise
       .then (rows) ->
-        rows.map (row) -> row.task_id
+        rows.map (row) -> row.taskId
       .fail ->
         return []
 
@@ -58,13 +58,13 @@ class ListTasks extends Table
   destroy: (list, task) ->
 
     @_delete
-      list_id: list
-      task_id: task
+      listId: list
+      taskId: task
 
 
   destroyAll: (list) ->
 
     @_delete
-      list_id: list
+      listId: list
 
 module.exports = ListTasks

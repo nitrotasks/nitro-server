@@ -8,7 +8,7 @@ class Pref extends Table
 
     @_createTable (table) =>
 
-      table.integer('user_id').unsigned()
+      table.integer('userId').unsigned()
         .primary()
         .references('id').inTable('user')
         .onDelete('cascade')
@@ -51,7 +51,7 @@ class Pref extends Table
   read: (id, columns) ->
 
     promise = @_search columns,
-      user_id: id
+      userid: id
 
     promise.then (rows) =>
       return rows[0]
@@ -71,7 +71,7 @@ class Pref extends Table
   update: (id, data) ->
 
     @_update data,
-      user_id: id
+      userId: id
 
 
   ###
@@ -87,7 +87,7 @@ class Pref extends Table
   destroy: (id) ->
 
     @_delete
-      user_id: id
+      userId: id
 
 
 module.exports = Pref

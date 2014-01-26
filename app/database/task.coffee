@@ -16,14 +16,14 @@ class Task extends Table
 
       table.increments('id').unsigned()
 
-      table.integer('user_id').unsigned()
+      table.integer('userId').unsigned()
         .index()
         .references('id').inTable('user')
         .onDelete('cascade')
         .onUpdate('cascade')
         .notNullable()
 
-      table.integer('list_id').unsigned()
+      table.integer('listId').unsigned()
         .references('id').inTable('list')
         .onDelete('cascade')
         .onUpdate('cascade')
@@ -37,17 +37,17 @@ class Task extends Table
 
       # CREATE TABLE IF NOT EXISTS `task` (
       #   `id`          int(11)         unsigned   NOT NULL    AUTO_INCREMENT,
-      #   `user_id`     int(11)         unsigned   NOT NULL,
-      #   `list_id`     int(11)         unsigned   NOT NULL,
+      #   `userId`     int(11)         unsigned   NOT NULL,
+      #   `listId`     int(11)         unsigned   NOT NULL,
       #   `name`        varchar(150)               NOT NULL    DEFAULT '',
       #   `notes`       varchar(400)               NOT NULL    DEFAULT '',
       #   `priority`    tinyint(4)      unsigned   NOT NULL,
       #   `completed`   bigint(20)      unsigned   NOT NULL,
       #   `date`        bigint(20)      unsigned   NOT NULL,
-      #   PRIMARY KEY (`id`,`user_id`),
-      #   CONSTRAINT `task_user_id` FOREIGN KEY (`user_id`)
+      #   PRIMARY KEY (`id`,`userId`),
+      #   CONSTRAINT `task_userId` FOREIGN KEY (`userId`)
       #   REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-      #   CONSTRAINT `task_list_id` FOREIGN KEY (`list_id`)
+      #   CONSTRAINT `task_listId` FOREIGN KEY (`listId`)
       #   REFERENCES `list` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
       # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 

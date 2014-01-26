@@ -10,7 +10,7 @@ class List extends Table
 
       table.increments('id').unsigned()
 
-      table.integer('user_id').unsigned()
+      table.integer('userId').unsigned()
         .index()
         .references('id').inTable('user')
         .onDelete('cascade')

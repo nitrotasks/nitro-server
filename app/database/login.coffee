@@ -8,9 +8,9 @@ class Login extends Table
 
     @_createTable (table) =>
 
-      table.primary(['user_id', 'token'])
+      table.primary(['userid', 'token'])
 
-      table.integer('user_id').unsigned()
+      table.integer('userId').unsigned()
         .references('id').inTable('user')
         .onDelete('cascade')
         .onUpdate('cascade')
@@ -19,11 +19,11 @@ class Login extends Table
       table.timestamp('created_at').defaultTo @query.raw 'now()'
 
       # CREATE TABLE IF NOT EXISTS `login` (
-      #   `user_id`      int(11)        unsigned   NOT NULL,
+      #   `userId`      int(11)        unsigned   NOT NULL,
       #   `token`        char(64)                  NOT NULL,
       #   `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
-      #   PRIMARY KEY (`user_id`,`token`),
-      #   CONSTRAINT `login_user_id` FOREIGN KEY (`user_id`)
+      #   PRIMARY KEY (`userId`,`token`),
+      #   CONSTRAINT `login_userId` FOREIGN KEY (`userId`)
       #   REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
       # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -31,7 +31,7 @@ class Login extends Table
   create: (id, token) ->
 
     super
-      user_id: id
+      userId: id
       token: token
 
 
@@ -49,7 +49,7 @@ class Login extends Table
   read: (id, token, columns) ->
 
     promise = @_search columns,
-      user_id: id
+      userId: id
       token: token
 
     promise.then (rows) ->
@@ -58,16 +58,11 @@ class Login extends Table
 
   exists: (id, token) ->
 
-    promise = @_search 'user_id',
-      user_id: id
+    promise = @_search 'userId',
+      userId: id
       token: token
 
-    promise
-      .then (rows) ->
-        return true
-      .fail ->
-        return false
-
+    promise.then @_true, @_false
 
   update: ->
 
@@ -77,14 +72,14 @@ class Login extends Table
   destroy: (id, token) ->
 
     @_delete
-      user_id: id
+      userId: id
       token: token
 
 
   destroyAll: (id) ->
 
     @_delete
-      user_id: id
+      userId: id
 
 
 module.exports = Login

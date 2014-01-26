@@ -55,13 +55,13 @@ class User
 
   createList: (list) ->
     @createModel 'list',
-      user_id: @id
+      userId: @id
       name: list.name
 
   createTask: (task) ->
     @createModel 'task',
-      user_id: @id
-      list_id: task.listId
+      userId: @id
+      listId: task.listId
       name: task.name
       notes: task.notes
       date: task.date
@@ -70,7 +70,7 @@ class User
 
   createPref: (pref) ->
     @createModel 'pref',
-      user_id: @id
+      userId: @id
       sort: pref.sort
       night: pref.night
       language: pref.language
@@ -78,6 +78,47 @@ class User
       dateFormat: pref.dateFormat
       confirmDelete: pref.confirmDelete
       moveCompleted: pref.moveCompleted
+
+
+  readModel: (classname, id, columns) ->
+    db[classname].read(id, columns).then (obj) ->
+      delete obj.userId
+      return obj
+
+  readList: (id, columns) ->
+    @readModel('list', id, columns)
+
+  readTask: (id, columns) ->
+    @readModel('task', id, columns)
+
+  readPref: (columns) ->
+    @readModel('pref', @id, columns)
+
+
+  updateModel: (classname, id, changes) ->
+    db[classname].update(id, changes)
+
+  updateTask: (id, changes) ->
+    @updateModel('task', id, changes)
+
+  updateList: (id, changes) ->
+    @updateModel('list', id, changes)
+
+  updatePref: (id, changes) ->
+    @updateModel('pref', id, changes)
+
+
+  destroyModel: (classname, id) ->
+    db[classname].destroy(id)
+
+  destroyTask: (id) ->
+    @destroyModel('task', id)
+
+  destroyList: (id) ->
+    @destroyModel('list', id)
+
+  destroyPref: ->
+    @destroyModel('pref', @id)
 
 
   ###

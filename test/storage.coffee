@@ -223,6 +223,16 @@ describe 'Storage API >', ->
         list.id = id
         done()
 
+    it 'should read the first list', (done) ->
+
+      list = lists[0]
+
+      user.readList(list.id).then (data) ->
+        data.should.eql
+          id: list.id
+          name: list.name
+        done()
+
     it 'should create the second list', (done) ->
 
       list = lists[1]
@@ -231,6 +241,15 @@ describe 'Storage API >', ->
         list.id = id
         done()
 
+    it 'should read the second list', (done) ->
+
+      list = lists[1]
+
+      user.readList(list.id).then (data) ->
+        data.should.eql
+          id: list.id
+          name: list.name
+        done()
 
     it 'should create the first task', (done) ->
 
@@ -239,6 +258,14 @@ describe 'Storage API >', ->
 
       user.createTask(task).then (id) ->
         task.id = id
+        done()
+
+    it 'should read the first task', (done) ->
+
+      task = tasks[0]
+
+      user.readTask(task.id).then (data) ->
+        data.should.eql task
         done()
 
     it 'should create the second task', (done) ->
@@ -250,6 +277,13 @@ describe 'Storage API >', ->
         task.id = id
         done()
 
+    it 'should read the second task', (done) ->
+
+      task = tasks[1]
+
+      user.readTask(task.id).then (data) ->
+        data.should.eql task
+        done()
 
 # -----------------------------------------------------------------------------
 # Deleting Users

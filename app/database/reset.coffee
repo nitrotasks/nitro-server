@@ -10,9 +10,9 @@ class Reset extends Table
 
     @_createTable (table) =>
 
-      table.primary(['user_id', 'token'])
+      table.primary(['userId', 'token'])
 
-      table.integer('user_id').unsigned()
+      table.integer('userId').unsigned()
         .references('id').inTable('user')
         .onDelete('cascade')
         .onUpdate('cascade')
@@ -21,18 +21,18 @@ class Reset extends Table
       table.timestamp('created_at').defaultTo @query.raw 'now()'
 
       # CREATE TABLE IF NOT EXISTS `reset` (
-      #   `user_id`      int(11)        unsigned   NOT NULL,
+      #   `userId`      int(11)        unsigned   NOT NULL,
       #   `token`        char(22)                  NOT NULL,
       #   `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
-      #   PRIMARY KEY (`user_id`,`token`),
-      #   CONSTRAINT `reset_user_id` FOREIGN KEY (`user_id`)
+      #   PRIMARY KEY (`userId`,`token`),
+      #   CONSTRAINT `reset_userId` FOREIGN KEY (`userId`)
       #   REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
       # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
   create: (id, token) ->
 
-    super({ user_id: id, token: token }).then ->
+    super({ userId: id, token: token }).then ->
       return id + '_' + token
 
 
@@ -41,12 +41,12 @@ class Reset extends Table
     match = @_parseToken(token)
     unless match then return Q.reject('err_invalid_token')
 
-    promise = @_search 'user_id',
-      user_id: match[0]
+    promise = @_search 'userId',
+      userId: match[0]
       token: match[1]
 
     promise.then (rows) ->
-      return rows[0].user_id
+      return rows[0].userId
 
 
   update: ->
@@ -60,7 +60,7 @@ class Reset extends Table
     unless match then return Q.reject('err_invalid_token')
 
     @_delete
-      user_id: match[0]
+      userId: match[0]
       token: match[1]
 
 

@@ -70,6 +70,12 @@ class Table
       return if exists
       @wrap @query.schema.createTable(@table, fn)
 
+  _true: ->
+    return true
+
+  _false: ->
+    return false
+
 
   _parseToken: (token) ->
     match = token.match(/^(\d+)_(\w+)$/)
@@ -148,6 +154,13 @@ class Table
     promise.then (rows) ->
       return rows[0]
 
+
+  exists: (id) ->
+
+    promise = @_search 'id',
+      id: id
+
+    promise.then(@_true, @_false)
 
 
   ###
