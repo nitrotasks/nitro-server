@@ -76,7 +76,6 @@ describe '[Socket]', ->
       .fail (err) ->
         console.log err
 
-###
   describe '[auth]', ->
 
     it 'should try to auth', (done) ->
@@ -131,6 +130,7 @@ describe '[Socket]', ->
         id: 'inbox'
         name: 'Inbox'
 
+###
     it 'should create user data', (done) ->
       socket.on 'message', (message) ->
         message.should.equal 'Jandal.fn_2(null,"s0")'

@@ -104,25 +104,30 @@ class Sync
   list_create: (list, timestamp) =>
 
     if list.id is INBOX
-      return @inbox_create
+      return @inbox_create(list, timestamp)
 
     @user.createList(list).then (id) ->
       return id
 
-  inbox_create: (model, timestamp) ->
+
+  inbox_create: (inbox, timestamp) ->
 
     @user.getInbox()
-      .then (id) ->
+      .then (id) =>
 
         if id isnt null
           warn '[list] [create] can not recreate inbox'
           throw ERR_INVALID_MODEL
 
-        @list_create(model, timestamp)
+        delete inbox.id
 
-      .then (id) ->
+        @list_create(inbox, timestamp)
+
+      .then (id) =>
         @user.setInbox(id)
-
+      
+      .then ->
+        return 'inbox'
 
 
 
@@ -255,7 +260,18 @@ class Sync
 
   inbox_update: (changes, timestamps) =>
 
-    console.log 'TODO: implement inbox_update'
+    @user.getInbox()
+      .then (id) =>
+
+        changes.id = id
+
+        @list_update(inbox, timestamp)
+
+      .then ->
+        changes.id = 'inbox'
+        return changes
+
+
 
   list_update: (changes, timestamps) =>
 

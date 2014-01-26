@@ -77,7 +77,7 @@ describe 'Storage API >', ->
             info.should.eql
               name: data.name
               email: data.email
-              password: data.password
+              pro: data.pro
             if i is array.length - 1 then done()
 
         .fail(log)
@@ -96,7 +96,7 @@ describe 'Storage API >', ->
             info.should.eql
               name: data.name
               email: data.email
-              password: data.password
+              pro: data.pro
             if i is array.length - 1 then done()
 
 

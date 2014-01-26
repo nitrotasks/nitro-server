@@ -19,18 +19,18 @@ class User
   Storage = require '../controllers/storage'
 
   info: ->
-    db.user.read @id, ['name', 'email', 'password']
+    db.user.read @id, ['name', 'email', 'pro']
 
   ###
    * Get Inbox
   ###
 
   getInbox: ->
-    db.user.read @id, 'inbox'
+    db.user.read(@id, 'inbox').then (info) ->
+      return info.inbox
 
   setInbox: (id) ->
-    db.user.update(@id, inbox: id).then ->
-      return id
+    db.user.update @id, inbox: id
 
 
 

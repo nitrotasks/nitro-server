@@ -17,6 +17,8 @@ client  = require './mock_client'
 # Fuzzer
 # -----------------------------------------------------------------------------
 
+ids = [0, 1, 2]
+
 events = ['create', 'update', 'destroy']
 
 classnames = ['task', 'list', 'pref']
@@ -39,12 +41,12 @@ models =
 
   pref:
     sort: 'boolean'
-    night: 'string'
+    night: 'number'
     language: 'string'
     weekStart: 'number'
     dateFormat: 'string'
     confirmDelete: 'boolean'
-    completedDuration: 'string'
+    moveCompleted: 'number'
 
 random =
 
@@ -56,7 +58,7 @@ random =
     string[index ... index + 1]
 
   id: ->
-    random.char('csx') + random.int(0, 100)
+    random.char('csx') + random.char(ids)
 
   listId: ->
     if random.int(0, 10) > 6
@@ -173,6 +175,12 @@ describe 'IGNORE Fuzz', ->
     console.log '\n', command
 
     socket.once 'message', (response) ->
+      console.log response
+
+      match = response.match(/Jandal\.fn_\d+\(null,"s(\d+)"\)/)
+      if match
+        ids.push parseInt(match[1], 10)
+
       deferred.resolve response
 
     socket.reply(command)
@@ -199,7 +207,7 @@ describe 'IGNORE Fuzz', ->
 
     promise = Q.resolve()
 
-    for i in [0..1000]
+    for i in [0..100]
       promise = promise.then ->
         exec random.command()
 
@@ -208,10 +216,4 @@ describe 'IGNORE Fuzz', ->
 
     promise.fail (err) ->
       console.log err
-
-  it 'should write to server', (done) ->
-    Storage.get(user.id).then (user) ->
-      Storage.writeUser(user).then ->
-        done()
-
 

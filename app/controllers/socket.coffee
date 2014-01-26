@@ -242,24 +242,18 @@ class UserSocket extends Socket
     super
     log 'A user has been authenticated'
     @authenticated = true
-    @_socket.on 'close', @logout
     @socket.join(@user.id)
     @sync = new Sync(@user)
 
   broadcast: (event, arg1, arg2, arg3) =>
     @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
 
-  logout: =>
-    # If the user is only logged in from one client then remove them from memory
-    if Jandal.all.in(@user.id).length() is 0
-      Storage.release @user.id
-
-
   parseId: (id) ->
     id = id.match(/\d+/)?[0]
     return parseInt(id, 10) or 0
 
   stringifyId: (id) ->
+    if id is 'inbox' then return id
     return 's' + id
 
 
@@ -270,10 +264,8 @@ class UserSocket extends Socket
   ###
 
   user_info: (fn) =>
-    fn null,
-      name: @user.name
-      email: @user.email
-      pro: @user.pro
+    @user.info().then (info) ->
+      fn null, info
 
 
   ###
@@ -307,6 +299,8 @@ class UserSocket extends Socket
       if fn then fn(true)
 
   task_create: (model, fn, time) =>
+    model.listId = @parseId model.listId
+    console.log model
     @create('task', model, fn, time)
 
   list_create: (model, fn, time) =>
@@ -321,11 +315,10 @@ class UserSocket extends Socket
   ###
 
   update: (classname, model, fn, time) =>
-    id = model.id
-    model.id = @stringifyId id
+    console.log model
     @sync[classname + '_update'](model, time)
-    .then (model) ->
-      model.id = id
+    .then (model) =>
+      model.id = @stringifyId model.id
       @broadcast classname + '.update', model
       if fn then fn(null)
     .fail ->
@@ -333,9 +326,16 @@ class UserSocket extends Socket
 
 
   task_update: (model, fn, time) =>
+    model.id = @parseId model.id
+    if model.listId?
+      model.listId = @parseId model.listId
     @update('task', model, fn, time)
 
   list_update: (model, fn, time) =>
+    model.id = @parseId model.id
+    if model.tasks?
+      for task, i in model.tasks
+        model.tasks[i] = @parseId task
     @update('list', model, fn, time)
 
   pref_update: (model, fn, time) =>
