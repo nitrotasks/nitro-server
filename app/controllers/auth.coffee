@@ -123,9 +123,12 @@ Auth =
   # Gives the user a token to use to connect to SocketIO
   login: (email, pass) ->
     user = null
-    Storage.getByEmail(email).then (_user) ->
+    Storage.getByEmail(email)
+    .then (_user) ->
       user = _user
-      Auth.compare(pass, user.password)
+      user.getPassword('password')
+    .then (password) ->
+      Auth.compare(pass, password)
     .then (same) ->
       if not same then throw ERR_BAD_PASS
       Auth.createLoginToken user.id

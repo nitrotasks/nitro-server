@@ -81,9 +81,11 @@ describe 'Auth API', ->
 
       Auth.verifyRegistration(token)
         .then (user) ->
-          data.name.should.equal user.name
-          data.email.should.equal user.email
-          data.password.should.not.equal user.password
+          user.info()
+        .then (info) ->
+          data.name.should.equal info.name
+          data.email.should.equal info.email
+          data.password.should.not.equal info.password
           done()
         .fail(log)
 

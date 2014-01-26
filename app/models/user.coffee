@@ -41,6 +41,9 @@ class User
   setName: (name) ->
     db.user.update @id, name: name
 
+  getName: ->
+    db.user.read(@id, 'name').then (info) ->
+      return info.name
 
   ###
    * Change a users password and remove all their login tokens
@@ -52,6 +55,10 @@ class User
     db.login.destroyAll @id
     db.user.update @id, password: password
 
+  getPassword: ->
+    db.user.read(@id, 'password').then (info) ->
+      return info.password
+
 
   ###
    * Change a users email and update the email lookup table
@@ -61,6 +68,10 @@ class User
 
   setEmail: (email) ->
     db.update @id, email: email
+
+  getEmail: ->
+    db.user.read(@id, 'email').then (info) ->
+      return info.email
 
 
   createModel: (classname, properties) ->
