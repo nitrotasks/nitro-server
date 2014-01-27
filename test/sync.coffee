@@ -97,6 +97,7 @@ describe 'Sync API', ->
     .fail (err) ->
       console.log err
 
+
   it 'should handle task and list updates', (done) ->
 
     # Update task names
@@ -193,7 +194,6 @@ describe 'Sync API', ->
     .fail (err) ->
       console.log err
 
-  ###
   it 'should respect update timestamps', ->
 
     # Travel 10 seconds back in time!
@@ -216,7 +216,6 @@ describe 'Sync API', ->
     }, {
       sort: now
     })
-  ###
 
 
   it 'should fail when updating a non-existant task', (done) ->

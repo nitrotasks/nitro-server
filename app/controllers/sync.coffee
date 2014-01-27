@@ -12,7 +12,7 @@
 
 Q       = require 'kew'
 Log     = require '../utils/log'
-Time    = require '../utils/time'
+time    = require '../utils/time'
 
 log      = Log 'Sync', 'cyan'
 logEvent = Log 'Sync Event', 'yellow'
@@ -40,30 +40,6 @@ class Sync
   #                                   #
   #####################################
 
-  ###
-   * (private) Create Model
-   *
-   * Assigns an id, saves it to the database and
-   * also inits the timestamps.
-   *
-   * - classname (string)
-   * - model (object)
-   * - [timestamp] (number)
-   * > id
-  ###
-
-  model_create: (classname, model, timestamp) =>
-
-    # Save to database
-    @user.setModel classname, id, model
-
-    # Handle timestamp
-    timestamp ?= Date.now()
-    @time.set classname, id, '*', timestamp
-
-    log "[#{ classname }] [create] created", id
-    return id
-
 
   ###
    * Create Task
@@ -76,22 +52,30 @@ class Sync
   task_create: (task, timestamp) =>
 
     # Check that the list exists
-    @user.shouldOwnList(task.listId)
-      .then (exists) =>
+    @user.shouldOwnList(task.listId).then (exists) =>
 
-        unless exists
-          warn '[task] [create] can not find listId', task.listId
-          throw ERR_INVALID_MODEL
+      unless exists
+        warn '[task] [create] can not find listId', task.listId
+        throw ERR_INVALID_MODEL
 
-        @user.createTask(task)
+      @user.createTask(task)
 
-      .then (id) =>
+    .then (id) =>
 
-        # Set id
-        task.id = id
+      # Set id
+      task.id = id
 
-        # Add the task to the list
-        @user.addTaskToList(id, task.listId).then -> return id
+      timestamp ?= Date.now()
+      time.createTask id, timestamp
+
+    .then (id) =>
+
+      # Add the task to the list
+      @user.addTaskToList(task.id, task.listId)
+
+    .then ->
+
+      return task.id
 
 
   ###
@@ -109,8 +93,13 @@ class Sync
       # Set id
       list.id = id
 
+      timestamp ?= Date.now()
+      time.createList list.id, timestamp
+
+    .then  ->
+
       # Return new id
-      return id
+      return list.id
 
 
 
@@ -217,36 +206,38 @@ class Sync
     delete changes.id
 
     # Make sure that the task exists and that the user owns it
-    @user.shouldOwnTask(id)
-      .then =>
+    @user.shouldOwnTask(id).then =>
 
-        # Set timestamps
-        # timestamps = @model_update_timestamps(TASK, id, changes, timestamps)
-        # unless timestamps
-        #   return null
+      @model_update_timestamps(TASK, id, changes, timestamps)
 
-        # Check listId
-        if changes.listId?
-          @user.shouldOwnList(changes.listId)
-            .then =>
-              @user.readTask(id, 'listId')
-            .then (old) =>
-              return if old.listId is changes.listId
-              @user.removeTaskFromList id, old.listId
-            .fin =>
-              @user.addTaskToList id, changes.listId
-            .fail ->
-              delete changes.listId
-            .then =>
-              @user.updateTask(id, changes)
+    .then (timestamps) =>
 
-        else
-          @user.updateTask(id, changes)
+      # Check listId
+      if changes.listId?
+        @user.shouldOwnList(changes.listId)
+          .then =>
+            @user.readTask(id, 'listId')
+          .then (old) =>
+            return if old.listId is changes.listId
+            @user.removeTaskFromList id, old.listId
+          .fin =>
+            @user.addTaskToList id, changes.listId
+          .fail ->
+            delete changes.listId
+          .then =>
+            @user.updateTask(id, changes)
 
-      .then ->
+      else
+        @user.updateTask(id, changes)
 
-        changes.id = id
-        return changes
+    .then =>
+
+      @time.set(TASK, id, timestamps)
+
+    .then ->
+
+      changes.id = id
+      return changes
 
 
   ###
