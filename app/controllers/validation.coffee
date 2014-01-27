@@ -6,8 +6,8 @@
 
 define 'Task', 'object',
   keys:
-    id: 'string'
-    listId: 'string'
+    id: 'number'
+    listId: 'number'
     date: 'number'
     name: 'string'
     notes: 'string'
@@ -15,22 +15,22 @@ define 'Task', 'object',
     completed: 'number'
 
 define 'TaskCollection', 'array',
-  all: 'string'
+  all: 'number'
 
 define 'List', 'object',
   keys:
-    id: 'string'
+    id: 'number'
     name: 'string'
     tasks: 'TaskCollection'
 
 define 'Pref', 'object',
   keys:
-    sort: 'boolean'
+    sort: 'number'
     night: 'number'
     language: 'string'
     weekStart: 'number'
     dateFormat: 'string'
-    confirmDelete: 'boolean'
+    confirmDelete: 'number'
     moveCompleted: 'number'
 
 

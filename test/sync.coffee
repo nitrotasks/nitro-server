@@ -299,8 +299,8 @@ describe 'Sync API', ->
 
   it 'should fail when destroying a non-existant task', (done) ->
 
-    sync.task_destroy(tasks[3] + 10).fail -> done()
+    sync.task_destroy(tasks[2] + 10).fail -> done()
 
   it 'should fail when destroying a non-existant list', (done) ->
 
-    sync.list_destroy(lists[3] + 10).fail -> done()
+    sync.list_destroy(lists[2] + 10).fail -> done()

@@ -1,5 +1,8 @@
 Q = require 'kew'
 db = require '../controllers/query'
+Log = require '../utils/log'
+
+log = Log('user', 'green')
 
 
 class User
@@ -20,18 +23,6 @@ class User
 
   info: ->
     db.user.read @id, ['name', 'email', 'pro']
-
-  ###
-   * Get Inbox
-  ###
-
-  getInbox: ->
-    db.user.read(@id, 'inbox').then (info) ->
-      return info.inbox
-
-  setInbox: (id) ->
-    db.user.update @id, inbox: id
-
 
 
   ###
@@ -120,10 +111,14 @@ class User
       userId: @id
 
   shouldOwnTask: (id) ->
-    @shouldOwnModel('task', id)
+    @shouldOwnModel('task', id).fail ->
+      log '[task] does not own', id
+      throw 'err_no_row'
 
   shouldOwnList: (id) ->
-    @shouldOwnModel('list', id)
+    @shouldOwnModel('list', id).fail ->
+      log '[list] does not own', id
+      throw 'err_no_row'
 
 
   checkModel: (classname, id) ->
@@ -213,20 +208,25 @@ class User
 
 
   exportTasks: ->
-    db.task._search('*', userId: @id).then (tasks) ->
+    db.task._search('*', userId: @id)
+    .then (tasks) ->
       for task in tasks
         delete task.userId
       return tasks
+    .fail ->
+      return []
 
   exportLists: ->
     db.list._search('*', userId: @id)
-      .then (lists) ->
-        promises = []
-        lists.forEach (list) ->
-          delete list.userId
-          promises.push db.listTasks.read(list.id).then (tasks) ->
-            list.tasks = tasks
-        Q.all(promises).then -> return lists
+    .then (lists) ->
+      promises = []
+      lists.forEach (list) ->
+        delete list.userId
+        promises.push db.listTasks.read(list.id).then (tasks) ->
+          list.tasks = tasks
+      Q.all(promises).then -> return lists
+    .fail ->
+      return []
 
   exportPref: ->
     db.pref.read(@id, '*')

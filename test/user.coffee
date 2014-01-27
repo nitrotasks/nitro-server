@@ -1,237 +1,89 @@
 User    = require '../app/models/user'
-Storage = require '../app/controllers/storage'
 should  = require 'should'
 
-global.DEBUG = true
+# global.DEBUG = true
 
-describe 'User class', ->
+describe 'User', ->
 
-  before ->
-    Storage._writeUser = Storage.writeUser
-    Storage.writeUser = ->
+  user = null
 
-  after ->
-    Storage.writeUser = Storage._writeUser
-    delete Storage._writeUser
-
-  it 'should create a new user', ->
+  beforeEach ->
     user = new User()
 
-  it 'should create a new using with pre-defined attributes', ->
+  describe '#info', ->
 
-    attrs =
-      id: 30
-      name: 'Johnny'
-      data_task:
-        football: true
-      created_at: Date.now()
+    it 'read'
 
-    user = new User(attrs)
+  describe '#name', ->
 
-    attrs.id.should.equal          user.id
-    attrs.name.should.equal        user.name
-    attrs.data_task.should.equal   user.data_task
-    attrs.created_at.should.equal  user.created_at
+    it 'set'
 
-  it 'should allow attributes to be changed', ->
+    it 'get'
 
-    name = 'Timothy'
-    user = new User()
+  describe '#email', ->
 
-    value = user.set 'name', name
+    it 'set'
 
-    name.should.equal user.name
-    value.should.equal name
+    it 'get'
 
-  it 'should throttle writes to the db', (done) ->
+  describe '#password', ->
 
-    start = Date.now()
+    it 'set'
 
-    fn = Storage.writeUser
-    count = 0
+    it 'get'
 
-    Storage.writeUser = (user, args) ->
+  describe '#create', ->
 
-      switch count++
-        when 0
-          args.should.eql ['data_tasks']
+    it 'task'
 
-        when 1
-          args.should.eql ['data_lists', 'data_name', 'data_email']
-          diff = Date.now() - start
-          diff.should.be.within 200, 205
-          Storage.writeUser = fn
-          done()
+    it 'list'
 
-    user = new User(null, 200)
-    user.save 'tasks'
-    user.save 'lists'
-    user.save 'name'
-    user.save 'email'
-
-  it 'should get and set data', ->
-
-    user = new User()
-
-    data = user.data 'animals'
-    data.should.be.empty
-
-    data.horses = 1
-
-    data = user.data 'animals'
-    data.horses.should.equal 1
-
-    user.data 'animals',
-      horses: 30
-
-    data = user.data 'animals'
-    data.horses.should.equal 30
-
-  it 'should get the index value', ->
-
-    user = new User()
-
-    index = user.index 'cows'
-    index.should.equal 0
-
-    user.set 'index_chickens', 30
-
-    index = user.index 'chickens'
-    index.should.equal 30
-
-  it 'should increment the index value', ->
-
-    user = new User()
-
-    index = user.index 'pigs'
-    index.should.equal 0
-
-    index = user.incrIndex 'pigs'
-    index.should.equal 1
-
-    index = user.incrIndex 'pigs'
-    index.should.equal 2
-
-  it 'should allow the password to be changed', (done) ->
-
-    id = 300
-    password = 'battery horse chicken staple'
-
-    fn = Storage.removeAllLoginTokens
-    Storage.removeAllLoginTokens = (userId) ->
-      userId.should.equal id
-      password.should.equal user.password
-      Storage.removeAllLoginTokens = fn
-      done()
-
-    user = new User
-      id: id
-      password: 'hunter2'
-
-    user.setPassword password
-
-  it 'should allow the email to be changed', (done) ->
-
-    id = 33
-    email = 'john@smith.com'
-
-    fn = Storage.replaceEmail
-    Storage.replaceEmail = (userId, oldEmail, newEmail) ->
-      userId.should.equal id
-      newEmail.should.equal user.email
-      email.should.equal user.email
-      Storage.replaceEmail = fn
-      done()
-
-    user = new User
-      id: id
-      email: 'john@gmail.com'
-
-    user.setEmail email
+    it 'pref'
 
 
-  it 'should be able to find models', ->
+  describe '#listTasks', ->
 
-    attrs =
-      data_task:
-        's-0':
-          name: 'Task 1'
-      data_list:
-        's-2':
-          name: 'List 3'
+    it 'add'
 
-    user = new User(attrs)
+    it 'remove'
 
-    # Tasks
-    task = user.findModel 'task', 's-0'
-    task.name.should.equal 'Task 1'
+    it 'get'
 
-    # Lists
-    list = user.findModel 'list', 's-2'
-    list.name.should.equal 'List 3'
+  describe '#shouldOwn', ->
 
-    # Should return an object if it doesn't exist
-    missing = user.findModel 'task', 's-10'
-    missing.should.eql {}
+    it 'task'
 
+    it 'list'
 
-  it 'should be able to detect if a model exists', ->
+  describe '#read', ->
 
-    attrs =
-      data_task:
-        's-0':
-          name: 'Task 1'
+    it 'task'
 
-    user = new User(attrs)
+    it 'list'
 
-    # Existing items should return true
-    exists = user.hasModel 'task', 's-0'
-    exists.should.be.ok
+    it 'pref'
 
-    # Missing items should return false
-    no_model = user.hasModel 'task', 's-100'
-    no_model.should.not.be.ok
-    no_class = user.hasModel 'Empty', 's-2'
-    no_class.should.not.be.ok
+  describe '#update', ->
 
+    it 'task'
 
-  it 'should export an array', ->
+    it 'list'
 
-    attrs =
-      data_task:
-        's-0':
-          name: 'Task 1'
-        's-1':
-          deleted: true
-        's-2':
-          name: 'Task 3'
-        's-3':
-          name: 'Task 4'
-      data_list:
-        's-0':
-          name: 'List 1'
-        's-1':
-          deleted: true
-        's-2':
-          deleted: true
-        's-3':
-          name: 'List 4'
+    it 'pref'
 
-    user = new User(attrs)
+  describe '#destroy', ->
 
-    tasks = user.exportModel 'task'
-    lists = user.exportModel 'list'
-    empty = user.exportModel 'empty'
+    it 'task'
 
-    lists.should.be.an.Array
-    tasks.should.be.an.Array
-    lists.should.have.length 2
-    tasks.should.have.length 3
+    it 'list'
 
-    # Should return our tasks and lists
-    tasks[0].name.should.equal 'Task 1'
-    lists[1].name.should.equal 'List 4'
+    it 'pref'
 
-    # If the class doesn't exist, it should return an empty array
-    empty.should.be.an.Array
-    empty.should.be.empty
+  describe '#export', ->
+
+    it 'task'
+
+    it 'list'
+
+    it 'pref'
+

@@ -23,7 +23,6 @@ warn     = Log 'Sync', 'red'
 LIST = 'list'
 PREF = 'pref'
 TASK = 'task'
-INBOX = 'inbox'
 
 ERR_INVALID_MODEL = 'err_invalid_model'
 
@@ -89,6 +88,9 @@ class Sync
 
       .then (id) =>
 
+        # Set id
+        task.id = id
+
         # Add the task to the list
         @user.addTaskToList(id, task.listId).then -> return id
 
@@ -103,31 +105,13 @@ class Sync
 
   list_create: (list, timestamp) =>
 
-    if list.id is INBOX
-      return @inbox_create(list, timestamp)
-
     @user.createList(list).then (id) ->
+
+      # Set id
+      list.id = id
+
+      # Return new id
       return id
-
-
-  inbox_create: (inbox, timestamp) ->
-
-    @user.getInbox()
-      .then (id) =>
-
-        if id isnt null
-          warn '[list] [create] can not recreate inbox'
-          throw ERR_INVALID_MODEL
-
-        delete inbox.id
-
-        @list_create(inbox, timestamp)
-
-      .then (id) =>
-        @user.setInbox(id)
-      
-      .then ->
-        return 'inbox'
 
 
 
@@ -258,27 +242,9 @@ class Sync
    * > changes
   ###
 
-  inbox_update: (changes, timestamps) =>
-
-    @user.getInbox()
-      .then (id) =>
-
-        changes.id = id
-
-        @list_update(inbox, timestamp)
-
-      .then ->
-        changes.id = 'inbox'
-        return changes
-
-
-
   list_update: (changes, timestamps) =>
 
     id = changes.id
-
-    if id is INBOX
-      return @inbox_update(changes, timestamps)
 
     @user.shouldOwnList(id)
       .then =>
@@ -318,7 +284,9 @@ class Sync
 
     # return @model_update_save(PREF, id, changes, timestamps)
 
-    @user.updatePref(changes)
+    @user.updatePref(changes).then ->
+
+      return changes
 
 
 

@@ -13,7 +13,6 @@ describe 'Database', ->
     name: 'Jimmy'
     email: 'jimmy@gmail.com'
     password: 'blah'
-    inbox: null
     pro: 0
 
   list =

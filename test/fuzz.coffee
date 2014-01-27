@@ -35,17 +35,17 @@ models =
     completed: 'completed'
 
   list:
-    id: 'listId'
+    id: 'id'
     name: 'string'
     tasks: 'ids'
 
   pref:
-    sort: 'boolean'
+    sort: 'number'
     night: 'number'
     language: 'string'
     weekStart: 'number'
     dateFormat: 'string'
-    confirmDelete: 'boolean'
+    confirmDelete: 'number'
     moveCompleted: 'number'
 
 random =
@@ -53,18 +53,12 @@ random =
   int: (a, b) ->
     Math.round((Math.random() * b - a) + a)
 
-  char: (string) ->
-    index = random.int(0, string.length - 1)
-    string[index ... index + 1]
+  item: (array) ->
+    index = random.int(0, array.length - 1)
+    array[index]
 
   id: ->
-    random.char('csx') + random.char(ids)
-
-  listId: ->
-    if random.int(0, 10) > 6
-      return 'inbox'
-    else
-      return random.id()
+    random.item(ids)
 
   ids: ->
     arr = []
@@ -77,7 +71,7 @@ random =
     str = ''
     len = random.int(0, 20)
     for i in [0..len]
-      str += random.char 'abcdefghijklmnopqrstuvwxyz'
+      str += random.item 'abcdefghijklmnopqrstuvwxyz'
     return str
 
   number: ->
@@ -177,7 +171,7 @@ describe 'IGNORE Fuzz', ->
     socket.once 'message', (response) ->
       console.log response
 
-      match = response.match(/Jandal\.fn_\d+\(null,"s(\d+)"\)/)
+      match = response.match(/Jandal\.fn_\d+\(null,(\d+)\)/)
       if match
         ids.push parseInt(match[1], 10)
 

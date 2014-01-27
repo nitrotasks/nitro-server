@@ -5,6 +5,7 @@ Socket  = require '../app/controllers/socket'
 Storage = require '../app/controllers/storage'
 Auth    = require '../app/controllers/auth'
 should  = require 'should'
+Jandal  = require 'jandal'
 setup   = require './setup'
 mockjs  = require './mockjs'
 client  = require './mock_client'
@@ -14,12 +15,12 @@ describe '[Socket]', ->
   make =
 
     _list:
-      id: 'c0'
+      id: 0
       name: 'list'
       tasks: []
 
     _task:
-      id: 'c0'
+      id: 0
       name: 'task'
       listId: 'inbox'
       date: 0
@@ -49,6 +50,7 @@ describe '[Socket]', ->
     name: 'Fred'
     email: 'fred@gmail.com'
     pass: 'xkcd'
+    pro: 0
 
   before setup
 
@@ -61,9 +63,16 @@ describe '[Socket]', ->
     socket.end()
     client.setId 1
 
+  expect = (fn) ->
+    socket.once 'message', (response) ->
+      res = Jandal::parse(response)
+      fn res.arg1, res.arg2, res.arg3
+
+
   describe '[setup]', ->
 
     it 'should create a new user', (done) ->
+
       Auth.register(user.name, user.email, user.pass)
       .then (token) ->
         Auth.verifyRegistration(token)
@@ -79,14 +88,18 @@ describe '[Socket]', ->
   describe '[auth]', ->
 
     it 'should try to auth', (done) ->
+
       socket.on 'close', ->
         socket.open.should.equal false
         done()
+
       client.user.auth(20, "token")
 
-    it 'should be kicked after 3 seconds', (done) ->
+    it 'SLOW should be kicked after 3 seconds', (done) ->
+
       @timeout 3200
       start = Date.now()
+
       socket.on 'close', ->
         diff = Date.now() - start
         diff.should.be.approximately(3000, 10)
@@ -94,82 +107,98 @@ describe '[Socket]', ->
         done()
 
     it 'should login via sockets', (done) ->
-      socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_1(null,true)'
-        socket.end()
+
+      expect (err, val) ->
+        should.equal null, err
+        val.should.be.true
         done()
+
       client.user.auth(user.id, user.token)
 
 
   describe '[methods]', ->
 
+    list = {}
+    task = {}
+
     beforeEach (done) ->
+
+      expect (err, val) ->
+        should.equal null, err
+        val.should.be.true
+        done()
+
       client.user.auth(user.id, user.token)
-      socket.on 'message', (message) ->
-        if message is 'Jandal.fn_1(null,true)'then done()
 
     it 'should get user info', (done) ->
-      socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2(null,{"name":"Fred","email":"fred@gmail.com","pro":0})'
+
+      expect (err, info) ->
+        should.equal null, err
+        info.should.eql
+          name: user.name
+          email: user.email
+          pro: user.pro
         done()
+
       client.user.info()
 
-    it 'should create the inbox list', (done) ->
-      socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2(null,"inbox")'
+    it 'should create a list', (done) ->
+
+      expect (err, id) ->
+        should.equal null, err
+        id.should.be.a.Number
+        list.id = id
         done()
-      client.list.create make.list
-        id: 'inbox'
+
+      list = make.list
+        id: 0
         name: 'Inbox'
 
-    it 'should only create the inbox list once', (done) ->
-      socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2(true)'
-        done()
-      client.list.create make.list
-        id: 'inbox'
-        name: 'Inbox'
+      client.list.create list
 
-###
-    it 'should create user data', (done) ->
-      socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2(null,"s0")'
+    it 'should create a task', (done) ->
+
+      expect (err, id) ->
+        should.equal null, err
+        id.should.be.a.Number
+        task.id = id
         done()
-      client.task.create make.task
-        id: 'c2'
+
+      task = make.task
+        id: -2
         name: 'something'
-        listId: 'inbox'
+        listId: list.id
+
+      client.task.create task
 
     it 'should fetch user data', (done) ->
-      socket.on 'message', (message) ->
-        message.should.equal 'Jandal.fn_2(null,[{' +
-            '"name":"something","listId":"inbox",' +
-            '"date":0,"completed":0,"notes":"","priority":0,' +
-            '"id":"s0"' +
-          '}])'
+
+      expect (err, info) ->
+        should.equal null, err
+        info.should.eql [ task ]
         done()
 
       client.task.fetch()
 
     it 'should destroy user data', (done) ->
-      socket.on 'message', (message) ->
-        switch message[10]
-          when '2'
-            message.should.equal 'Jandal.fn_2(null)'
-            client.task.fetch()
-          when '3'
-            message.should.equal 'Jandal.fn_3(null,[])'
-            done()
 
-      client.task.destroy id: 's0'
+      expect (err) ->
+        should.equal null, err
 
+        expect (err, info) ->
+          should.equal null, err
+          info.should.eql []
+          done()
+
+        client.task.fetch()
+
+      client.task.destroy id: task.id
 
 
     describe '[broadcast]', ->
 
       # Create a second socket called other
       other = null
-
 
       beforeEach (done) ->
         other = mockjs.createSocket()
@@ -187,93 +216,85 @@ describe '[Socket]', ->
         other.end()
 
 
-      testBroadcast = (done, fn) ->
+      testBroadcast = (done, event, fn) ->
 
         client.socket = null
         client.callback = false
 
-        message = fn()
-
-
         client.socket = socket
         client.callback = true
 
-        other.on 'message', (text) ->
-          text.should.equal message
+        other.once 'message', (response) ->
+          res = Jandal::parse(response)
+          event.should.equal res.namespace + '.' + res.event
+          fn res.arg1, res.arg2, res.arg3
           done()
 
 
       it 'should create a task', (done) ->
 
-        model = make.task
-          id: 'c1'
-          listId: 'inbox'
+        task = make.task
+          id: 1
+          listId: list.id
           name: 'A brand new task'
 
-        testBroadcast done, ->
-          delete model.id
-          model.id = 's1'
-          client.task.create model
+        testBroadcast done, 'task.create', (_task) ->
+          task.id = _task.id
+          _task.should.eql task
 
-        client.task.create model
+        client.task.create task
 
       it 'should create a list', (done) ->
 
-        model = make.list
-          id: 'c1'
+        list = make.list
+          id: 1
           name: 'A brand new list'
 
-        testBroadcast done, ->
-          delete model.id
-          model.id = 's0'
-          client.list.create model
+        testBroadcast done, 'list.create', (_list) ->
+          list.id = _list.id
+          list.should.eql list
 
-        client.list.create model
+        client.list.create list
 
       it 'should update a task', (done) ->
 
-        testBroadcast done, ->
-          client.task.update
+        testBroadcast done, 'task.update', (_task) ->
+          _task.should.eql
+            id: task.id
             name: 'An updated task'
-            id: 's1'
+            priority: 2
 
         client.task.update
-          id: 's1'
+          id: task.id
           name: 'An updated task'
+          priority: 2
 
       it 'should update a list', (done) ->
 
-        testBroadcast done, ->
-          client.list.update
+        testBroadcast done, 'list.update', (_list) ->
+          _list.should.eql
+            id: list.id
             name: 'An updated list'
-            id: 's0'
 
         client.list.update
-          id: 's0'
+          id: list.id
           name: 'An updated list'
 
       it 'should update a pref', (done) ->
 
-        testBroadcast done, ->
-          client.pref.update
-            sort: true
+        testBroadcast done, 'pref.update', (pref) ->
+          pref.should.eql
+            sort: 1
+            dateFormat: 'yy/mm/dd'
 
         client.pref.update
-          sort: true
-
-      it 'should update a pref', (done) ->
-
-        testBroadcast done, ->
-          client.pref.update
-            sort: true
-
-        client.pref.update
-          sort: true
+          sort: 1
+          dateFormat: 'yy/mm/dd'
 
       it 'should update a pref again', (done) ->
 
-        testBroadcast done, ->
-          client.pref.update
+        testBroadcast done, 'pref.update', (pref) ->
+          pref.should.eql
             language: 'en-us'
 
         client.pref.update
@@ -281,22 +302,23 @@ describe '[Socket]', ->
 
       it 'should destroy a task', (done) ->
 
-        testBroadcast done, ->
-          client.task.destroy
-            id: 's1'
+        testBroadcast done, 'task.destroy', (task) ->
+          task.should.eql
+            id: task.id
 
         client.task.destroy
-          id: 's1'
+          id: task.id
 
       it 'should destroy a list', (done) ->
 
-        testBroadcast done, ->
-          client.list.destroy
-            id: 's0'
+        testBroadcast done, 'list.destroy', (list) ->
+          list.should.eql
+            id: list.id
 
         client.list.destroy
-          id: 's0'
+          id: list.id
 
+###
     describe '[queue]', ->
 
       CREATE = 0

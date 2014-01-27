@@ -8,7 +8,7 @@ global.DEBUG = true
 TASK = 'task'
 TIME = 'time'
 
-describe 'User class', ->
+describe 'Time', ->
 
   before ->
     Storage._writeUser = Storage.writeUser

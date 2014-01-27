@@ -25,6 +25,7 @@ DESTROY = 2
 TASK = 'task'
 LIST = 'list'
 PREF = 'pref'
+INBOX = 'inbox'
 
 # How long a connection has to authenticate itself before being kicked
 TIMEOUT_AUTH = 3000
@@ -248,14 +249,6 @@ class UserSocket extends Socket
   broadcast: (event, arg1, arg2, arg3) =>
     @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
 
-  parseId: (id) ->
-    id = id.match(/\d+/)?[0]
-    return parseInt(id, 10) or 0
-
-  stringifyId: (id) ->
-    if id is 'inbox' then return id
-    return 's' + id
-
 
   ###
    * User Info
@@ -275,9 +268,14 @@ class UserSocket extends Socket
    * - fn (function)
   ###
 
-  task_fetch: (fn) => fn null, @user.exportTasks()
-  list_fetch: (fn) => fn null, @user.exportLists()
-  pref_fetch: (fn) => fn null, @user.exportPref()
+  task_fetch: (fn) =>
+    @user.exportTasks().then (info) -> fn null, info
+
+  list_fetch: (fn) =>
+    @user.exportLists().then (info) -> fn null, info
+
+  pref_fetch: (fn) =>
+    @user.exportPref().then (info) -> fn null, info
 
 
   ###
@@ -291,7 +289,6 @@ class UserSocket extends Socket
   create: (classname, model, fn, time) =>
     @sync[classname + '_create'](model, time)
     .then (id) =>
-      model.id = id = @stringifyId id
       @broadcast classname + '.create', model
       if fn then fn(null, id)
       return id
@@ -299,12 +296,10 @@ class UserSocket extends Socket
       if fn then fn(true)
 
   task_create: (model, fn, time) =>
-    model.listId = @parseId model.listId
-    console.log model
-    @create('task', model, fn, time)
+    @create(TASK, model, fn, time)
 
   list_create: (model, fn, time) =>
-    @create('list', model, fn, time)
+    @create(LIST, model, fn, time)
 
 
   ###
@@ -315,31 +310,23 @@ class UserSocket extends Socket
   ###
 
   update: (classname, model, fn, time) =>
-    console.log model
     @sync[classname + '_update'](model, time)
     .then (model) =>
-      model.id = @stringifyId model.id
       @broadcast classname + '.update', model
       if fn then fn(null)
-    .fail ->
+    .fail (err) ->
+      console.log err
       if fn then fn(true)
 
 
   task_update: (model, fn, time) =>
-    model.id = @parseId model.id
-    if model.listId?
-      model.listId = @parseId model.listId
-    @update('task', model, fn, time)
+    @update(TASK, model, fn, time)
 
   list_update: (model, fn, time) =>
-    model.id = @parseId model.id
-    if model.tasks?
-      for task, i in model.tasks
-        model.tasks[i] = @parseId task
-    @update('list', model, fn, time)
+    @update(LIST, model, fn, time)
 
   pref_update: (model, fn, time) =>
-    @update('pref', model, fn, time)
+    @update(PREF, model, fn, time)
 
 
   ###
@@ -350,20 +337,21 @@ class UserSocket extends Socket
   ###
 
   destroy: (classname, model, fn, time) =>
-    id = @parseId model.id
+    id = model.id
     @sync[classname + '_destroy'](id, time)
-    .then ->
-      @broadcast classname + '.destroy', id: model.id
+    .then =>
+      @broadcast classname + '.destroy', id: id
       if fn then fn(null)
-    .fail ->
+    .fail (err) ->
+      console.log err
       if fn then fn(true)
 
 
   task_destroy: (model, fn, time) =>
-    @destroy 'task', model, fn, time
+    @destroy TASK, model, fn, time
 
   list_destroy: (model, fn, time) =>
-    @destroy 'list', model, fn, time
+    @destroy LIST, model, fn, time
 
 
   ###
