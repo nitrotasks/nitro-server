@@ -14,10 +14,10 @@ tables =
   login: require '../database/login'
   reset: require '../database/reset'
   register: require '../database/register'
-  listTasks: require '../database/list_tasks'
-  timeTask: require '../database/time_task'
-  timeList: require '../database/time_list'
-  timePref: require '../database/time_pref'
+  list_tasks: require '../database/list_tasks'
+  time_task: require '../database/time_task'
+  time_list: require '../database/time_list'
+  time_pref: require '../database/time_pref'
 
 initiateTables = (queryFn) ->
   promises = []

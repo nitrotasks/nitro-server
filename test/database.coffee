@@ -167,11 +167,11 @@ describe 'Database', ->
         name: now
         tasks: now
 
-      db.timeList.create(model).then -> done()
+      db.time_list.create(model).then -> done()
 
     it 'should read timestamps for an existing list', (done) ->
 
-      db.timeList.read(list.id).then (times) ->
+      db.time_list.read(list.id).then (times) ->
         times.should.eql
           id: list.id
           name: now
@@ -182,18 +182,18 @@ describe 'Database', ->
 
       now = Date.now()
 
-      db.timeList.update(list.id, { name: now })
+      db.time_list.update(list.id, { name: now })
       .then ->
-        db.timeList.read(list.id, 'name')
+        db.time_list.read(list.id, 'name')
       .then (times) ->
         times.name.should.equal now
         done()
 
     it 'should destroy timestamps for an existing list', (done) ->
 
-      db.timeList.destroy(list.id)
+      db.time_list.destroy(list.id)
       .then ->
-        db.timeList.read(list.id)
+        db.time_list.read(list.id)
       .fail (err) ->
         err.should.equal 'err_no_row'
         done()
@@ -255,11 +255,11 @@ describe 'Database', ->
         date: now
         completed: now
 
-      db.timeTask.create(model).then -> done()
+      db.time_task.create(model).then -> done()
 
     it 'should read timestamps for an existing task', (done) ->
 
-      db.timeTask.read(task.id).then (times) ->
+      db.time_task.read(task.id).then (times) ->
         times.should.eql
           id: task.id
           listId: now
@@ -274,18 +274,18 @@ describe 'Database', ->
 
       now = Date.now()
 
-      db.timeTask.update(task.id, { listId: now })
+      db.time_task.update(task.id, { listId: now })
       .then ->
-        db.timeTask.read(task.id, 'listId')
+        db.time_task.read(task.id, 'listId')
       .then (times) ->
         times.listId.should.equal now
         done()
 
     it 'should destroy timestamps for an existing task', (done) ->
 
-      db.timeTask.destroy(task.id)
+      db.time_task.destroy(task.id)
       .then ->
-        db.timeTask.read(task.id)
+        db.time_task.read(task.id)
       .fail (err) ->
         err.should.equal 'err_no_row'
         done()
@@ -407,11 +407,11 @@ describe 'Database', ->
         confirmDelete: now
         moveCompleted: now
 
-      db.timePref.create(model).then -> done()
+      db.time_pref.create(model).then -> done()
 
     it 'should read timestamps for an existing pref', (done) ->
 
-      db.timePref.read(user.id).then (times) ->
+      db.time_pref.read(user.id).then (times) ->
         times.should.eql
           id: user.id
           sort: now
@@ -427,18 +427,18 @@ describe 'Database', ->
 
       now = Date.now()
 
-      db.timePref.update(user.id, { sort: now })
+      db.time_pref.update(user.id, { sort: now })
       .then ->
-        db.timePref.read(user.id, 'sort')
+        db.time_pref.read(user.id, 'sort')
       .then (times) ->
         times.sort.should.equal now
         done()
 
     it 'should destroy timestamps for an existing pref', (done) ->
 
-      db.timePref.destroy(user.id)
+      db.time_pref.destroy(user.id)
       .then ->
-        db.timePref.read(user.id)
+        db.time_pref.read(user.id)
       .fail (err) ->
         err.should.equal 'err_no_row'
         done()
@@ -448,33 +448,33 @@ describe 'Database', ->
 
     it 'should add a task to a list', (done) ->
 
-      db.listTasks.create(list.id, task.id).then -> done()
+      db.list_tasks.create(list.id, task.id).then -> done()
 
     it 'should read all tasks from a list', (done) ->
 
-      db.listTasks.read(list.id).then (tasks) ->
+      db.list_tasks.read(list.id).then (tasks) ->
         tasks.should.eql [ task.id ]
         done()
 
     it 'should remove a task from a list', (done) ->
 
-      db.listTasks.destroy(list.id, task.id).then -> done()
+      db.list_tasks.destroy(list.id, task.id).then -> done()
 
     it 'should return an empty array when there are no tasks', (done) ->
 
-      db.listTasks.read(list.id).then (tasks) ->
+      db.list_tasks.read(list.id).then (tasks) ->
         tasks.should.eql []
         done()
 
     it 'should add the same task to the same list again', (done) ->
 
-      db.listTasks.create(list.id, task.id).then -> done()
+      db.list_tasks.create(list.id, task.id).then -> done()
 
     it 'should remove all tasks from a list', (done) ->
 
-      db.listTasks.destroyAll(list.id)
+      db.list_tasks.destroyAll(list.id)
         .then ->
-          db.listTasks.read(list.id)
+          db.list_tasks.read(list.id)
         .then (tasks) ->
           tasks.should.eql []
           done()
@@ -633,11 +633,11 @@ describe 'Database', ->
         task.id = id
 
       # Add the task to the list
-        db.listTasks.create(list.id, task.id)
+        db.list_tasks.create(list.id, task.id)
       .then ->
 
       # Check that we have added the task
-        db.listTasks.read(list.id)
+        db.list_tasks.read(list.id)
       .then (tasks) ->
         tasks.should.eql [ task.id ]
 
@@ -646,7 +646,7 @@ describe 'Database', ->
       .then ->
 
       # Check that the task is no longer in the list
-        db.listTasks.read(list.id)
+        db.list_tasks.read(list.id)
       .then (tasks) ->
         tasks.should.eql []
         done()

@@ -1,78 +1,161 @@
 User    = require '../app/models/user'
 Storage = require '../app/controllers/storage'
-Time    = require '../app/utils/time'
+time    = require '../app/utils/time'
+setup   = require './setup'
 should  = require 'should'
 
 global.DEBUG = true
 
-TASK = 'task'
-TIME = 'time'
-
 describe 'Time', ->
 
-  before ->
-    Storage._writeUser = Storage.writeUser
-    Storage.writeUser = ->
+  _user =
+    name: 'User - Time'
+    email: 'time@inter.net'
+    password: 'hunter2'
 
-  after ->
-    Storage.writeUser = Storage._writeUser
-    delete Storage._writeUser
-
-  time = null
-  user = null
+  userId = null
+  listId = null
+  taskId = null
   now = null
 
-  attrs =
-    data_task:
-      's-0':
-        name: 'buy food'
-      's-1':
-        name: 'eat food'
-      's-2':
-        name: 'release nitro'
-        date: 123
-        priority: 3
-        notes: 'some notes'
-    data_time:
-      task:
-        's-2':
-          name: 123
+  before (done) -> setup ->
+    user = null
+    Storage.add(_user)
+    .then (_user) ->
+      user = _user
+      userId = user.id
+      user.createList name: 'List for timestamps'
+    .then (_listId) ->
+      listId = _listId
+      user.createTask name: 'Task for timestamps', listId: listId
+    .then (_taskId) ->
+      taskId = _taskId
+      done()
 
   beforeEach ->
-    user = new User(attrs)
-    time = new Time(user)
     now = Date.now()
 
-  it 'should set timestamps', ->
-    time.set TASK, 's-0', 'name', now
-    time.get(TASK, 's-0', 'name').should.equal now
+  it 'should create timestamps for a task', (done) ->
 
-  it 'should set all timestamps', ->
-    time.set TASK, 's-1', '*', now
-    time.get(TASK, 's-1', 'name').should.equal now
+    time.createTask(taskId, now)
+    .then ->
+      time.read('task', taskId)
+    .then (times) ->
+      times.should.eql
+        id: taskId
+        listId: now
+        name: now
+        notes: now
+        priority: now
+        completed: now
+        date: now
+      done()
+    .fail (err) ->
+      console.log err
 
-  it 'should set many timestamps', ->
-    times =
-      name: now
-      date: now + 10
-      priority: now - 10
-      notes: now + 20
+  it 'should create timestamps for a list', (done) ->
 
-    time.set TASK, 's-2', times
-    time.get(TASK, 's-2', 'notes').should.equal times.notes
-    time.get(TASK, 's-2', 'date').should.equal times.date
+    time.createList(listId, now)
+    .then ->
+      time.read('list', listId)
+    .then (times) ->
+      times.should.eql
+        id: listId
+        name: now
+        tasks: now
+      done()
+    .fail (err) ->
+      console.log err
 
-  it 'should return undefined on missing items', ->
-    no_key = time.get TASK, 's-0', 'missing'
-    no_id  = time.get TASK, 's-100', 'name'
-    no_class = time.get 'missing', 's-100', 'name'
-    should.equal no_key, undefined
-    should.equal no_id, undefined
-    should.equal no_class, undefined
+  it 'should create timestamps for a pref', (done) ->
 
-  it 'should clear timestamps', ->
-    time.clear TASK, 's-2'
-    model = user.data(TIME)[TASK]['s-2']
-    should.equal model, undefined
+    time.createPref(userId, now)
+    .then ->
+      time.read('pref', userId)
+    .then (times) ->
+      times.should.eql
+        id: userId
+        sort: now
+        night: now
+        language: now
+        weekStart: now
+        dateFormat: now
+        confirmDelete: now
+        moveCompleted: now
+      done()
+    .fail (err) ->
+      console.log err
 
+  it 'should timestamps for a task', (done) ->
+
+    time.read('task', taskId, 'name').then (times) ->
+      times.name.should.be.a.Number
+      done()
+
+  it 'should timestamps for a list', (done) ->
+
+    time.read('list', listId, 'name').then (times) ->
+      times.name.should.be.a.Number
+      done()
+
+  it 'should timestamps for a pref', (done) ->
+
+    time.read('pref', userId, 'sort').then (times) ->
+      times.sort.should.be.a.Number
+      done()
+
+  it 'should update a task timestamp', (done) ->
+
+    time.update('task', taskId, 'name', now)
+    .then ->
+      time.read('task', taskId, 'name')
+    .then (times) ->
+      times.name.should.equal now
+      done()
+
+  it 'should update a list timestamp', (done) ->
+
+    time.update('list', listId, 'name', now)
+    .then ->
+      time.read('list', listId, 'name')
+    .then (times) ->
+      times.name.should.equal now
+      done()
+
+  it 'should update a pref timestamp', (done) ->
+
+    time.update('pref', userId, {sort: now, dateFormat: now})
+    .then ->
+      time.read('pref', userId, ['sort', 'dateFormat'])
+    .then (times) ->
+      times.sort.should.equal now
+      times.dateFormat.should.equal now
+      done()
+
+  it 'should destroy a task timestamp', (done) ->
+
+    time.destroy('task', taskId)
+    .then ->
+      time.read('task', taskId)
+    .fail (err) ->
+      err.should.equal 'err_no_row'
+      done()
+
+  it 'should destroy a list timestamp', (done) ->
+
+    time.destroy('list', listId)
+    .then ->
+      time.read('list', listId)
+    .fail (err) ->
+      err.should.equal 'err_no_row'
+      done()
+
+  it 'should destroy a pref timestamp', (done) ->
+
+    time.destroy('pref', userId)
+    .then ->
+      time.read('pref', userId)
+    .fail (err) ->
+      err.should.equal 'err_no_row'
+      done()
 

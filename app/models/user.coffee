@@ -102,13 +102,13 @@ class User
 
 
   addTaskToList: (taskId, listId) ->
-    db.listTasks.create(listId, taskId)
+    db.list_tasks.create(listId, taskId)
 
   removeTaskFromList: (taskId, listId) ->
-    db.listTasks.destroy(listId, taskId)
+    db.list_tasks.destroy(listId, taskId)
 
   readListTasks: (listId) ->
-    db.listTasks.read(listId)
+    db.list_tasks.read(listId)
 
 
   shouldOwnModel: (classname, id) ->
@@ -186,11 +186,11 @@ class User
 
   exportLists: ->
     db.list._search('*', userId: @id)
-    .then (lists) ->
+    .then (lists) =>
       promises = []
-      lists.forEach (list) ->
+      lists.forEach (list) =>
         delete list.userId
-        promises.push db.listTasks.read(list.id).then (tasks) ->
+        promises.push @readListTasks(list.id).then (tasks) ->
           list.tasks = tasks
       Q.all(promises).then -> return lists
     .fail ->

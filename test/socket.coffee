@@ -10,7 +10,7 @@ setup   = require './setup'
 mockjs  = require './mockjs'
 client  = require './mock_client'
 
-describe '[Socket]', ->
+describe 'Socket', ->
 
   make =
 
@@ -69,7 +69,7 @@ describe '[Socket]', ->
       fn res.arg1, res.arg2, res.arg3
 
 
-  describe '[setup]', ->
+  describe '#setup', ->
 
     it 'should create a new user', (done) ->
 
@@ -85,7 +85,7 @@ describe '[Socket]', ->
       .fail (err) ->
         console.log err
 
-  describe '[auth]', ->
+  describe '#auth', ->
 
     it 'should try to auth', (done) ->
 
@@ -116,7 +116,7 @@ describe '[Socket]', ->
       client.user.auth(user.id, user.token)
 
 
-  describe '[methods]', ->
+  describe '#methods', ->
 
     list = {}
     task = {}
@@ -195,7 +195,7 @@ describe '[Socket]', ->
       client.task.destroy id: task.id
 
 
-    describe '[broadcast]', ->
+    describe '#broadcast', ->
 
       # Create a second socket called other
       other = null
@@ -319,7 +319,7 @@ describe '[Socket]', ->
           id: list.id
 
 ###
-    describe '[queue]', ->
+    describe '#queue', ->
 
       CREATE = 0
       UPDATE = 1

@@ -31,7 +31,6 @@ ERR_INVALID_MODEL = 'err_invalid_model'
 class Sync
 
   constructor: (@user) ->
-    @time = new Time(@user)
 
 
   #####################################
