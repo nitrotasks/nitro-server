@@ -156,6 +156,48 @@ describe 'Database', ->
         done()
 
 
+  describe '#time_list', ->
+
+    now = Date.now()
+
+    it 'should add timestamps to an existing list', (done) ->
+
+      model =
+        id: list.id
+        name: now
+        tasks: now
+
+      db.timeList.create(model).then -> done()
+
+    it 'should read timestamps for an existing list', (done) ->
+
+      db.timeList.read(list.id).then (times) ->
+        times.should.eql
+          id: list.id
+          name: now
+          tasks: now
+        done()
+
+    it 'should update timestamps for an existing list', (done) ->
+
+      now = Date.now()
+
+      db.timeList.update(list.id, { name: now })
+      .then ->
+        db.timeList.read(list.id, 'name')
+      .then (times) ->
+        times.name.should.equal now
+        done()
+
+    it 'should destroy timestamps for an existing list', (done) ->
+
+      db.timeList.destroy(list.id)
+      .then ->
+        db.timeList.read(list.id)
+      .fail (err) ->
+        err.should.equal 'err_no_row'
+        done()
+
   describe '#task', ->
 
     before ->
@@ -196,6 +238,58 @@ describe 'Database', ->
       db.task.create(task).then (id) ->
         task.id = id
         done()
+
+
+  describe '#time_task', ->
+
+    now = Date.now()
+
+    it 'should add timestamps to an existing task', (done) ->
+
+      model =
+        id: task.id
+        listId: now
+        name: now
+        notes: now
+        priority: now
+        date: now
+        completed: now
+
+      db.timeTask.create(model).then -> done()
+
+    it 'should read timestamps for an existing task', (done) ->
+
+      db.timeTask.read(task.id).then (times) ->
+        times.should.eql
+          id: task.id
+          listId: now
+          name: now
+          notes: now
+          priority: now
+          date: now
+          completed: now
+        done()
+
+    it 'should update timestamps for an existing task', (done) ->
+
+      now = Date.now()
+
+      db.timeTask.update(task.id, { listId: now })
+      .then ->
+        db.timeTask.read(task.id, 'listId')
+      .then (times) ->
+        times.listId.should.equal now
+        done()
+
+    it 'should destroy timestamps for an existing task', (done) ->
+
+      db.timeTask.destroy(task.id)
+      .then ->
+        db.timeTask.read(task.id)
+      .fail (err) ->
+        err.should.equal 'err_no_row'
+        done()
+
 
 
   describe '#register', ->
@@ -291,6 +385,63 @@ describe 'Database', ->
       db.pref.destroy(user.id).then ->
         done()
 
+
+  describe '#time_pref', ->
+
+    now = Date.now()
+
+    before (done) ->
+      db.pref.create({
+        userId: user.id
+      }).then -> done()
+
+    it 'should add timestamps to an existing pref', (done) ->
+
+      model =
+        id: user.id
+        sort: now
+        night: now
+        language: now
+        weekStart: now
+        dateFormat: now
+        confirmDelete: now
+        moveCompleted: now
+
+      db.timePref.create(model).then -> done()
+
+    it 'should read timestamps for an existing pref', (done) ->
+
+      db.timePref.read(user.id).then (times) ->
+        times.should.eql
+          id: user.id
+          sort: now
+          night: now
+          language: now
+          weekStart: now
+          dateFormat: now
+          confirmDelete: now
+          moveCompleted: now
+        done()
+
+    it 'should update timestamps for an existing pref', (done) ->
+
+      now = Date.now()
+
+      db.timePref.update(user.id, { sort: now })
+      .then ->
+        db.timePref.read(user.id, 'sort')
+      .then (times) ->
+        times.sort.should.equal now
+        done()
+
+    it 'should destroy timestamps for an existing pref', (done) ->
+
+      db.timePref.destroy(user.id)
+      .then ->
+        db.timePref.read(user.id)
+      .fail (err) ->
+        err.should.equal 'err_no_row'
+        done()
 
 
   describe '#list_tasks', ->

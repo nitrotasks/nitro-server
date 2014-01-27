@@ -16,5 +16,6 @@ class TimeList extends Table
         .notNullable()
 
       table.bigInteger('name').unsigned()
+      table.bigInteger('tasks').unsigned()
 
 module.exports = TimeList
