@@ -15,6 +15,9 @@ tables =
   reset: require '../database/reset'
   register: require '../database/register'
   listTasks: require '../database/list_tasks'
+  timeTask: require '../database/time_task'
+  timeList: require '../database/time_list'
+  timePref: require '../database/time_pref'
 
 initiateTables = (queryFn) ->
   promises = []
