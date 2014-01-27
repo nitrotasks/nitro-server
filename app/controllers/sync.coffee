@@ -77,7 +77,7 @@ class Sync
   task_create: (task, timestamp) =>
 
     # Check that the list exists
-    @user.checkList(task.listId)
+    @user.shouldOwnList(task.listId)
       .then (exists) =>
 
         unless exists
@@ -226,7 +226,23 @@ class Sync
         # unless timestamps
         #   return null
 
-        @user.updateTask(id, changes)
+        # Check listId
+        if changes.listId?
+          @user.shouldOwnList(changes.listId)
+            .then =>
+              @user.readTask(id, 'listId')
+            .then (old) =>
+              return if old.listId is changes.listId
+              @user.removeTaskFromList id, old.listId
+            .fin =>
+              @user.addTaskToList id, changes.listId
+            .fail ->
+              delete changes.listId
+            .then =>
+              @user.updateTask(id, changes)
+
+        else
+          @user.updateTask(id, changes)
 
       .then ->
 

@@ -27,6 +27,8 @@ class User
 
   ###
    * Set Name
+   *
+   * - name (string) : the users name
   ###
 
   setName: (name) ->
@@ -35,6 +37,21 @@ class User
   getName: ->
     db.user.read(@id, 'name').then (info) ->
       return info.name
+
+
+  ###
+   * Change a users email and update the email lookup table
+   *
+   * - email (string) : the email to change to
+  ###
+
+  setEmail: (email) ->
+    db.user.update @id, email: email
+
+  getEmail: ->
+    db.user.read(@id, 'email').then (info) ->
+      return info.email
+
 
   ###
    * Change a users password and remove all their login tokens
@@ -51,18 +68,7 @@ class User
       return info.password
 
 
-  ###
-   * Change a users email and update the email lookup table
-   *
-   * - email (string) : the email to change to
-  ###
 
-  setEmail: (email) ->
-    db.update @id, email: email
-
-  getEmail: ->
-    db.user.read(@id, 'email').then (info) ->
-      return info.email
 
 
   createModel: (classname, properties) ->
@@ -121,19 +127,6 @@ class User
       throw 'err_no_row'
 
 
-  checkModel: (classname, id) ->
-    db[classname].exists(id)
-
-  checkList: (id) ->
-    @checkModel('list', id)
-
-  checkTask: (id) ->
-    @checkModel('task', id)
-
-  checkPref: (id) ->
-    @checkModel('pref', id)
-
-
   readModel: (classname, id, columns) ->
     db[classname].read(id, columns).then (obj) ->
       delete obj.userId
@@ -156,23 +149,7 @@ class User
     @updateModel('list', id, changes)
 
   updateTask: (id, changes) ->
-
-    # Check listId
-    if changes.listId?
-      @shouldOwnList(changes.listId)
-        .then =>
-          @readTask(id, 'listId')
-        .then (old) =>
-          return if old.listId is changes.listId
-          @removeTaskFromList id, old.listId
-        .then =>
-          @addTaskToList id, changes.listId
-        .fail ->
-          delete changes.listId
-        .then =>
-          @updateModel('task', id, changes)
-    else
-      @updateModel('task', id, changes)
+    @updateModel('task', id, changes)
 
   updatePref: (changes) ->
     @updateModel('pref', @id, changes)
@@ -198,15 +175,6 @@ class User
    * > object
   ###
 
-  exportModel: (classname) ->
-    models = []
-    data = @data classname
-    return models unless data
-    for id, model of data when not model.deleted
-      models.push model
-    return models
-
-
   exportTasks: ->
     db.task._search('*', userId: @id)
     .then (tasks) ->
@@ -229,4 +197,4 @@ class User
       return []
 
   exportPref: ->
-    db.pref.read(@id, '*')
+    @readPref()

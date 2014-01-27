@@ -148,7 +148,7 @@ random =
 # SETUP
 # -----------------------------------------------------------------------------
 
-describe 'IGNORE Fuzz', ->
+describe 'SLOW Fuzz', ->
   socket = null
 
   user =

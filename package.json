@@ -2,8 +2,8 @@
   "name": "Nitro-Sync",
   "version": "2.1.0",
   "scripts": {
-    "test": "mocha -R spec --compilers coffee:coffee-script test/",
-    "coverage": "mocha --compilers coffee:coffee-script -r blanket -R html-cov test/user.coffee > coverage.html"
+    "test": "mocha -R spec --compilers coffee:coffee-script -ig Time test/",
+    "coverage": "mocha --compilers coffee:coffee-script -r blanket -R html-cov -ig Time > coverage.html"
   },
   "dependencies": {
     "coffee-script": "1.6.x",
@@ -28,7 +28,7 @@
   },
   "config": {
     "blanket": {
-      "pattern": "app/models",
+      "pattern": "app/",
       "loader": "./node-loaders/coffee-script"
     }
   }
