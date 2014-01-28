@@ -318,7 +318,6 @@ describe 'Socket', ->
         client.list.destroy
           id: list.id
 
-###
     describe '#queue', ->
 
       CREATE = 0
@@ -326,9 +325,13 @@ describe 'Socket', ->
       DESTROY = 2
 
       beforeEach (done) ->
-        Storage.get(user.id).then (user) ->
-          user.wipe()
+        Storage.get(user.id)
+        .then (user) ->
+          user.clearAllData()
+        .then ->
           done()
+        .fail (err) ->
+          console.log err
 
       test = (input, output, done) ->
 
@@ -360,48 +363,48 @@ describe 'Socket', ->
 
           list:
             c20: [CREATE, {
-              id: 'c20', name: 'list 1', tasks: ['c12', 'c13'] }, now]
+              id: -20, name: 'list 1', tasks: [-12, -13] }, now]
             c33: [CREATE, {
-              id: 'c33', name: 'list 2', tasks: ['c14', 'c15'] }, now]
+              id: -33, name: 'list 2', tasks: [-14, -15] }, now]
 
           task:
             c12: [CREATE, {
-              id: 'c12', name: 'task 1', listId: 'c20' }, now]
+              id: -12, name: 'task 1', listId: -20 }, now]
             c13: [CREATE, {
-              id: 'c13', name: 'task 2', listId: 'c20' }, now]
+              id: -13, name: 'task 2', listId: -20 }, now]
             c14: [CREATE, {
-              id: 'c14', name: 'task 3', listId: 'c33' }, now]
+              id: -14, name: 'task 3', listId: -33 }, now]
             c15: [CREATE, {
-              id: 'c15', name: 'task 4', listId: 'c33' }, now]
+              id: -15, name: 'task 4', listId: -33 }, now]
 
         output =
 
           list: [
-            id: 's0'
+            id: 0
             name: 'list 1',
-            tasks: ['s0', 's1']
+            tasks: [0, 1]
           ,
-            id: 's1'
+            id: 1
             name: 'list 2'
-            tasks: ['s2', 's3']
+            tasks: [2, 3]
           ]
 
           task: [
-            id: 's0'
+            id: 0
             name: 'task 1'
-            listId: 's0'
+            listId: 0
           ,
-            id: 's1'
+            id: 1
             name: 'task 2'
-            listId: 's0'
+            listId: 0
           ,
-            id: 's2'
+            id: 2
             name: 'task 3'
-            listId: 's1'
+            listId: 1
           ,
-            id: 's3'
+            id: 3
             name: 'task 4'
-            listId: 's1'
+            listId: 1
           ]
 
         test input, output, done
@@ -410,10 +413,10 @@ describe 'Socket', ->
 
       it 'update existing items', (done) ->
 
-        client.list.create make.list id: 'c0', name: 'List 1'
-        client.task.create make.task id: 'c1', name: 'Task 1', listId: 's0'
-        client.task.create make.task id: 'c2', name: 'Task 2', listId: 's0'
-        client.task.create make.task id: 'c3', name: 'Task 3', listId: 's0'
+        client.list.create make.list id: -0, name: 'List 1'
+        client.task.create make.task id: -1, name: 'Task 1', listId: 0
+        client.task.create make.task id: -2, name: 'Task 2', listId: 0
+        client.task.create make.task id: -3, name: 'Task 3', listId: 0
 
         now = Date.now() + 100
 
@@ -421,46 +424,46 @@ describe 'Socket', ->
 
           task:
             s0: [ UPDATE,
-              { id: 's0', name: 'Task 1 - Updated', listId: 'c1' },
+              { id: 0, name: 'Task 1 - Updated', listId: -1 },
               { name: now, listId: now }]
             s1: [ UPDATE,
-              { id: 's1', name: 'Task 2 - Updated' },
+              { id: 1, name: 'Task 2 - Updated' },
               { name: now }]
             s2: [ UPDATE,
-              { id: 's2', name: 'Task 3 - Updated', listId: 'c1' },
+              { id: 2, name: 'Task 3 - Updated', listId: -1 },
               { name: now, listId: now }]
 
           list:
             s0: [ UPDATE,
-              { id: 's0', name: 'List 1 - Updated' },
+              { id: 0, name: 'List 1 - Updated' },
               { name: now }]
-            c1: [CREATE, { id: 'c1', name: 'List 2' }, now]
+            c1: [CREATE, { id: -1, name: 'List 2' }, now]
 
 
         output =
 
           list: [
-            id: 's0'
+            id: 0
             name: 'List 1 - Updated'
-            tasks: ['s1']
+            tasks: [1]
           ,
-            id: 's1'
+            id: 1
             name: 'List 2'
-            tasks: ['s0', 's2']
+            tasks: [0, 2]
           ]
 
           task: [
-            id: 's0'
+            id: 0
             name: 'Task 1 - Updated'
-            listId: 's1'
+            listId: 1
           ,
-            id: 's1'
+            id: 1
             name: 'Task 2 - Updated'
-            listId: 's0'
+            listId: 0
           ,
-            id: 's2'
+            id: 2
             name: 'Task 3 - Updated'
-            listId: 's1'
+            listId: 1
           ]
 
         test input, output, done
@@ -470,22 +473,22 @@ describe 'Socket', ->
 
         now = Date.now() + 10
 
-        client.list.create make.list id: 'c0', name: 'List 1'
-        client.task.create make.task id: 'c1', name: 'Task 1', listId: 's0'
-        client.task.create make.task id: 'c2', name: 'Task 2', listId: 's0'
-        client.task.create make.task id: 'c3', name: 'Task 3', listId: 's0'
+        client.list.create make.list id: -0, name: 'List 1'
+        client.task.create make.task id: -1, name: 'Task 1', listId: 0
+        client.task.create make.task id: -2, name: 'Task 2', listId: 0
+        client.task.create make.task id: -3, name: 'Task 3', listId: 0
 
         input =
 
           task:
-            s0: [DESTROY, {id: 's0'}, now]
-            s1: [DESTROY, {id: 's1'}, now]
-            s2: [DESTROY, {id: 's2'}, now]
-            c1: [CREATE, { id: 'c1', name: 'Task 4', listId: 'c1' }, now]
+            s0: [DESTROY, {id: 0}, now]
+            s1: [DESTROY, {id: 1}, now]
+            s2: [DESTROY, {id: 2}, now]
+            c1: [CREATE, { id: -1, name: 'Task 4', listId: 'c1' }, now]
 
           list:
             s0: [UPDATE,
-              { id: 's0', name: 'List 1 - Updated' },
+              { id: 0, name: 'List 1 - Updated' },
               { name: now }]
             c1: [CREATE, {name: 'List 2'}, now]
 
@@ -494,18 +497,17 @@ describe 'Socket', ->
           list: [
             name: 'List 1 - Updated'
             tasks: []
-            id: 's0'
+            id: 0
           ,
             name: 'List 2'
-            tasks: [ 's3' ]
-            id: 's1'
+            tasks: [ 3 ]
+            id: 1
           ]
 
           task: [
-            id: 's3'
+            id: 3
             name: 'Task 4'
-            listId: 's1'
+            listId: 1
           ]
 
         test input, output, done
-###

@@ -117,7 +117,6 @@ class Table
       .where(data)
 
     promise.then (rows) =>
-      unless rows then throw @ERR_NO_ROW
       return true
 
 

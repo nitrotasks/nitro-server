@@ -14,8 +14,6 @@ Jandal.handle 'node'
 # Constants
 # -----------------------------------------------------------------------------
 
-SERVER_PREFIX = 's'
-
 SOCKET_URL = '/socket'
 
 CREATE  = 0
@@ -363,6 +361,11 @@ class UserSocket extends Socket
 
   queue_sync: (queue, fn) =>
 
+    # Make a new promise so we can do all this sequentially
+    _promise = Q.resolve()
+    promise = (fn, arg1, arg2, arg3) ->
+      _promise = _promise.then fn.call(this, arg1, arg2, arg3)
+
     # Map client IDs to server IDs -- for lists only
     lists = {}
 
@@ -375,18 +378,20 @@ class UserSocket extends Socket
           when CREATE
 
             tasks = list.tasks
-            for taskId, i in tasks by -1 when taskId[0] isnt SERVER_PREFIX
+            for taskId, i in tasks by -1 when taskId < 0
               tasks.splice(i, 1)
 
             list.id = id
-            lists[id] = @list_create(list, null, time)
+            # FIXME: closure bug
+            promise @list_create, list, null, time
+            promise (_id) -> lists[id] = id
 
           when UPDATE
             list.id = id
-            @list_update(list, null, time)
+            promise @list_update, list, null, time
 
           when DESTROY
-            @list_destroy(list, null, time)
+            promise @list_destroy, list, null, time
 
     # TASKS
 
@@ -398,16 +403,16 @@ class UserSocket extends Socket
             task.id = id
             if lists[task.listId]
               task.listId = lists[task.listId]
-            @task_create(task, null, time)
+            promise.then @task_create(task, null, time)
 
           when UPDATE
             task.id = id
             if task.listId? and lists[task.listId]
               task.listId = lists[task.listId]
-            @task_update(task, null, time)
+            promise @task_update(task, null, time)
 
           when DESTROY
-            @task_destroy(task, null, time)
+            promise @task_destroy(task, null, time)
 
     # PREFS
 
@@ -422,9 +427,9 @@ class UserSocket extends Socket
     # CALLBACK
 
     if fn then fn null,
-      list: @user.exportModel(LIST)
-      task: @user.exportModel(TASK)
-      pref: @user.exportModel(PREF)
+      list: @user.exportLists()
+      task: @user.exportTasks()
+      pref: @user.exportPref()
 
 module.exports =
   init: init

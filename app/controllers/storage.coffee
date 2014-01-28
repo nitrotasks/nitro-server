@@ -1,6 +1,5 @@
 Q    = require 'kew'
 db   = require '../controllers/query'
-time = require '../utils/time'
 Log  = require '../utils/log'
 User = require '../models/user'
 
@@ -83,24 +82,10 @@ Storage =
 
       # Add user to database
       db.user.create(user)
-      .then (_id) =>
-
-        id = _id
-
-        # Create a prefs entry for them
-        db.pref.create(userId: id)
-
-      .then =>
-
-        # Create a pref timestamps
-        time.create('pref', id, {})
-
-      .then =>
-
-        # Return as user
-        @get(id)
-
-
+      .then (id) =>
+        @get id
+      .then (user) ->
+        user.setup()
 
 
   ###

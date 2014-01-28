@@ -1,9 +1,9 @@
 Q = require 'kew'
 db = require '../controllers/query'
+time = require '../utils/time'
 Log = require '../utils/log'
 
 log = Log('user', 'green')
-
 
 class User
 
@@ -16,10 +16,12 @@ class User
 
   constructor: (@id) ->
 
-
-  # Resolve cyclic dependency with Storage controller
-  module.exports = User
-  Storage = require '../controllers/storage'
+  setup: ->
+    db.pref.create(userId: @id)
+    .then =>
+      time.create('pref', @id, {})
+    .then =>
+      return this
 
   info: ->
     db.user.read @id, ['name', 'email', 'pro']
@@ -168,6 +170,14 @@ class User
     @destroyModel('pref', @id)
 
 
+  clearAllData: ->
+    Q.all([
+      db.task._delete(userId: @id)
+      db.list._delete(userId: @id)
+      db.pref._delete(userId: @id)
+    ]).then => @setup()
+
+
   ###
    * Get an array of all the active models in a class
    *
@@ -198,3 +208,6 @@ class User
 
   exportPref: ->
     @readPref()
+
+
+module.exports = User
