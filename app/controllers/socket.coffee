@@ -1,10 +1,11 @@
-sockjs = require 'sockjs'
-Jandal = require 'jandal'
-xType = require 'xtype'
-Sync = require '../controllers/sync'
-Storage = require '../controllers/storage'
+sockjs     = require 'sockjs'
+Q          = require 'kew'
+Jandal     = require 'jandal'
+xType      = require 'xtype'
+Sync       = require '../controllers/sync'
+Storage    = require '../controllers/storage'
 Validation = require '../controllers/validation'
-Log = require '../utils/log'
+Log        = require '../utils/log'
 
 log = Log 'Socket', 'yellow'
 Jandal.handle 'node'
@@ -361,10 +362,19 @@ class UserSocket extends Socket
 
   queue_sync: (queue, fn) =>
 
+
     # Make a new promise so we can do all this sequentially
-    _promise = Q.resolve()
-    promise = (fn, arg1, arg2, arg3) ->
-      _promise = _promise.then fn.call(this, arg1, arg2, arg3)
+    pList = []
+    pAll = []
+
+
+    # PREFS
+
+    if queue.pref
+      for [event, pref, time] in queue.task
+        continue unless event is UPDATE
+        pAll.push @pref_update(pref, null, time)
+
 
     # Map client IDs to server IDs -- for lists only
     lists = {}
@@ -372,64 +382,70 @@ class UserSocket extends Socket
     # LISTS
 
     if queue.list
-      for id, [event, list, time] of queue.list
+      for [event, list, time] in queue.list
+
         switch event
 
           when CREATE
 
             tasks = list.tasks
+
             for taskId, i in tasks by -1 when taskId < 0
               tasks.splice(i, 1)
 
-            list.id = id
-            # FIXME: closure bug
-            promise @list_create, list, null, time
-            promise (_id) -> lists[id] = id
+            do =>
+              id = list.id
+              pList.push @list_create(list, null, time).then (_id) ->
+                lists[id] = _id
 
           when UPDATE
-            list.id = id
-            promise @list_update, list, null, time
+            pAll.push @list_update list, null, time
 
           when DESTROY
-            promise @list_destroy, list, null, time
+            pAll.push @list_destroy list, null, time
 
-    # TASKS
+    Q.all(pList)
+    .then =>
 
-    if queue.task
-      for id, [event, task, time] of queue.task
-        switch event
+      # TASKS
 
-          when CREATE
-            task.id = id
-            if lists[task.listId]
-              task.listId = lists[task.listId]
-            promise.then @task_create(task, null, time)
+      if queue.task
 
-          when UPDATE
-            task.id = id
-            if task.listId? and lists[task.listId]
-              task.listId = lists[task.listId]
-            promise @task_update(task, null, time)
+        for [event, task, time] in queue.task
 
-          when DESTROY
-            promise @task_destroy(task, null, time)
+          if lists[task.listId]
+            task.listId = lists[task.listId]
 
-    # PREFS
+          switch event
 
-    if queue.pref
-      for id, [event, pref, time] of queue.task
-        switch event
+            when CREATE
+              pAll.push @task_create(task, null, time)
 
-          when UPDATE
-            @pref_update(pref, null, time)
+            when UPDATE
+              pAll.push @task_update(task, null, time)
+
+            when DESTROY
+              pAll.push @task_destroy(task, null, time)
 
 
-    # CALLBACK
+      Q.all(pAll)
 
-    if fn then fn null,
-      list: @user.exportLists()
-      task: @user.exportTasks()
-      pref: @user.exportPref()
+    .then =>
+
+      unless fn then throw 'no_fn'
+
+      Q.all [
+        @user.exportLists()
+        @user.exportTasks()
+        @user.exportPref()
+      ]
+
+    .then ([lists, tasks, pref]) =>
+
+      fn null,
+        list: lists
+        task: tasks
+        pref: pref
 
 module.exports =
   init: init

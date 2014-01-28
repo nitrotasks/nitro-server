@@ -345,13 +345,18 @@ describe 'Socket', ->
         output.list.map (item) -> make.list item
         output.task.map (item) -> make.task item
 
-        socket.on 'message', (message) ->
-          # 17 = "Jandal.fn_2(null,".length
-          # -1 = ")"
-          {list, task, pref} = JSON.parse(message[17...-1])
-          list.should.eql output.list
-          task.should.eql output.task
+        socket.on 'message', (response) ->
+
+          res = Jandal::parse(response)
+
+          try
+            res.arg2.list.should.eql output.list
+            res.arg2.task.should.eql output.task
+          catch e
+            console.log e
+
           done()
+
         client.queue.sync input
 
 
@@ -361,56 +366,58 @@ describe 'Socket', ->
 
         input =
 
-          list:
-            c20: [CREATE, {
-              id: -20, name: 'list 1', tasks: [-12, -13] }, now]
-            c33: [CREATE, {
-              id: -33, name: 'list 2', tasks: [-14, -15] }, now]
+          list: [
+            [CREATE, {
+                id: -20, name: 'list 1', tasks: [-12, -13] }, now]
+            [CREATE, {
+                id: -33, name: 'list 2', tasks: [-14, -15] }, now]
+          ]
 
-          task:
-            c12: [CREATE, {
+          task: [
+            [CREATE, {
               id: -12, name: 'task 1', listId: -20 }, now]
-            c13: [CREATE, {
+            [CREATE, {
               id: -13, name: 'task 2', listId: -20 }, now]
-            c14: [CREATE, {
+            [CREATE, {
               id: -14, name: 'task 3', listId: -33 }, now]
-            c15: [CREATE, {
+            [CREATE, {
               id: -15, name: 'task 4', listId: -33 }, now]
+          ]
 
         output =
 
           list: [
-            id: 0
+            id: 3
             name: 'list 1',
-            tasks: [0, 1]
+            tasks: [3, 4]
           ,
-            id: 1
+            id: 4
             name: 'list 2'
-            tasks: [2, 3]
+            tasks: [5, 6]
           ]
 
           task: [
-            id: 0
-            name: 'task 1'
-            listId: 0
-          ,
-            id: 1
-            name: 'task 2'
-            listId: 0
-          ,
-            id: 2
-            name: 'task 3'
-            listId: 1
-          ,
             id: 3
+            name: 'task 1'
+            listId: 3
+          ,
+            id: 4
+            name: 'task 2'
+            listId: 3
+          ,
+            id: 5
             name: 'task 4'
-            listId: 1
+            listId: 4
+          ,
+            id: 6
+            name: 'task 3'
+            listId: 4
           ]
 
         test input, output, done
 
 
-
+###
       it 'update existing items', (done) ->
 
         client.list.create make.list id: -0, name: 'List 1'
@@ -511,3 +518,5 @@ describe 'Socket', ->
           ]
 
         test input, output, done
+
+###

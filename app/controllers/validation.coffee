@@ -144,13 +144,13 @@ define 'PrefEvent', 'array',
   required: [0,1,2]
 
 
-define 'TaskQueue', 'object',
+define 'TaskQueue', 'array',
   all: 'TaskEvent'
 
-define 'ListQueue', 'object',
+define 'ListQueue', 'array',
   all: 'ListEvent'
 
-define 'PrefQueue', 'object',
+define 'PrefQueue', 'array',
   all: 'PrefEvent'
 
 
