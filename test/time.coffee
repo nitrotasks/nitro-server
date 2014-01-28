@@ -132,6 +132,56 @@ describe 'Time', ->
       times.dateFormat.should.equal now
       done()
 
+  it 'should check a single time - newer', (done) ->
+
+    # Set time to 10 seconds in the future
+    future = Date.now() + 10 * 1000
+
+    time.checkSingle('task', taskId, future).then (exists) ->
+      exists.should.equal true
+      done()
+
+  it 'should check a single time - older', (done) ->
+
+    # Set time to 10 seconds in the past
+    past = Date.now() - 10 * 1000
+
+    time.checkSingle('task', taskId, past).then (exists) ->
+      exists.should.equal false
+      done()
+
+  it 'should check multiple timestamps - mixed', (done) ->
+
+    present = Date.now()
+    past = now - 10 * 1000
+    future = now + 10 * 1000
+
+    time.checkMultiple('task', taskId, {
+      name: now
+      listId: past
+      notes: future
+      priority: past
+      date: now
+      completed: future
+    }).then (timestamps) ->
+      timestamps.should.eql
+        name: now
+        notes: future
+        date: now
+        completed: future
+      done()
+
+  it 'should check multiple timestamps - older', (done) ->
+
+    past = now - 10 * 1000
+
+    time.checkMultiple('list', listId, {
+      name: past
+      tasks: past
+    }).fail (err) ->
+      err.should.equal 'err_old_event'
+      done()
+
   it 'should destroy a task timestamp', (done) ->
 
     time.destroy('task', taskId)

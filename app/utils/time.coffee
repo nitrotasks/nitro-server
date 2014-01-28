@@ -2,6 +2,7 @@ db = require '../controllers/query'
 
 TIME = 'time'
 PREFIX = 'time_'
+ERR_OLD_EVENT = 'err_old_event'
 
 time =
 
@@ -28,18 +29,21 @@ time =
     db[PREFIX + classname].update id, obj
 
 
-  # Set timestamp for an attribute
-  create: (classname, id, attr, time) ->
+  ###
+   * Create Time
+   *
+   * Set multiple timestamps.
+   * Will add id property to attrs object.
+   *
+   * - classname (string)
+   * - id (int)
+   * - attrs (object)
+  ###
 
-    # If attr is an object, loop through it
-    if typeof attr is 'object'
-      attr.id = id
-      obj = attr
-    else
-      obj = id: id
-      obj[attr] = time
+  create: (classname, id, attrs) ->
 
-    db[PREFIX + classname].create(obj)
+    attrs.id = id
+    db[PREFIX + classname].create(attrs)
 
 
   createTask: (id, time) ->
@@ -67,7 +71,7 @@ time =
       moveCompleted: time
 
   # Check if the variable `time` is greater than any times stored in the DB
-  check: (classname, id, time) ->
+  checkSingle: (classname, id, time) ->
 
     @read(classname, id).then (times) ->
 
@@ -77,5 +81,24 @@ time =
         if val > time then pass = no
 
       return pass
+
+  checkMultiple: (classname, id, times) ->
+
+    keys = Object.keys(times)
+    length = keys.length
+
+    @read(classname, id, keys).then (timestamps) ->
+
+      for attr, time of times
+        current = timestamps[attr]
+
+        if current > time
+          delete times[attr]
+          length -= 1
+
+      if length is 0
+        throw ERR_OLD_EVENT
+
+      return times
 
 module.exports = time
