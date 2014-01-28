@@ -2,7 +2,6 @@ db = require '../controllers/query'
 
 TIME = 'time'
 PREFIX = 'time_'
-ERR_OLD_EVENT = 'err_old_event'
 
 time =
 
@@ -84,8 +83,8 @@ time =
 
   checkMultiple: (classname, id, times) ->
 
-    keys = Object.keys(times)
-    length = keys.length
+    keys = Object.keys times
+    old = []
 
     @read(classname, id, keys).then (timestamps) ->
 
@@ -93,12 +92,8 @@ time =
         current = timestamps[attr]
 
         if current > time
-          delete times[attr]
-          length -= 1
+          old.push attr
 
-      if length is 0
-        throw ERR_OLD_EVENT
-
-      return times
+      return old
 
 module.exports = time

@@ -69,7 +69,10 @@ describe 'Time', ->
 
   it 'should create timestamps for a pref', (done) ->
 
-    time.createPref(userId, now)
+    # Storage.add auto adds a time_pref entry
+    time.destroy('pref', userId)
+    .then ->
+      time.createPref(userId, now)
     .then ->
       time.read('pref', userId)
     .then (times) ->
@@ -86,19 +89,19 @@ describe 'Time', ->
     .fail (err) ->
       console.log err
 
-  it 'should timestamps for a task', (done) ->
+  it 'should read timestamps for a task', (done) ->
 
     time.read('task', taskId, 'name').then (times) ->
       times.name.should.be.a.Number
       done()
 
-  it 'should timestamps for a list', (done) ->
+  it 'should read timestamps for a list', (done) ->
 
     time.read('list', listId, 'name').then (times) ->
       times.name.should.be.a.Number
       done()
 
-  it 'should timestamps for a pref', (done) ->
+  it 'should read timestamps for a pref', (done) ->
 
     time.read('pref', userId, 'sort').then (times) ->
       times.sort.should.be.a.Number
@@ -164,11 +167,7 @@ describe 'Time', ->
       date: now
       completed: future
     }).then (timestamps) ->
-      timestamps.should.eql
-        name: now
-        notes: future
-        date: now
-        completed: future
+      timestamps.should.eql ['listId', 'priority']
       done()
 
   it 'should check multiple timestamps - older', (done) ->
@@ -178,8 +177,18 @@ describe 'Time', ->
     time.checkMultiple('list', listId, {
       name: past
       tasks: past
+    }).then (timestamps) ->
+      timestamps.should.eql ['name', 'tasks']
+      done()
+
+  it 'should check multiple timestamps - error', (done) ->
+
+    now = Date.now()
+
+    time.checkMultiple('pref', userId, {
+      sort: now
+      sploodle: now
     }).fail (err) ->
-      err.should.equal 'err_old_event'
       done()
 
   it 'should destroy a task timestamp', (done) ->

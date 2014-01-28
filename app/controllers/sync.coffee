@@ -25,6 +25,20 @@ PREF = 'pref'
 TASK = 'task'
 
 ERR_INVALID_MODEL = 'err_invalid_model'
+ERR_OLD_EVENT = 'err_old_event'
+
+
+hasSameKeys = (a, b) ->
+
+  aKeys = Object.keys(a)
+  bKeys = Object.keys(b)
+
+  if aKeys.length is bKeys.length
+    if aKeys.every( (key) -> b.hasOwnProperty(key) )
+      return aKeys
+
+  return false
+
 
 
 # Does all the useful stuff
@@ -110,32 +124,6 @@ class Sync
   #                                  #
   ####################################
 
-
-  ###
-   * (private) Update Model
-   *
-   * Setup update event
-   *
-   * - classname (string)
-   * - changes (object)
-   * - timestamps (object)
-   * > boolean
-  ###
-
-  model_update_setup: (classname, changes, timestamps) =>
-
-    # Delete id because we don't want to overwrite it
-    id = changes.id
-    delete changes.id
-
-    # Check model exists on server
-    @user.checkModel(classname, id).then (exists) ->
-      warn "[#{ classname }] [update] could not find #{ id }"
-      return false
-
-    return true
-
-
   ###
    * (private) Model Update Timestamps
    *
@@ -148,48 +136,40 @@ class Sync
    * > timestamps
   ###
 
+  model_update_create_timestamps: (changes) ->
+
+    timestamps = {}
+    now = Date.now()
+    for key of changes
+      timestamps[key] = now
+
+    Q.resolve timestamps
+
+
   model_update_timestamps: (classname, id, changes, timestamps) ->
 
     if timestamps
-      for attr, time of timestamps
 
-        # Check timestamp is newer than the last timestamp
-        old = @time.get classname, id, attr
-        if old > time
-          delete timestamps[attr]
-          delete changes[attr]
+      keys = hasSameKeys(changes, timestamps)
 
-      # If we have no events left, exit
-      if Object.keys(changes).length is 0
-        warn "[#{ classname }] [update] all properties are old"
-        return null
+      if keys is false
+        return Q.reject ERR_INVALID_MODEL
+
+      time.checkMultiple(classname, id, timestamps).then (oldKeys) ->
+
+        for key in oldKeys
+          delete timestamps[key]
+          delete changes[key]
+
+        if oldKeys.length is keys.length
+          throw ERR_OLD_EVENT
+
 
     else
-      timestamps = {}
-      now = Date.now()
-      for key of changes
-        timestamps[key] = now
-
-    return timestamps
+      @model_update_create_timestamps(changes)
 
 
-  ###
-   * (private) Model Update Save
-   *
-   * Save model changes and timestamps
-   *
-   * - classname (string)
-   * - id (string)
-   * - changes (object)
-   * - timestamps (object)
-   * > changes
-  ###
 
-  model_update_save: (classname, id, changes, timestamps) ->
-    log "[#{ classname }] [update] saved #{ id }"
-    @time.set(classname, id, timestamps)
-    @user.updateModel(classname, id, changes)
-    return changes
 
 
   ###
@@ -205,34 +185,48 @@ class Sync
     id = changes.id
     delete changes.id
 
+    if Object.keys(changes).length is 0
+      return Q.reject ERR_INVALID_MODEL
+
     # Make sure that the task exists and that the user owns it
     @user.shouldOwnTask(id).then =>
 
+      # Check timestamps
       @model_update_timestamps(TASK, id, changes, timestamps)
 
-    .then (timestamps) =>
+    .then (_timestamps) =>
+      timestamps = _timestamps
 
-      # Check listId
-      if changes.listId?
-        @user.shouldOwnList(changes.listId)
-          .then =>
-            @user.readTask(id, 'listId')
-          .then (old) =>
-            return if old.listId is changes.listId
-            @user.removeTaskFromList id, old.listId
-          .fin =>
-            @user.addTaskToList id, changes.listId
-          .fail ->
-            delete changes.listId
-          .then =>
-            @user.updateTask(id, changes)
+      # Check list ID
+      if not changes.listId
+        return Q.resolve()
 
-      else
-        @user.updateTask(id, changes)
+      @user.shouldOwnList(changes.listId)
+      .then =>
+        @user.readTask(id, 'listId')
+
+      .then (old) =>
+        if old.listId is changes.listId
+          throw ERR_INVALID_MODEL
+
+        @user.removeTaskFromList id, old.listId
+
+      .then =>
+        @user.addTaskToList id, changes.listId
+
+      .fail (err) ->
+        delete changes.listId
+        delete timestamps.listId
 
     .then =>
 
-      @time.set(TASK, id, timestamps)
+      # Set timestamps
+      time.update(TASK, id, timestamps)
+
+    .then =>
+
+      # Save changes
+      @user.updateTask(id, changes)
 
     .then ->
 
@@ -251,21 +245,31 @@ class Sync
   list_update: (changes, timestamps) =>
 
     id = changes.id
+    delete changes.id
+
+    if Object.keys(changes).length is 0
+      return Q.reject ERR_INVALID_MODEL
 
     @user.shouldOwnList(id)
       .then =>
 
-        # # Set timestamps
-        # timestamps = @model_update_timestamps(LIST, id, changes, timestamps)
-        # unless timestamps
-        #   return null
-
-        # Handle tasks
+        # TODO: Handle tasks
         if changes.tasks
           warn '[list] [update] TODO: Handle list.tasks'
           delete changes.tasks
           delete timestamps.tasks
 
+        # Check timestamps
+        @model_update_timestamps(LIST, id, changes, timestamps)
+
+      .then (timestamps) =>
+
+        # Set timestamps
+        time.update(LIST, id, timestamps)
+
+      .then =>
+
+        # Save changes
         @user.updateList(id, changes)
 
       .then ->
@@ -284,13 +288,19 @@ class Sync
 
   pref_update: (changes, timestamps) =>
 
-    # timestamps = @model_update_timestamps(PREF, id, changes, timestamps)
-    # unless timestamps
-    #   return null
+    if Object.keys(changes).length is 0
+      return Q.reject ERR_INVALID_MODEL
 
-    # return @model_update_save(PREF, id, changes, timestamps)
+    @model_update_timestamps(PREF, @user.id, changes, timestamps)
+    .then (timestamps) =>
 
-    @user.updatePref(changes).then ->
+      time.update(PREF, @user.id, timestamps)
+
+    .then =>
+
+      @user.updatePref(changes)
+
+    .then ->
 
       return changes
 
@@ -305,74 +315,6 @@ class Sync
 
 
   ###
-   * (private) Model Destroy Setup
-   *
-   * Check that model exists, and set the timestamp for it
-   *
-   * - classname (string)
-   * - id (string)
-   * - timestamp (number)
-   * > model
-  ###
-
-  model_destroy_setup: (classname, id) =>
-
-    unless @user.checkModel(classname, id)
-      warn "[#{ classname }] [destroy] could not find #{ id }"
-      return null
-
-    # Get existing model
-    model = @user.findModel(classname, id)
-
-    return model
-
-
-  ###
-   * Model Destroy Timestamp
-   *
-   * Check that the model hasn't been updated after this event
-   *
-   * - classname (string)
-   * - id (string)
-   * - timestamp (number)
-   * > timestamp
-  ###
-
-  model_destroy_timestamp: (classname, id, timestamp) =>
-
-    timestamp ?= Date.now()
-    unless @time.check classname, id, timestamp
-      warn "[#{ classname }] [destroy] updated after delete time: #{ id }"
-      return null
-
-    return timestamp
-
-
-  ###
-   * (private) Model Destroy Save
-   *
-   * Overwrite model with deleted object template and
-   * save deleted timestamp.
-   *
-   * - classname (string)
-   * - id (string)
-   * - timestamp (number)
-   * > true
-  ###
-
-  model_destroy_save: (classname, id, timestamp) =>
-
-    @user.setModel classname, id,
-      id: id
-      deleted: yes
-
-    @time.set(classname, id, 'deleted', timestamp)
-    log "[#{ classname }] [destroy] deleted #{ id }"
-
-    return true
-
-
-  ###
    * Destroy Task
    *
    * - id (string)
@@ -381,19 +323,14 @@ class Sync
 
   task_destroy: (id, timestamp) =>
 
-    @user.shouldOwnTask(id).then =>
+    @user.shouldOwnTask(id)
+    .then =>
+
+      time.checkSingle(TASK, id, timestamp)
+
+    .then =>
+
       @user.destroyTask id
-
-    # timestamp = @model_destroy_timestamp(TASK, id, timestamp)
-    # return null unless timestamp
-
-    # Remove from list
-    # list = @user.findModel(LIST, model.listId)
-    # if list.tasks?
-    #   @taskRemove id, list
-
-    # return @model_destroy_save(TASK, id, timestamp)
-
 
   ###
    * Destroy List
@@ -404,57 +341,14 @@ class Sync
 
   list_destroy: (id, timestamp) =>
 
-    @user.shouldOwnList(id).then =>
+    @user.shouldOwnList(id)
+    .then =>
+
+      time.checkSingle(LIST, id, timestamp)
+
+    .then =>
+
       @user.destroyList id
 
-    # model = @model_destroy_setup(LIST, id)
-    # return null unless model
-
-    # timestamp = @model_destroy_timestamp(LIST, id, timestamp)
-    # return null unless timestamp
-
-    # # Destroy all tasks within that list
-    # for taskId, i in model.tasks by -1
-    #   @task_destroy taskId, timestamp
-
-    # return @model_destroy_save(LIST, id, timestamp)
-
-
-# -----------------------------------------------------------------------------
-# Useful Task Management Methods
-# -----------------------------------------------------------------------------
-
-
-  # Add a task to a list
-  taskAdd: (taskId, list) ->
-    tasks = list.tasks
-    return false unless tasks
-    if tasks.indexOf(taskId) < 0
-      tasks.push taskId
-      @user.save LIST
-
-  # Remove a task from a list
-  taskRemove: (taskId, list) ->
-    tasks = list.tasks
-    return false unless tasks
-    index = tasks.indexOf taskId
-    if index >= 0
-      tasks.splice index, 1
-      @user.save LIST
-
-  # Move a task from list to another
-  taskMove: (taskId, oldListId, newListId) ->
-    list = @user.findModel(LIST, newListId)
-    @taskAdd taskId, list
-    list = @user.findModel(LIST, oldListId)
-    @taskRemove taskId, list
-
-  # Replace a task ID
-  taskUpdateId: (oldId, newId, listId) ->
-    tasks = @user.findModel(LIST, listId).tasks
-    index = tasks.indexOf oldId
-    if index >= 0
-      tasks.spice index, 1, newId
-      @user.save LIST
 
 module.exports = Sync

@@ -70,6 +70,10 @@ class Table
       return if exists
       @wrap @query.schema.createTable(@table, fn)
 
+  _dropTable: ->
+
+    @wrap @query.schema.dropTable(@table)
+
   _true: ->
     return true
 

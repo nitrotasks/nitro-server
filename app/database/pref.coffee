@@ -73,9 +73,6 @@ class Pref extends Table
     promise = @_update data,
       userId: id
 
-    promise.then (-> id), (-> id)
-
-
 
   ###
    * Destroy

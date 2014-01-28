@@ -1,5 +1,6 @@
 Q    = require 'kew'
 db   = require '../controllers/query'
+time = require '../utils/time'
 Log  = require '../utils/log'
 User = require '../models/user'
 
@@ -78,12 +79,28 @@ Storage =
       if exists then throw ERR_OLD_EMAIL
 
       user.pro = 0
+      id = null
 
       # Add user to database
-      db.user.create(user).then (id) =>
+      db.user.create(user)
+      .then (_id) =>
+
+        id = _id
 
         # Create a prefs entry for them
-        db.pref.create(userId: id).then => @get(id)
+        db.pref.create(userId: id)
+
+      .then =>
+
+        # Create a pref timestamps
+        time.create('pref', id, {})
+
+      .then =>
+
+        # Return as user
+        @get(id)
+
+
 
 
   ###

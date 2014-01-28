@@ -19,7 +19,7 @@ module.exports = (done) ->
 
   database.connected
     .then ->
-      database.query('user').del()
+      database.resetTables()
     .then ->
       done()
     .fail (err) ->

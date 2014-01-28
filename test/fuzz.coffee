@@ -5,6 +5,7 @@
 global.DEBUG = true
 
 Q       = require 'kew'
+Jandal  = require 'jandal'
 Socket  = require '../app/controllers/socket'
 Auth    = require '../app/controllers/auth'
 Storage = require '../app/controllers/storage'
@@ -104,8 +105,11 @@ random =
     index = random.int 0, classnames.length - 1
     classnames[index]
 
+
+  _callback: 0
+
   callback: ->
-    ".fn(#{ random.int(0, 100) })"
+    ".fn(#{ @_callback++ })"
 
   model: (model) ->
     obj = {}
@@ -166,14 +170,15 @@ describe 'SLOW Fuzz', ->
 
   exec = (command) ->
     deferred = Q.defer()
-    console.log '\n', command
+    console.log '\n' + command
 
     socket.once 'message', (response) ->
-      console.log response
+      res = Jandal::parse(response)
 
-      match = response.match(/Jandal\.fn_\d+\(null,(\d+)\)/)
-      if match
-        ids.push parseInt(match[1], 10)
+      id = res.arg2
+
+      if typeof id is 'number'
+        ids.push(id)
 
       deferred.resolve response
 
@@ -201,7 +206,7 @@ describe 'SLOW Fuzz', ->
 
     promise = Q.resolve()
 
-    for i in [0..100]
+    for i in [0..1000]
       promise = promise.then ->
         exec random.command()
 

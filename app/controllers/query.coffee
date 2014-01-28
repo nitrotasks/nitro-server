@@ -19,21 +19,26 @@ tables =
   time_list: require '../database/time_list'
   time_pref: require '../database/time_pref'
 
-initiateTables = (queryFn) ->
-  promises = []
+createTables = ->
+  promise = Q.resolve()
   for name, Table of tables
-    table = new Table(queryFn)
-    promises.push table.setup()
-    module.exports[name] = table
-  return Q.all promises
+    module.exports[name] = table = new Table(connect.db)
+    do (table) -> promise = promise.then -> table.setup()
+  return promise
 
+resetTables = ->
+  # Sequentially drop each table in reverse order
+  promise = Q.resolve()
+  for name in Object.keys(tables) by -1
+    do (name) -> promise = promise.then -> module.exports[name]._dropTable()
+  promise.then -> createTables()
 
 connected = connect.ready.then ->
 
   module.exports.query = connect.db
   # deferred = Q.defer()
 
-  return initiateTables(connect.db)
+  return createTables(connect.db)
 
   # switch connect.engine
 
@@ -79,3 +84,4 @@ connected = connect.ready.then ->
 
 module.exports =
   connected: connected
+  resetTables: resetTables
