@@ -1,6 +1,8 @@
 Q = require 'kew'
 Table = require '../controllers/table'
 
+ERR_BAD_TOKEN = 'err_bad_token'
+
 class Register extends Table
 
   table: 'register'
@@ -35,14 +37,15 @@ class Register extends Table
   read: (token) ->
 
     match = @_parseToken(token)
-    unless match then return Q.reject('err_invalid_token')
+    unless match then return Q.reject ERR_BAD_TOKEN
 
     promise = @_search ['id', 'name', 'email', 'password'],
       id: match[0]
       token: match[1]
 
-    promise.then (rows) ->
-      return rows[0]
+    promise
+      .then (rows) -> return rows[0]
+      .fail -> throw ERR_BAD_TOKEN
 
 
   update: ->

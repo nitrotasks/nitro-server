@@ -211,8 +211,7 @@ Storage =
   ###
 
   checkResetToken: (token) ->
-    db.reset.read(token).fail ->
-      throw ERR_BAD_TOKEN
+    db.reset.read(token)
 
   ###
    * Destroy a reset token

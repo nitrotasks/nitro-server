@@ -64,22 +64,15 @@ class Table
 
   _createTable: (fn) ->
 
-    promise = @wrap @query.schema.hasTable(@table)
+    promise = @query.schema.hasTable(@table)
 
-    promise.then (exists) =>
+    @wrap(promise).then (exists) =>
       return if exists
       @wrap @query.schema.createTable(@table, fn)
 
   _dropTable: ->
 
     @wrap @query.schema.dropTable(@table)
-
-  _true: ->
-    return true
-
-  _false: ->
-    return false
-
 
   _parseToken: (token) ->
     match = token.match(/^(\d+)_(\w+)$/)
@@ -89,35 +82,25 @@ class Table
 
   _search: (columns, data) ->
 
-    promise = @wrap @query(@table)
-      .select()
-      .column(columns)
-      .where(data)
-
-    promise.then (rows) =>
+    promise = @query(@table).select().column(columns).where(data)
+    @wrap(promise).then (rows) =>
       unless rows.length then throw @ERR_NO_ROW
       return rows
 
 
   _update: (data, where) ->
 
-    promise = @wrap @query(@table)
-      .update(data)
-      .where(where)
-
-    promise.then (rows) =>
+    promise = @query(@table).update(data).where(where)
+    @wrap(promise).then (rows) =>
       unless rows then throw @ERR_NO_ROW
       return rows
 
 
   _delete: (data) ->
 
-    promise = @wrap @query(@table)
-      .del()
-      .where(data)
-
-    promise.then (rows) =>
-      return true
+    promise = @query(@table).del().where(data)
+    @wrap(promise).then (rows) =>
+      return rows > 0
 
 
   ###
@@ -131,11 +114,8 @@ class Table
 
   create: (data) ->
 
-    promise = @wrap @query(@table)
-      .insert(data)
-
-    promise.then (id) ->
-      return id[0]
+    promise = @query(@table).insert(data)
+    @wrap(promise).then (id) -> return id[0]
 
 
   ###
@@ -151,19 +131,16 @@ class Table
 
   read: (id, columns) ->
 
-    promise = @_search columns,
-      id: id
-
-    promise.then (rows) ->
-      return rows[0]
+    promise = @_search columns, id: id
+    promise.then (rows) -> return rows[0]
 
 
   exists: (id) ->
 
-    promise = @_search 'id',
-      id: id
-
-    promise.then(@_true, @_false)
+    promise = @_search 'id', id: id
+    promise
+      .then -> true
+      .fail -> false
 
 
   ###

@@ -158,28 +158,28 @@ describe 'Storage API >', ->
         user.id.should.equal _id
         done()
 
-    it 'should fail if reset token does not exist', (done) ->
+    it 'should fail check if reset token does not exist', (done) ->
       Storage.checkResetToken('12_abcd').fail (err) ->
+        console.log err
         err.should.equal 'err_bad_token'
         done()
 
-    it 'should fail if reset token is corrupt', (done) ->
+    it 'should fail check if reset token is corrupt', (done) ->
       Storage.checkResetToken('random').fail (err) ->
         err.should.equal 'err_bad_token'
         done()
 
-    it 'should remove reset token', (done) ->
+    it 'should destroy reset token', (done) ->
       Storage.destroyResetToken(token).then ->
         done()
 
-    it 'should fail if reset token does not exist', (done) ->
-      Storage.destroyResetToken('12_abcd').fail ->
-        done()
+    it 'should not fail destroy if reset token does not exist', (done) ->
+      Storage.destroyResetToken('12_abcd').then -> done()
 
-    it 'should fail if reset token is not correct', (done) ->
-      Storage.destroyResetToken('random').fail ->
+    it 'should fail destroy if reset token is not correct', (done) ->
+      Storage.destroyResetToken('random').fail (err) ->
+        err.should.eql 'err_bad_token'
         done()
-
 
 # -----------------------------------------------------------------------------
 # User Data

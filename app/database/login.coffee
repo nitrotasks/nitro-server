@@ -62,7 +62,9 @@ class Login extends Table
       userId: id
       token: token
 
-    promise.then @_true, @_false
+    promise
+      .then -> true
+      .fail -> false
 
   update: ->
 

@@ -164,6 +164,8 @@ class Sync
         if oldKeys.length is keys.length
           throw ERR_OLD_EVENT
 
+        return timestamps
+
 
     else
       @model_update_create_timestamps(changes)

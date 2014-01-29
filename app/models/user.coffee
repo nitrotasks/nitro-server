@@ -5,6 +5,8 @@ Log = require '../utils/log'
 
 log = Log('user', 'green')
 
+ERR_NO_ROW = 'err_no_row'
+
 class User
 
   ###
@@ -158,7 +160,9 @@ class User
 
 
   destroyModel: (classname, id) ->
-    db[classname].destroy(id)
+    db[classname].destroy(id).then (success) ->
+      if not success then throw ERR_NO_ROW
+      return success
 
   destroyList: (id) ->
     @destroyModel('list', id)
@@ -171,11 +175,13 @@ class User
 
 
   clearAllData: ->
-    Q.all([
-      db.task._delete(userId: @id)
+    db.task._delete(userId: @id)
+    .then =>
       db.list._delete(userId: @id)
+    .then =>
       db.pref._delete(userId: @id)
-    ]).then => @setup()
+    .then =>
+      @setup()
 
 
   ###

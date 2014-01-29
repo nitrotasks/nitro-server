@@ -5,7 +5,11 @@ config   = require '../app/config'
 # Setup
 # -----------------------------------------------------------------------------
 
-config.use 'testing'
+if process.env.TRAVIS
+  config.use 'travis'
+else
+  config.use 'testing'
+
 global.DEBUG = true
 
 # Load controllers

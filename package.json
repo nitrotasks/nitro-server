@@ -2,29 +2,28 @@
   "name": "Nitro-Sync",
   "version": "2.1.0",
   "scripts": {
-    "test": "mocha -R spec --compilers coffee:coffee-script",
-    "coverage": "mocha --compilers coffee:coffee-script -r blanket -R html-cov | tee coverage.html"
+    "test": "mocha -R spec --compilers coffee:coffee-script/register",
+    "coverage": "mocha --compilers coffee:coffee-script/register -r blanket -R html-cov | tee coverage.html"
   },
   "dependencies": {
-    "coffee-script": "1.6.x",
+    "coffee-script": "1.7.x",
     "express": "3.4.x",
     "bcrypt": "0.7.x",
     "nodemailer": "0.6.x",
-    "mysql": "2.0.0-rc1",
-    "mssql": "~0.4.5",
     "kew": "0.3.x",
     "sockjs": "0.3.x",
     "cors": "2.1.x",
     "jandal": "0.0.10",
     "xtype": "0.0.7",
-    "forever": "0.10.x",
-    "knex": "~0.5.4"
+    "knex": "0.5.x",
+    "mysql": "~2.0.1"
   },
   "devDependencies": {
     "supertest": "0.8.x",
     "mocha": "1.15.x",
     "should": "~2.1.1",
-    "blanket": "~1.1.6"
+    "blanket": "~1.1.6",
+    "forever": "0.10.x"
   },
   "config": {
     "blanket": {

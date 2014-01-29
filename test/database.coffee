@@ -99,9 +99,9 @@ describe 'Database', ->
         err.should.equal 'err_no_row'
         done()
 
-    it 'should fail when destroying a user that does not exist', (done) ->
+    it 'should not fail when destroying a user that does not exist', (done) ->
 
-      db.user.destroy(user.id).fail -> done()
+      db.user.destroy(user.id).then -> done()
 
     it 'should create another user', (done) ->
 
@@ -322,24 +322,22 @@ describe 'Database', ->
     it 'should fail when it cannot find a registration', (done) ->
 
       db.register.read(user.id + '_gibberish').fail (err) ->
-        err.should.equal 'err_no_row'
+        err.should.equal 'err_bad_token'
         done()
 
     it 'should fail when it cannot parse a token', (done) ->
 
       db.register.read('nonsense').fail (err) ->
-        err.should.equal 'err_invalid_token'
+        err.should.equal 'err_bad_token'
         done()
 
     it 'should destroy an existing token', (done) ->
 
       db.register.destroy(token).then -> done()
 
-    it 'should fail when destroying a token that does not exist', (done) ->
+    it 'should not fail when destroying a token that does not exist', (done) ->
 
-      db.register.destroy(user.id + '_gibberish').fail (err) ->
-        err.should.equal 'err_no_row'
-        done()
+      db.register.destroy(user.id + '_gibberish').then -> done()
 
 
 
@@ -593,7 +591,7 @@ describe 'Database', ->
     it 'should fail when using an invalid token', (done) ->
 
       db.reset.read('blah').fail (err) ->
-        err.should.equal 'err_invalid_token'
+        err.should.equal 'err_bad_token'
         done()
 
     it 'should destroy a reset token', (done) ->
@@ -603,7 +601,7 @@ describe 'Database', ->
     it 'should fail when reading a token that does not exist', (done) ->
 
       db.reset.read(token).fail (err) ->
-        err.should.equal 'err_no_row'
+        err.should.equal 'err_bad_token'
         done()
 
 

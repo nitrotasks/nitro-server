@@ -1,6 +1,7 @@
 Q = require 'kew'
 Table = require '../controllers/table'
 
+ERR_BAD_TOKEN = 'err_bad_token'
 
 class Reset extends Table
 
@@ -39,15 +40,15 @@ class Reset extends Table
   read: (token) ->
 
     match = @_parseToken(token)
-    unless match then return Q.reject('err_invalid_token')
+    unless match then return Q.reject ERR_BAD_TOKEN
 
     promise = @_search 'userId',
       userId: match[0]
       token: match[1]
 
-    promise.then (rows) ->
-      return rows[0].userId
-
+    promise
+      .then (rows) -> return rows[0].userId
+      .fail -> throw ERR_BAD_TOKEN
 
   update: ->
 
@@ -57,7 +58,7 @@ class Reset extends Table
   destroy: (token) ->
 
     match = @_parseToken(token)
-    unless match then return Q.reject('err_invalid_token')
+    unless match then return Q.reject ERR_BAD_TOKEN
 
     @_delete
       userId: match[0]

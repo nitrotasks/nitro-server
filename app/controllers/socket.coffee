@@ -314,7 +314,6 @@ class UserSocket extends Socket
       @broadcast classname + '.update', model
       if fn then fn(null)
     .fail (err) ->
-      console.log err
       if fn then fn(true)
 
 
@@ -342,7 +341,6 @@ class UserSocket extends Socket
       @broadcast classname + '.destroy', id: id
       if fn then fn(null)
     .fail (err) ->
-      console.log err
       if fn then fn(true)
 
 
@@ -362,11 +360,9 @@ class UserSocket extends Socket
 
   queue_sync: (queue, fn) =>
 
-
     # Make a new promise so we can do all this sequentially
     pList = []
     pAll = []
-
 
     # PREFS
 

@@ -27,6 +27,7 @@ class Socket
 
   end: =>
     if @open then @emit 'close'
+    @vent.removeAllListeners()
 
   close: (status, message) =>
     if @open then @emit 'close', status, message

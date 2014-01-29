@@ -333,6 +333,14 @@ describe 'Socket', ->
         .fail (err) ->
           console.log err
 
+      sortItems = (a, b) ->
+        return a.name.localeCompare(b.name)
+
+      check = (obj, fake, real) ->
+        if obj[fake]? and obj[fake] isnt real
+          console.log "err_no_match #{ fake }, #{ real }"
+        obj[fake] = real
+
       test = (input, output, done) ->
 
         # Fix input
@@ -349,11 +357,42 @@ describe 'Socket', ->
 
           res = Jandal::parse(response)
 
-          try
-            res.arg2.list.should.eql output.list
-            res.arg2.task.should.eql output.task
-          catch e
-            console.log e
+          res.list = res.arg2.list.sort(sortItems)
+          res.task = res.arg2.task.sort(sortItems)
+
+          # Get the index of a task by it's id
+          indexOf = (id) ->
+            return i for task, i in res.task when task.id is id
+
+          # Sort list.tasks by the order of the tasks
+          sortListTasks = (a, b) ->
+            indexOf(a) - indexOf(b)
+
+          for list in res.list
+            list.tasks.sort(sortListTasks)
+
+          listIds = {}
+          taskIds = {}
+
+          # task.id
+          for task, i in output.task
+            real = res.task[i]
+            check taskIds, task.id, real.id
+            check listIds, task.listId, real.listId
+            task.id = real.id
+            task.listId = real.listId
+
+          # list.id
+          for list, i in output.list
+            real = res.list[i]
+            check listIds, list.id, real.id
+            list.id = real.id
+            for task, j in list.tasks
+              check taskIds, task, real.tasks[j]
+              list.tasks[j] = real.tasks[j]
+
+          res.list.should.eql output.list
+          res.task.should.eql output.task
 
           done()
 
@@ -387,65 +426,78 @@ describe 'Socket', ->
         output =
 
           list: [
-            id: 3
+            id: 100
             name: 'list 1',
-            tasks: [3, 4]
+            tasks: [1, 2]
           ,
-            id: 4
+            id: 200
             name: 'list 2'
-            tasks: [5, 6]
+            tasks: [3, 4]
           ]
 
           task: [
-            id: 3
+            id: 1
             name: 'task 1'
-            listId: 3
+            listId: 100
+          ,
+            id: 2
+            name: 'task 2'
+            listId: 100
+          ,
+            id: 3
+            name: 'task 3'
+            listId: 200
           ,
             id: 4
-            name: 'task 2'
-            listId: 3
-          ,
-            id: 5
             name: 'task 4'
-            listId: 4
-          ,
-            id: 6
-            name: 'task 3'
-            listId: 4
+            listId: 200
           ]
 
         test input, output, done
 
 
-###
       it 'update existing items', (done) ->
 
+        now = Date.now() + 10 * 1000
+        ids = []
+
         client.list.create make.list id: -0, name: 'List 1'
-        client.task.create make.task id: -1, name: 'Task 1', listId: 0
-        client.task.create make.task id: -2, name: 'Task 2', listId: 0
-        client.task.create make.task id: -3, name: 'Task 3', listId: 0
 
-        now = Date.now() + 100
+        socket.on 'message', (message) ->
 
-        input =
+          id = Jandal::parse(message).arg2
+          return unless typeof id is 'number'
+          ids.push id
 
-          task:
-            s0: [ UPDATE,
-              { id: 0, name: 'Task 1 - Updated', listId: -1 },
-              { name: now, listId: now }]
-            s1: [ UPDATE,
-              { id: 1, name: 'Task 2 - Updated' },
-              { name: now }]
-            s2: [ UPDATE,
-              { id: 2, name: 'Task 3 - Updated', listId: -1 },
-              { name: now, listId: now }]
+          if ids.length is 1
+            client.task.create make.task id: -1, name: 'Task 1', listId: ids[0]
+            client.task.create make.task id: -2, name: 'Task 2', listId: ids[0]
+            client.task.create make.task id: -3, name: 'Task 3', listId: ids[0]
 
-          list:
-            s0: [ UPDATE,
-              { id: 0, name: 'List 1 - Updated' },
-              { name: now }]
-            c1: [CREATE, { id: -1, name: 'List 2' }, now]
+          if ids.length is 4
 
+            input =
+
+              task: [
+                [ UPDATE,
+                  { id: ids[1], name: 'Task 1 - Updated', listId: -1 },
+                  { name: now, listId: now }]
+                [ UPDATE,
+                  { id: ids[2], name: 'Task 2 - Updated' },
+                  { name: now }]
+                [ UPDATE,
+                  { id: ids[3], name: 'Task 3 - Updated', listId: -1 },
+                  { name: now, listId: now }]
+              ]
+
+              list: [
+                [ UPDATE,
+                  { id: ids[0], name: 'List 1 - Updated' },
+                  { name: now }]
+                [CREATE, { id: -1, name: 'List 2' }, now]
+              ]
+
+            test input, output, done
 
         output =
 
@@ -473,31 +525,44 @@ describe 'Socket', ->
             listId: 1
           ]
 
-        test input, output, done
-
 
       it 'destroy existing tasks', (done) ->
 
-        now = Date.now() + 10
+        now = Date.now() + 10 * 1000
+        ids = []
 
         client.list.create make.list id: -0, name: 'List 1'
-        client.task.create make.task id: -1, name: 'Task 1', listId: 0
-        client.task.create make.task id: -2, name: 'Task 2', listId: 0
-        client.task.create make.task id: -3, name: 'Task 3', listId: 0
 
-        input =
+        socket.on 'message', (message) ->
 
-          task:
-            s0: [DESTROY, {id: 0}, now]
-            s1: [DESTROY, {id: 1}, now]
-            s2: [DESTROY, {id: 2}, now]
-            c1: [CREATE, { id: -1, name: 'Task 4', listId: 'c1' }, now]
+          id = Jandal::parse(message).arg2
+          return unless typeof id is 'number'
+          ids.push id
 
-          list:
-            s0: [UPDATE,
-              { id: 0, name: 'List 1 - Updated' },
-              { name: now }]
-            c1: [CREATE, {name: 'List 2'}, now]
+          if ids.length is 1
+            client.task.create make.task id: -1, name: 'Task 1', listId: ids[0]
+            client.task.create make.task id: -2, name: 'Task 2', listId: ids[0]
+            client.task.create make.task id: -3, name: 'Task 3', listId: ids[0]
+
+          if ids.length is 4
+
+            input =
+
+              task: [
+                [DESTROY, {id: ids[1]}, now]
+                [DESTROY, {id: ids[2]}, now]
+                [DESTROY, {id: ids[3]}, now]
+                [CREATE,  {id: -1, name: 'Task 4', listId: -20}, now]
+              ]
+
+              list: [
+                [UPDATE,
+                  { id: ids[0], name: 'List 1 - Updated' },
+                  { name: now }]
+                [CREATE, {id: -20, name: 'List 2'}, now]
+              ]
+
+            test input, output, done
 
         output =
 
@@ -516,7 +581,3 @@ describe 'Socket', ->
             name: 'Task 4'
             listId: 1
           ]
-
-        test input, output, done
-
-###
