@@ -20,7 +20,8 @@ describe 'Route -> Registration', ->
       .send( name: 'George', email: 'example@email.com', password: 'password' )
       .end (err, res) ->
         token = res.text.match(/\/(\w*)$/)[1]
-        token.length.should.equal 22
+        token.should.match /^\d+_\w+$/
+        token.match(/[^_]*$/)[0].length.should.equal 22
         done()
 
 
@@ -29,8 +30,9 @@ describe 'Route -> Registration', ->
       .post('/register')
       .send( name: 'Jono', email: 'example@email.com', password: 'password' )
       .end (err, res) ->
-        altToken = res.text.match(/\/(\w*)$/)[1]
-        altToken.length.should.equal 22
+        _token = res.text.match(/\/(\w*)$/)[1]
+        _token.should.match /^\d+_\w+$/
+        _token.match(/[^_]*$/)[0].length.should.equal 22
         done()
 
   it 'should verify the token and add the user', (done) ->

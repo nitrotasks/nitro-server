@@ -77,7 +77,7 @@ resetPassword = (req, res) ->
   Storage.checkResetToken(token)
     .then (id) ->
       log 'removing token', token
-      Storage.removeResetToken token
+      Storage.destroyResetToken token
       Storage.get id
     .then (user) ->
       log 'changed password for', user.email

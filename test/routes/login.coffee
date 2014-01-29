@@ -35,11 +35,8 @@ describe 'Route -> Login', ->
       .post('/login')
       .send( email: data.email, password: data.password )
       .end (err, res) ->
-        [id, token, email, name, pro] = res.body
+        [id, token] = res.body
         token.should.have.length 64
-        email.should.equal data.email
-        name.should.equal data.name
-        pro.should.equal 0
         done()
 
   it 'should not allow users to login with the incorrect password', (done) ->

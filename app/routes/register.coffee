@@ -35,7 +35,7 @@ verifyRegistration = (req, res) ->
 
   Auth.verifyRegistration(token)
     .then (user) ->
-      log 'verified user', user.email
+      log 'verified user', user.id
 
       if DEBUG
         res.send 'success'

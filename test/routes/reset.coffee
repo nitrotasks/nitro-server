@@ -23,6 +23,7 @@ describe 'Route -> Reset', ->
       .send(data)
       .end (req, res) ->
         registerToken = res.text.match(/\/(\w*)$/)[1]
+        registerToken.should.match /^\d+_\w+$/
         done()
 
   it 'should verify the user', (done) ->
@@ -45,6 +46,8 @@ describe 'Route -> Reset', ->
       .end (err, res) ->
         res.text.should.not.equal 'err_bad_email'
         resetToken = res.text
+        resetToken.should.match /^\d+_\w+$/
+        resetToken.match(/[^_]*$/)[0].length.should.equal 22
         done()
 
   it 'should fail if the email address does not exist', (done) ->
@@ -86,6 +89,15 @@ describe 'Route -> Reset', ->
       )
       .expect(200, done)
 
+  it 'should not be able to use the same token twice', (done) ->
+
+    request(app)
+      .post("/reset/#{ resetToken }")
+      .send(
+        password: 'hacker'
+        passwordConfirmation: 'hacker'
+      )
+      .expect(401, done)
 
   it 'should be able to login with the new password', (done) ->
 
