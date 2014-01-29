@@ -1,5 +1,7 @@
 # Nitro Sync 2.1 #
 
+[![Build Status](https://travis-ci.org/stayradiated/Nitro-Sync.png?branch=master)](https://travis-ci.org/stayradiated/Nitro-Sync)
+
 ## Requirements ##
 - Node.js and NPM
 - Coffeescript
