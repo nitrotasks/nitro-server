@@ -182,4 +182,4 @@ defineFn 'pref_update', 'Pref', '~function'
 defineFn 'task_destroy', 'DestroyTask', '~function'
 defineFn 'list_destroy', 'DestroyList', '~function'
 
-defineFn 'queue_sync', 'Queue', 'function'
+defineFn 'queue_sync', 'Queue', 'number', 'function'

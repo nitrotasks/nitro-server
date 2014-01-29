@@ -396,7 +396,7 @@ describe 'Socket', ->
 
           done()
 
-        client.queue.sync input
+        client.queue.sync input, Date.now()
 
 
       it 'create lists and tasks simultaneously', (done) ->

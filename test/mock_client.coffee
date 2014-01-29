@@ -28,8 +28,8 @@ client =
 
   queue:
 
-    sync: (queue) ->
-      emit 'queue.sync', queue
+    sync: (queue, time) ->
+      emit 'queue.sync', queue, time
 
   user:
 

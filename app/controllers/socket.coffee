@@ -6,6 +6,7 @@ Sync       = require '../controllers/sync'
 Storage    = require '../controllers/storage'
 Validation = require '../controllers/validation'
 Log        = require '../utils/log'
+Time       = require '../utils/time'
 
 log = Log 'Socket', 'yellow'
 Jandal.handle 'node'
@@ -358,7 +359,9 @@ class UserSocket extends Socket
    * - fn (function)
   ###
 
-  queue_sync: (queue, fn) =>
+  queue_sync: (queue, clientTime, fn) =>
+
+    offset = Date.now() - clientTime
 
     # Make a new promise so we can do all this sequentially
     pList = []
@@ -368,6 +371,9 @@ class UserSocket extends Socket
 
     if queue.pref
       for [event, pref, time] in queue.task
+
+        Time.offset offset, time
+
         continue unless event is UPDATE
         pAll.push @pref_update(pref, null, time)
 
@@ -380,6 +386,8 @@ class UserSocket extends Socket
     if queue.list
       for [event, list, time] in queue.list
 
+        Time.offset offset, time
+
         switch event
 
           when CREATE
@@ -389,6 +397,7 @@ class UserSocket extends Socket
             for taskId, i in tasks by -1 when taskId < 0
               tasks.splice(i, 1)
 
+            # Enclose list
             do =>
               id = list.id
               pList.push @list_create(list, null, time).then (_id) ->
@@ -408,6 +417,8 @@ class UserSocket extends Socket
       if queue.task
 
         for [event, task, time] in queue.task
+
+          Time.offset offset, time
 
           if lists[task.listId]
             task.listId = lists[task.listId]

@@ -96,4 +96,13 @@ time =
 
       return old
 
+  offset: (offset, time) ->
+
+    if typeof time is 'object'
+      for own key, value of time
+        time[key] = value + offset
+      return time
+
+    return time + offset
+
 module.exports = time

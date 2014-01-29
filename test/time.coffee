@@ -218,3 +218,20 @@ describe 'Time', ->
       err.should.equal 'err_no_row'
       done()
 
+  it 'should calculate offset for a time', ->
+
+    # Single times
+    time.offset(100, 200).should.equal 300
+    time.offset(-100, 200).should.equal 100
+    time.offset(0, 200).should.eql 200
+
+    # Multiple times
+    time.offset(-50, {
+      name: 100
+      list: 200
+      id: 300
+    }).should.eql({
+      name: 50
+      list: 150
+      id: 250
+    })
