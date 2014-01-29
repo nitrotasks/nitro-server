@@ -1,0 +1,7 @@
+language: node_js
+node_js:
+  - "0.10"
+services:
+  - mysql
+before_script:
+  - mysql -e 'create database nitro_travis'
