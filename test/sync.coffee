@@ -18,6 +18,8 @@ describe 'Sync API', ->
   lists = []
   tasks = []
 
+  compareArray = (a, b) ->
+    a.sort().should.eql b.sort()
 
   before (done) -> setup ->
     Auth.register('George', 'mail@example.com', 'password')
@@ -50,14 +52,18 @@ describe 'Sync API', ->
         lists = _lists
 
         # Check lists exist
-        user.exportLists()
+        Q.all [
+          user.readList lists[0]
+          user.readList lists[1]
+          user.readList lists[2]
+        ]
 
       .then (_lists) ->
 
         _lists.should.eql [
-          { name: 'List 1', tasks: [], id: lists[0] }
-          { name: 'List 2', tasks: [], id: lists[1] }
-          { name: 'List 3', tasks: [], id: lists[2] }
+          { name: 'List 1', id: lists[0] }
+          { name: 'List 2', id: lists[1] }
+          { name: 'List 3', id: lists[2] }
         ]
 
         # Create three tasks
@@ -73,7 +79,11 @@ describe 'Sync API', ->
         tasks = _tasks
 
         # Check tasks exists
-        user.exportTasks()
+        Q.all [
+          user.readTask tasks[0]
+          user.readTask tasks[1]
+          user.readTask tasks[2]
+        ]
 
       .then (_tasks) ->
 
@@ -92,7 +102,8 @@ describe 'Sync API', ->
         user.readListTasks lists[0]
 
       .then (_tasks) ->
-        _tasks.should.eql tasks
+        _tasks.length.should.equal tasks.length
+        # TODO: TEST FOR SAME PROPERTIES
         done()
 
       .fail (err) ->
@@ -110,7 +121,11 @@ describe 'Sync API', ->
 
       promise.then ->
 
-        user.exportTasks()
+        Q.all [
+          user.readTask tasks[0]
+          user.readTask tasks[1]
+          user.readTask tasks[2]
+        ]
 
       .then (_tasks) ->
 
@@ -128,7 +143,11 @@ describe 'Sync API', ->
 
       .then ->
 
-        user.exportLists()
+        Q.all [
+          user.readList lists[0]
+          user.readList lists[1]
+          user.readList lists[2]
+        ]
 
       .then (_lists) ->
 
@@ -161,15 +180,16 @@ describe 'Sync API', ->
     it 'should move a task to another list', (done) ->
 
       promise = Q.all [
-        user.exportLists()
-        user.exportTasks()
+        user.readTask tasks[0]
+        user.readListTasks lists[0]
+        user.readListTasks lists[1]
       ]
 
-      promise.then ([_lists, _tasks]) ->
+      promise.then ([task_0, list_0_tasks, list_1_tasks]) ->
 
-        _tasks[0].listId.should.equal lists[0]
-        _lists[0].tasks.should.eql tasks
-        _lists[1].tasks.should.eql []
+        task_0.listId.should.equal lists[0]
+        compareArray list_0_tasks, tasks
+        list_1_tasks.should.eql []
 
         # Move task
         sync.task_update
@@ -179,16 +199,17 @@ describe 'Sync API', ->
       .then ->
 
         Q.all [
-          user.exportLists()
-          user.exportTasks()
+          user.readTask tasks[0]
+          user.readListTasks lists[0]
+          user.readListTasks lists[1]
         ]
 
-      .then ([_lists, _tasks]) ->
+      .then ([task_0, list_0_tasks, list_1_tasks]) ->
 
         # Check task has been moved
-        _tasks[0].listId.should.equal lists[1]
-        _lists[0].tasks.should.eql [tasks[1], tasks[2]]
-        _lists[1].tasks.should.eql [tasks[0]]
+        task_0.listId.should.equal lists[1]
+        compareArray list_0_tasks, [tasks[1], tasks[2]]
+        compareArray list_1_tasks, [tasks[0]]
 
         done()
 
