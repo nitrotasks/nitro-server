@@ -14,8 +14,8 @@ connect =
   init: () ->
 
     @db = Knex.initialize
-      client: config.database.engine
-      connection: config.database
+      client: config.database_engine
+      connection: config.database_config
 
     # # Connect to SQL database
     # @engine = config.database.engine

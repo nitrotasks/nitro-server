@@ -35,41 +35,44 @@ config =
     url: 'http://nitro-server.herokuapp.com'
     port: process.env.PORT
 
-    database:
-      engine: 'pg'
-      connectionString: process.env.HEROKU_POSTGRESQL_ROSE_URL
+    database_engine: 'pg'
+    database_config: process.env.DATABASE_URL
 
+  azure:
+
+    database_engine: 'mssql'
+
+    database_config:
+      user: 'nodejs'
+      password: 'nodejs'
+      server: 'localhost'
+      database: 'Nitro'
+      options:
+        port: ''
+        instanceName: 'SQLEXPRESS'
 
   development:
 
     url: 'http://localhost:8080'
     port: 8080
 
-    database:
-      engine: 'mysql'
+    database_engine: 'mysql'
+
+    database_config:
       host: '127.0.0.1'
       port: 3306
       user: 'nodejs'
       password: 'nodejs'
       database: 'Nitro'
 
-    # database:
-    #   engine: 'mssql'
-    #   user: 'nodejs'
-    #   password: 'nodejs'
-    #   server: 'localhost'
-    #   database: 'Nitro'
-    #   options:
-    #     port: ''
-    #     instanceName: 'SQLEXPRESS'
-
   testing:
 
     url: 'http://localhost:8080'
     port: 8080
 
-    database:
-      engine: 'mysql'
+    database_engine: 'mysql'
+
+    database_config:
       host: '127.0.0.1'
       port: 3306
       user: 'nodejs'
@@ -82,8 +85,9 @@ config =
     url: 'http://localhost:8080'
     port: 8080
 
-    database:
-      engine: 'mysql'
+    database_engine: 'mysql'
+
+    database_config:
       url: '127.0.0.1'
       port: 3306
       user: 'travis'
