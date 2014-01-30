@@ -1,6 +1,9 @@
 # Nitro Sync 2.1 #
 
-[![Build Status](https://travis-ci.org/stayradiated/Nitro-Sync.png?branch=master)](https://travis-ci.org/stayradiated/Nitro-Sync)
+[![Build Status](https://travis-ci.org/stayradiated/Nitro-Sync.png)](https://travis-ci.org/stayradiated/Nitro-Sync)
+[![Coverage Status](https://coveralls.io/repos/stayradiated/Nitro-Sync/badge.png?branch=master)](https://coveralls.io/r/stayradiated/Nitro-Sync?branch=master)
+[![Dependency Status](https://david-dm.org/stayradiated/Nitro-Sync.png)](https://david-dm.org/stayradiated/Nitro-Sync)
+[![devDependency Status](https://david-dm.org/stayradiated/Nitro-Sync/dev-status.png)](https://david-dm.org/stayradiated/Nitro-Sync#info=devDependencies)
 
 ## Requirements ##
 - Node.js and NPM
