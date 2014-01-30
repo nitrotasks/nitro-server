@@ -3,7 +3,9 @@ Auth   = require '../app/controllers/auth'
 setup  = require './setup'
 should = require 'should'
 Q      = require 'kew'
+Log = require '../app/utils/log'
 
+log = Log 'sync - test'
 
 LIST = 'list'
 TASK = 'task'
@@ -28,8 +30,7 @@ describe 'Sync API', ->
     .then (_user) ->
       user = _user
       done()
-    .fail (err) ->
-      console.log err
+    .fail (log)
 
 
   beforeEach ->
@@ -106,8 +107,7 @@ describe 'Sync API', ->
         # TODO: TEST FOR SAME PROPERTIES
         done()
 
-      .fail (err) ->
-        console.log err
+      .fail(log)
 
 
     it 'should handle task and list updates', (done) ->
@@ -172,9 +172,7 @@ describe 'Sync API', ->
 
         done()
 
-      .fail (err) ->
-        console.log err
-        console.log err.stack
+      .fail(log)
 
 
     it 'should move a task to another list', (done) ->
@@ -213,8 +211,7 @@ describe 'Sync API', ->
 
         done()
 
-      .fail (err) ->
-        console.log err
+      .fail(log)
 
 
   describe '#timestamps', ->
@@ -332,8 +329,7 @@ describe 'Sync API', ->
 
         done()
 
-      .fail (err) ->
-        console.log err
+      .fail(log)
 
 
     it 'should fail when destroying a non-existant task', (done) ->

@@ -9,6 +9,9 @@ Jandal  = require 'jandal'
 setup   = require './setup'
 mockjs  = require './mockjs'
 client  = require './mock_client'
+Log = require '../app/utils/log'
+
+log = Log 'socket - test'
 
 describe 'Socket', ->
 
@@ -82,8 +85,7 @@ describe 'Socket', ->
         user.id = id
         user.token = token
         done()
-      .fail (err) ->
-        console.log err
+      .fail(log)
 
   describe '#auth', ->
 
@@ -330,15 +332,14 @@ describe 'Socket', ->
           user.clearAllData()
         .then ->
           done()
-        .fail (err) ->
-          console.log err
+        .fail(log)
 
       sortItems = (a, b) ->
         return a.name.localeCompare(b.name)
 
       check = (obj, fake, real) ->
         if obj[fake]? and obj[fake] isnt real
-          console.log "err_no_match #{ fake }, #{ real }"
+          log "err_no_match #{ fake }, #{ real }"
         obj[fake] = real
 
       test = (input, output, done) ->

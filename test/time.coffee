@@ -3,6 +3,9 @@ Storage = require '../app/controllers/storage'
 time    = require '../app/utils/time'
 setup   = require './setup'
 should  = require 'should'
+Log = require '../app/utils/log'
+
+log = Log 'database - test'
 
 global.DEBUG = true
 
@@ -50,8 +53,7 @@ describe 'Time', ->
         completed: now
         date: now
       done()
-    .fail (err) ->
-      console.log err
+    .fail(log)
 
   it 'should create timestamps for a list', (done) ->
 
@@ -64,8 +66,7 @@ describe 'Time', ->
         name: now
         tasks: now
       done()
-    .fail (err) ->
-      console.log err
+    .fail(log)
 
   it 'should create timestamps for a pref', (done) ->
 
@@ -86,8 +87,7 @@ describe 'Time', ->
         confirmDelete: now
         moveCompleted: now
       done()
-    .fail (err) ->
-      console.log err
+    .fail(log)
 
   it 'should read timestamps for a task', (done) ->
 

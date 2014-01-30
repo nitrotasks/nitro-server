@@ -13,6 +13,9 @@ should  = require 'should'
 setup   = require './setup'
 mockjs  = require './mockjs'
 client  = require './mock_client'
+Log     = require '../app/utils/log'
+
+log = Log 'fuzz'
 
 # -----------------------------------------------------------------------------
 # Fuzzer
@@ -170,7 +173,7 @@ describe 'SLOW Fuzz', ->
 
   exec = (command) ->
     deferred = Q.defer()
-    console.log '\n' + command
+    log '\n' + command
 
     socket.once 'message', (response) ->
       res = Jandal::parse(response)
@@ -213,6 +216,5 @@ describe 'SLOW Fuzz', ->
     promise.then ->
       done()
 
-    promise.fail (err) ->
-      console.log err
+    promise.fail(log)
 

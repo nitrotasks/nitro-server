@@ -1,9 +1,11 @@
 Q = require 'kew'
 should = require 'should'
 db = require '../app/controllers/query'
-
+Log = require '../app/utils/log'
 setup   = require './setup'
 should  = require 'should'
+
+log = Log 'database - test'
 
 # Testing the database storage engine
 
@@ -560,8 +562,7 @@ describe 'Database', ->
         y.should.equal false
         z.should.equal false
         done()
-      .fail (err) ->
-        console.log err
+      .fail(log)
 
 
   describe '#reset', ->
@@ -649,5 +650,4 @@ describe 'Database', ->
         tasks.should.eql []
         done()
 
-      .fail (err) ->
-        console.log err
+      .fail(log)

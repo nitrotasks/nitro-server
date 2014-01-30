@@ -18,5 +18,6 @@ colors =
 module.exports = (name, color='reset') ->
   prefix = "#{colors[color]}[#{name}]#{colors.reset}"
   return (args...) =>
+    return if process.env.DISABLE_LOG
     args.unshift(prefix)
     console.log(args...)

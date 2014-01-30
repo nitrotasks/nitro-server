@@ -3,7 +3,7 @@
   "version": "2.1.0",
   "scripts": {
     "test": "mocha -R spec --compilers coffee:coffee-script/register test/*",
-    "coverage": "mocha --compilers coffee:coffee-script/register -r blanket -R html-cov | tee coverage.html"
+    "coverage": "DISABLE_LOG=1 mocha --compilers coffee:coffee-script/register -r blanket -R mocha-lcov-reporter | coveralls"
   },
   "dependencies": {
     "coffee-script": "1.7.x",
@@ -13,17 +13,19 @@
     "kew": "0.3.x",
     "sockjs": "0.3.x",
     "cors": "2.1.x",
-    "jandal": "0.0.10",
+    "jandal": "0.0.x",
     "xtype": "0.0.7",
     "knex": "0.5.x",
     "mysql": "~2.0.1"
   },
   "devDependencies": {
-    "supertest": "0.8.x",
-    "mocha": "1.15.x",
-    "should": "~2.1.1",
-    "blanket": "~1.1.6",
-    "forever": "0.10.x"
+    "supertest": "0.9.x",
+    "mocha": "1.17.x",
+    "should": "3.1.x",
+    "blanket": "1.1.x",
+    "forever": "0.10.x",
+    "mocha-lcov-reporter": "0.0.x",
+    "coveralls": "2.7.x"
   },
   "config": {
     "blanket": {

@@ -13,8 +13,6 @@ connect =
 
   init: () ->
 
-    console.log 'intializing'
-
     @db = Knex.initialize
       client: config.database.engine
       connection: config.database

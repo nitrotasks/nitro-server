@@ -2,8 +2,9 @@ User    = require '../app/models/user'
 Storage = require '../app/controllers/storage'
 setup   = require './setup'
 should  = require 'should'
+Log = require '../app/utils/log'
 
-# global.DEBUG = true
+log = Log 'user - test'
 
 describe 'User', ->
 
@@ -108,8 +109,7 @@ describe 'User', ->
         })
       .then ->
         done()
-      .fail (err) ->
-        console.log err
+      .fail(log)
 
 
   describe '#listTasks', ->

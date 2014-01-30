@@ -89,6 +89,8 @@ class Sync
 
     .then ->
 
+      log '[task] [create]', task
+
       return task.id
 
 
@@ -111,6 +113,8 @@ class Sync
       time.createList list.id, timestamp
 
     .then  ->
+
+      log '[list] [create]', list
 
       # Return new id
       return list.id
@@ -233,6 +237,9 @@ class Sync
     .then ->
 
       changes.id = id
+
+      log '[task] [update]', changes
+
       return changes
 
 
@@ -277,6 +284,9 @@ class Sync
       .then ->
 
         changes.id = id
+
+        log '[list] [update]', changes
+
         return changes
 
 
@@ -303,6 +313,8 @@ class Sync
       @user.updatePref(changes)
 
     .then ->
+
+      log '[pref] [update]', changes
 
       return changes
 
@@ -332,6 +344,8 @@ class Sync
 
     .then =>
 
+      log '[task] [destroy]', id
+
       @user.destroyTask id
 
   ###
@@ -349,6 +363,8 @@ class Sync
       time.checkSingle(LIST, id, timestamp)
 
     .then =>
+
+      log '[list] [destroy]', id
 
       @user.destroyList id
 

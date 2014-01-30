@@ -2,8 +2,9 @@ should   = require 'should'
 Q        = require 'kew'
 setup    = require './setup'
 Auth     = require '../app/controllers/auth'
+Log      = require '../app/utils/log'
 
-log = console.log.bind(console)
+log = Log 'auth - test'
 
 describe 'Auth API', ->
 

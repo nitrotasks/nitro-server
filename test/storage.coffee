@@ -2,14 +2,15 @@ Q        = require 'kew'
 should   = require 'should'
 setup    = require './setup'
 Storage  = require '../app/controllers/storage'
+Log = require '../app/utils/log'
+
+log = Log 'storage - test'
 
 users = [
   {name: 'stayradiated',  email: 'george@czabania.com',   password: 'abc'}
   {name: 'consindo',      email: 'jono@jonocooper.com',   password: 'xkcd'}
   {name: 'nitroman',      email: 'user@nitrotaks.com',    password: 'hunter2'}
 ]
-
-log = console.log.bind(console)
 
 describe 'Storage API >', ->
 
@@ -160,7 +161,6 @@ describe 'Storage API >', ->
 
     it 'should fail check if reset token does not exist', (done) ->
       Storage.checkResetToken('12_abcd').fail (err) ->
-        console.log err
         err.should.equal 'err_bad_token'
         done()
 
