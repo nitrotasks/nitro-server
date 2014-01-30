@@ -2,8 +2,8 @@
   "name": "Nitro-Sync",
   "version": "2.1.0",
   "scripts": {
-    "test": "mocha -R spec --compilers coffee:coffee-script/register test/*",
-    "coveralls": "DISABLE_LOG=1 mocha --compilers coffee:coffee-script/register -r blanket -R mocha-lcov-reporter | coveralls"
+    "test": "DISABLE_LOG=1 mocha -R spec --compilers coffee:coffee-script/register test/*",
+    "coveralls": "DISABLE_LOG=1 ./node_modules/.bin/mocha --compilers coffee:coffee-script/register -r blanket -R mocha-lcov-reporter | ./node_modules/.bin/coveralls"
   },
   "dependencies": {
     "coffee-script": "1.7.x",
