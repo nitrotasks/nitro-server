@@ -3,7 +3,7 @@
   "version": "2.1.0",
   "scripts": {
     "test": "mocha -R spec --compilers coffee:coffee-script/register test/*",
-    "coverage": "DISABLE_LOG=1 mocha --compilers coffee:coffee-script/register -r blanket -R mocha-lcov-reporter | coveralls"
+    "coveralls": "DISABLE_LOG=1 mocha --compilers coffee:coffee-script/register -r blanket -R mocha-lcov-reporter | coveralls"
   },
   "dependencies": {
     "coffee-script": "1.7.x",
