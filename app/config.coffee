@@ -37,7 +37,7 @@ config =
 
     database:
       engine: 'pg'
-      connectionString: process.env.HEROKU_POSTGRESQL_BLACK_URL
+      connectionString: process.env.HEROKU_POSTGRESQL_ROSE_URL
 
 
   development:
