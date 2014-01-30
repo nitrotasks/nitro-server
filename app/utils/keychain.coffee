@@ -7,12 +7,10 @@ keys = {}
 warn = Log 'Keychain', 'red'
 
 try
-  data = fs.readFileSync __dirname + '/../../keychain'
+  keys = require '../../keychain.json'
 catch e
   warn 'Could not load keychain'
-  data = '{}'
-
-keys = JSON.parse data.toString()
+  keys = {}
 
 module.exports = (key) ->
   if not keys.hasOwnProperty(key)
