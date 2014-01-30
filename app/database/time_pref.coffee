@@ -15,12 +15,12 @@ class TimePref extends Table
         .onUpdate('cascade')
         .notNullable()
 
-      table.bigInteger('sort').unsigned()
-      table.bigInteger('night').unsigned()
-      table.bigInteger('language').unsigned()
-      table.bigInteger('weekStart').unsigned()
-      table.bigInteger('dateFormat').unsigned()
-      table.bigInteger('confirmDelete').unsigned()
-      table.bigInteger('moveCompleted').unsigned()
+      table.integer('sort').unsigned()
+      table.integer('night').unsigned()
+      table.integer('language').unsigned()
+      table.integer('weekStart').unsigned()
+      table.integer('dateFormat').unsigned()
+      table.integer('confirmDelete').unsigned()
+      table.integer('moveCompleted').unsigned()
 
 module.exports = TimePref

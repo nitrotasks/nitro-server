@@ -2,6 +2,7 @@ Q = require 'kew'
 should = require 'should'
 db = require '../app/controllers/query'
 Log = require '../app/utils/log'
+time = require '../app/utils/time'
 setup   = require './setup'
 should  = require 'should'
 
@@ -160,7 +161,7 @@ describe 'Database', ->
 
   describe '#time_list', ->
 
-    now = Date.now()
+    now = time.now()
 
     it 'should add timestamps to an existing list', (done) ->
 
@@ -182,7 +183,7 @@ describe 'Database', ->
 
     it 'should update timestamps for an existing list', (done) ->
 
-      now = Date.now()
+      now = time.now()
 
       db.time_list.update(list.id, { name: now })
       .then ->
@@ -190,6 +191,7 @@ describe 'Database', ->
       .then (times) ->
         times.name.should.equal now
         done()
+      .fail(log)
 
     it 'should destroy timestamps for an existing list', (done) ->
 
@@ -244,7 +246,7 @@ describe 'Database', ->
 
   describe '#time_task', ->
 
-    now = Date.now()
+    now = time.now()
 
     it 'should add timestamps to an existing task', (done) ->
 
@@ -257,7 +259,9 @@ describe 'Database', ->
         date: now
         completed: now
 
-      db.time_task.create(model).then -> done()
+      db.time_task.create(model)
+        .then -> done()
+        .fail(log)
 
     it 'should read timestamps for an existing task', (done) ->
 
@@ -274,7 +278,7 @@ describe 'Database', ->
 
     it 'should update timestamps for an existing task', (done) ->
 
-      now = Date.now()
+      now = time.now()
 
       db.time_task.update(task.id, { listId: now })
       .then ->
@@ -297,6 +301,7 @@ describe 'Database', ->
   describe '#register', ->
 
     token = null
+    id = null
 
     it 'should create a new entry', (done) ->
 
@@ -314,6 +319,7 @@ describe 'Database', ->
     it 'should read an existing entry', (done) ->
 
       db.register.read(token).then (info) ->
+        id = info.id
         info.should.eql
           id: token.match(/(\d+)_/)[1]
           name: user.name
@@ -335,11 +341,18 @@ describe 'Database', ->
 
     it 'should destroy an existing token', (done) ->
 
-      db.register.destroy(token).then -> done()
+      db.register.destroy(id)
+        .then ->
+          db.register.read(token)
+        .fail (err) ->
+          err.should.equal 'err_bad_token'
+          done()
 
     it 'should not fail when destroying a token that does not exist', (done) ->
 
-      db.register.destroy(user.id + '_gibberish').then -> done()
+      db.register.destroy(user.id + 20)
+        .then -> done()
+        .fail(log)
 
 
 
@@ -376,9 +389,11 @@ describe 'Database', ->
 
     it 'should read from a pref', (done) ->
 
-      db.pref.read(user.id).then (info) ->
+      db.pref.read(user.id)
+      .then (info) ->
         info.should.eql pref
         done()
+      .fail(log)
 
     it 'should destroy a pref', (done) ->
 
@@ -388,7 +403,7 @@ describe 'Database', ->
 
   describe '#time_pref', ->
 
-    now = Date.now()
+    now = time.now()
 
     before (done) ->
       db.pref.create({
@@ -425,7 +440,7 @@ describe 'Database', ->
 
     it 'should update timestamps for an existing pref', (done) ->
 
-      now = Date.now()
+      now = time.now()
 
       db.time_pref.update(user.id, { sort: now })
       .then ->
@@ -544,26 +559,37 @@ describe 'Database', ->
 
     it 'should delete all login token', (done) ->
 
-      Q.all([
+      promise = Q.all [
         db.login.exists login.id, login.token
         db.login.exists user.id, 'temp'
         db.login.exists user.id, 'orary'
+      ]
 
-        db.login.destroyAll(user.id)
+      promise.then ([a, b, c])->
 
-        db.login.exists login.id, login.token
-        db.login.exists user.id, 'temp'
-        db.login.exists user.id, 'orary'
-      ]).then ([a, b, c, _, x, y, z]) ->
         a.should.equal true
         b.should.equal true
         c.should.equal true
-        x.should.equal false
-        y.should.equal false
-        z.should.equal false
-        done()
-      .fail(log)
 
+        db.login.destroyAll(user.id)
+
+      .then ->
+
+        Q.all [
+          db.login.exists login.id, login.token
+          db.login.exists user.id, 'temp'
+          db.login.exists user.id, 'orary'
+        ]
+
+      .then ([a, b, c]) ->
+
+        a.should.equal false
+        b.should.equal false
+        c.should.equal false
+
+        done()
+
+      .fail(log)
 
   describe '#reset', ->
 
@@ -621,7 +647,6 @@ describe 'Database', ->
     it 'should deleting a task should remove it from a list', (done) ->
 
       task =
-        id: null
         userId: user.id
         listId: list.id
         name: 'Task 3'

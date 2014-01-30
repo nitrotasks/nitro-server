@@ -5,6 +5,10 @@ PREFIX = 'time_'
 
 time =
 
+  # Return current time
+  now: ->
+    Math.floor Date.now() / 1000
+
   # Return timestamp for an item or attribute
   read: (classname, id, column) ->
     db[PREFIX + classname].read(id, column)

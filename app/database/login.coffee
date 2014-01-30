@@ -8,7 +8,7 @@ class Login extends Table
 
     @_createTable (table) =>
 
-      table.primary(['userid', 'token'])
+      table.primary(['userId', 'token'])
 
       table.integer('userId').unsigned()
         .references('id').inTable('user')
@@ -30,7 +30,7 @@ class Login extends Table
 
   create: (id, token) ->
 
-    super
+    @_create 'userId',
       userId: id
       token: token
 

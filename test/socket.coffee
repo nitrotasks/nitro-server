@@ -10,6 +10,7 @@ setup   = require './setup'
 mockjs  = require './mockjs'
 client  = require './mock_client'
 Log = require '../app/utils/log'
+time = require '../app/utils/time'
 
 log = Log 'socket - test'
 
@@ -397,12 +398,12 @@ describe 'Socket', ->
 
           done()
 
-        client.queue.sync input, Date.now()
+        client.queue.sync input, time.now()
 
 
       it 'create lists and tasks simultaneously', (done) ->
 
-        now = Date.now()
+        now = time.now()
 
         input =
 
@@ -459,7 +460,7 @@ describe 'Socket', ->
 
       it 'update existing items', (done) ->
 
-        now = Date.now() + 10 * 1000
+        now = time.now() + 10
         ids = []
 
         client.list.create make.list id: -0, name: 'List 1'
@@ -529,7 +530,7 @@ describe 'Socket', ->
 
       it 'destroy existing tasks', (done) ->
 
-        now = Date.now() + 10 * 1000
+        now = time.now() + 10
         ids = []
 
         client.list.create make.list id: -0, name: 'List 1'

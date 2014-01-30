@@ -356,12 +356,13 @@ class UserSocket extends Socket
    * Model Sync
    *
    * - queue (object)
+   * - clientTime (number) : time in seconds since 01/01/1970 12:00:00
    * - fn (function)
   ###
 
   queue_sync: (queue, clientTime, fn) =>
 
-    offset = Date.now() - clientTime
+    offset = Time.now() - clientTime
 
     # Make a new promise so we can do all this sequentially
     pList = []

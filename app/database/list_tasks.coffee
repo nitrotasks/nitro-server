@@ -33,7 +33,7 @@ class ListTasks extends Table
 
   create: (list, task) ->
 
-    super
+    @_create 'taskId',
       listId: list
       taskId: task
 

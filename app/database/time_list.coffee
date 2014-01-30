@@ -15,7 +15,7 @@ class TimeList extends Table
         .onUpdate('cascade')
         .notNullable()
 
-      table.bigInteger('name').unsigned()
-      table.bigInteger('tasks').unsigned()
+      table.integer('name').unsigned()
+      table.integer('tasks').unsigned()
 
 module.exports = TimeList

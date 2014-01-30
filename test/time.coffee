@@ -36,7 +36,7 @@ describe 'Time', ->
       done()
 
   beforeEach ->
-    now = Date.now()
+    now = time.now()
 
   it 'should create timestamps for a task', (done) ->
 
@@ -138,7 +138,7 @@ describe 'Time', ->
   it 'should check a single time - newer', (done) ->
 
     # Set time to 10 seconds in the future
-    future = Date.now() + 10 * 1000
+    future = time.now() + 10
 
     time.checkSingle('task', taskId, future).then (exists) ->
       exists.should.equal true
@@ -147,7 +147,7 @@ describe 'Time', ->
   it 'should check a single time - older', (done) ->
 
     # Set time to 10 seconds in the past
-    past = Date.now() - 10 * 1000
+    past = time.now() - 10
 
     time.checkSingle('task', taskId, past).then (exists) ->
       exists.should.equal false
@@ -155,9 +155,9 @@ describe 'Time', ->
 
   it 'should check multiple timestamps - mixed', (done) ->
 
-    present = Date.now()
-    past = now - 10 * 1000
-    future = now + 10 * 1000
+    present = time.now()
+    past = now - 10
+    future = now + 10
 
     time.checkMultiple('task', taskId, {
       name: now
@@ -172,7 +172,7 @@ describe 'Time', ->
 
   it 'should check multiple timestamps - older', (done) ->
 
-    past = now - 10 * 1000
+    past = now - 10
 
     time.checkMultiple('list', listId, {
       name: past
@@ -183,7 +183,7 @@ describe 'Time', ->
 
   it 'should check multiple timestamps - error', (done) ->
 
-    now = Date.now()
+    now = time.now()
 
     time.checkMultiple('pref', userId, {
       sort: now

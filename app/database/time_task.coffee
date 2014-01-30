@@ -15,11 +15,11 @@ class TimeTask extends Table
         .onUpdate('cascade')
         .notNullable()
 
-      table.bigInteger('listId').unsigned()
-      table.bigInteger('name').unsigned()
-      table.bigInteger('notes').unsigned()
-      table.bigInteger('priority').unsigned()
-      table.bigInteger('completed').unsigned()
-      table.bigInteger('date').unsigned()
+      table.integer('listId').unsigned()
+      table.integer('name').unsigned()
+      table.integer('notes').unsigned()
+      table.integer('priority').unsigned()
+      table.integer('completed').unsigned()
+      table.integer('date').unsigned()
 
 module.exports = TimeTask

@@ -79,6 +79,12 @@ class Table
     if match is null then return null
     return [match[1], match[2]]
 
+  _create: (returning, data) ->
+
+    promise = @query(@table).returning(returning).insert(data)
+    @wrap(promise).then (id) -> return id[0]
+
+
 
   _search: (columns, data) ->
 
@@ -114,8 +120,7 @@ class Table
 
   create: (data) ->
 
-    promise = @query(@table).insert(data)
-    @wrap(promise).then (id) -> return id[0]
+    @_create('id', data)
 
 
   ###

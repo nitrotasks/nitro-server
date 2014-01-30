@@ -402,25 +402,29 @@ describe 'User', ->
 
       user.exportTasks().then (tasks) ->
         tasks.should.be.an.Array
-        tasks[tasks.length - 1].should.eql
-          id: taskId
-          listId: listId
-          name: 'The Last Task'
-          notes: null
-          date: null
-          completed: null
-          priority: null
+        for task in tasks when task.id is taskId
+          task.should.eql
+            id: taskId
+            listId: listId
+            name: 'The Last Task'
+            notes: null
+            date: null
+            completed: null
+            priority: null
         done()
+      .fail(log)
 
     it 'list', (done) ->
 
       user.exportLists().then (lists) ->
         lists.should.be.an.Array
-        lists[lists.length - 1].should.eql
-          id: listId
-          name: 'The Last List'
-          tasks: [ taskId ]
+        for list in lists when list is listId
+          list.should.eql
+            id: listId
+            name: 'The Last List'
+            tasks: [ taskId ]
         done()
+      .fail(log)
 
     it 'pref', (done) ->
 

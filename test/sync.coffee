@@ -4,6 +4,7 @@ setup  = require './setup'
 should = require 'should'
 Q      = require 'kew'
 Log = require '../app/utils/log'
+time = require '../app/utils/time'
 
 log = Log 'sync - test'
 
@@ -217,7 +218,7 @@ describe 'Sync API', ->
   describe '#timestamps', ->
 
     # Travel 10 seconds back in time!
-    past = Date.now() - 1000 * 10
+    past = time.now() - 10
 
     it 'should respect timestamps - task', (done) ->
 

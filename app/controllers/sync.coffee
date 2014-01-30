@@ -79,7 +79,7 @@ class Sync
       # Set id
       task.id = id
 
-      timestamp ?= Date.now()
+      timestamp ?= time.now()
       time.createTask id, timestamp
 
     .then (id) =>
@@ -109,7 +109,7 @@ class Sync
       # Set id
       list.id = id
 
-      timestamp ?= Date.now()
+      timestamp ?= time.now()
       time.createList list.id, timestamp
 
     .then  ->
@@ -143,7 +143,7 @@ class Sync
   model_update_create_timestamps: (changes) ->
 
     timestamps = {}
-    now = Date.now()
+    now = time.now()
     for key of changes
       timestamps[key] = now
 

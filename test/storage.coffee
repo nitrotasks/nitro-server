@@ -2,6 +2,7 @@ Q        = require 'kew'
 should   = require 'should'
 setup    = require './setup'
 Storage  = require '../app/controllers/storage'
+time     = require '../app/utils/time'
 Log = require '../app/utils/log'
 
 log = Log 'storage - test'
@@ -189,13 +190,13 @@ describe 'Storage API >', ->
 
     tasks = [
       name: 'Task 1'
-      date: 1355863711107
+      date: time.now()
       priority: '2'
       notes: 'Just some notes'
       completed: 0
     ,
       name: 'Task 2'
-      date: 1355863711407
+      date: time.now()
       priority: '1'
       notes: 'Not many notes'
       completed: 0

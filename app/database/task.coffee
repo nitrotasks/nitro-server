@@ -32,8 +32,8 @@ class Task extends Table
       table.string('name', 150)
       table.string('notes', 400)
       table.integer('priority').unsigned()
-      table.bigInteger('completed').unsigned()
-      table.bigInteger('date').unsigned()
+      table.integer('completed').unsigned()
+      table.integer('date').unsigned()
 
       # CREATE TABLE IF NOT EXISTS `task` (
       #   `id`          int(11)         unsigned   NOT NULL    AUTO_INCREMENT,

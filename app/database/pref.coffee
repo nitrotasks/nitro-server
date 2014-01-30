@@ -14,12 +14,12 @@ class Pref extends Table
         .onDelete('cascade')
         .onUpdate('cascade')
 
-      table.boolean('sort').unsigned()
+      table.integer('sort').unsigned()
       table.integer('night').unsigned()
       table.string('language', 5)
       table.integer('weekStart').unsigned()
       table.string('dateFormat', 8)
-      table.boolean('confirmDelete').unsigned()
+      table.integer('confirmDelete').unsigned()
       table.integer('moveCompleted').unsigned()
 
       # CREATE TABLE IF NOT EXISTS `pref` (
@@ -37,6 +37,11 @@ class Pref extends Table
       # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
+  create: (data) ->
+
+    @_create('userId', data)
+
+
   ###
    * Read
    *
@@ -51,7 +56,7 @@ class Pref extends Table
   read: (id, columns) ->
 
     promise = @_search columns,
-      userid: id
+      userId: id
 
     promise.then (rows) =>
       return rows[0]

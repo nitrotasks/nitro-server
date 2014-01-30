@@ -33,7 +33,11 @@ class Reset extends Table
 
   create: (id, token) ->
 
-    super({ userId: id, token: token }).then ->
+    promise = @_create 'userId',
+      userId: id
+      token: token
+
+    promise.then ->
       return id + '_' + token
 
 
