@@ -1,1 +1,1 @@
-web: coffee app/init.coffee --debug
+web: node server.js

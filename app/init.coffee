@@ -14,11 +14,15 @@ DEBUG = global.DEBUG ?= off
 if '--debug' in process.argv
   DEBUG = on
 
+
+
 if DEBUG
   warn 'Running in debug mode!'
-  config.use 'development'
+
+if process.env.NITRO_CONFIG
+  config.use process.env.NITRO_CONFIG
 else
-  config.use 'production'
+  config.use 'development'
 
 connect.init()
 

@@ -16,7 +16,8 @@
     "jandal": "0.0.x",
     "xtype": "0.0.7",
     "knex": "0.5.x",
-    "mysql": "~2.0.1"
+    "mysql": "~2.0.1",
+    "pg": "~2.11.1"
   },
   "devDependencies": {
     "supertest": "0.9.x",

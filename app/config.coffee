@@ -13,7 +13,7 @@ config =
   production:
 
     url: 'http://sync.nitrotasks.com'
-    port: process.env.PORT || 8080
+    port: 8080
 
     database:
       engine: keychain 'sql_type'
@@ -30,10 +30,20 @@ config =
       # password: process.env.NITRO_SQL_PASS
       # database: process.env.NITRO_SQL_DB
 
+  heroku:
+
+    url: 'http://nitro-server.herokuapp.com'
+    port: process.env.PORT
+
+    database:
+      engine: 'pg'
+      connectionString: process.env.HEROKU_POSTGRESQL_BLACK_URL
+
+
   development:
 
     url: 'http://localhost:8080'
-    port: process.env.PORT || 8080
+    port: 8080
 
     database:
       engine: 'mysql'
