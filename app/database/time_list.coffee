@@ -8,7 +8,7 @@ class TimeList extends Table
 
     @_createTable (table) =>
 
-      table.integer('id')
+      table.integer('id').unsigned()
         .primary()
         .references('id').inTable('list')
         .onDelete('cascade')

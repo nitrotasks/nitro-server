@@ -74,6 +74,11 @@ class Table
 
     @wrap @query.schema.dropTable(@table)
 
+  _created_at: (table) ->
+
+    table.timestamp('created_at').defaultTo @query.raw 'now()'
+    # table.dateTime('created_at').defaultTo @query.raw 'getdate()'
+
   _parseToken: (token) ->
     match = token.match(/^(\d+)_(\w+)$/)
     if match is null then return null

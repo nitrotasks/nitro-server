@@ -16,7 +16,7 @@ class Register extends Table
       table.string('name', 100).notNullable()
       table.string('email', 100).notNullable()
       table.string('password', 60).notNullable()
-      table.dateTime('created_at').defaultTo @query.raw 'getDate()'
+      @_created_at(table)
 
   create: (data) ->
 

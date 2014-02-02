@@ -8,7 +8,7 @@ class Pref extends Table
 
     @_createTable (table) =>
 
-      table.integer('userId')
+      table.integer('userId').unsigned()
         .primary()
         .references('id').inTable('user')
         .onDelete('cascade')

@@ -16,7 +16,7 @@ class Task extends Table
 
       table.increments('id')
 
-      table.integer('userId')
+      table.integer('userId').unsigned()
         .index()
         .references('id').inTable('user')
         .notNullable()

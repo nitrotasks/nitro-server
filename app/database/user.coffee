@@ -19,7 +19,8 @@ class User extends Table
       table.string('email', 100).index().unique().notNullable()
       table.string('password', 60).notNullable()
       table.integer('pro').notNullable()
-      table.dateTime('created_at').defaultTo @query.raw 'getdate()'
+      @_created_at(table)
+
 
   search: (email) ->
 

@@ -8,7 +8,7 @@ class TimeTask extends Table
 
     @_createTable (table) =>
 
-      table.integer('id')
+      table.integer('id').unsigned()
         .primary()
         .references('id').inTable('task')
         .onDelete('cascade')

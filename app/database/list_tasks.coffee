@@ -10,11 +10,11 @@ class ListTasks extends Table
 
       table.primary(['listId', 'taskId'])
 
-      table.integer('listId')
+      table.integer('listId').unsigned()
         .notNullable()
         .references('id').inTable('list')
 
-      table.integer('taskId')
+      table.integer('taskId').unsigned()
         .notNullable()
         .references('id').inTable('task')
         .onDelete('cascade')

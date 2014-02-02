@@ -10,13 +10,13 @@ class Login extends Table
 
       table.primary(['userId', 'token'])
 
-      table.integer('userId')
+      table.integer('userId').unsigned()
         .notNullable()
         .references('id').inTable('user')
         .onDelete('cascade')
 
       table.string('token', 64).notNullable()
-      table.dateTime('created_at').defaultTo @query.raw 'getdate()'
+      @_created_at(table)
 
   create: (id, token) ->
 
