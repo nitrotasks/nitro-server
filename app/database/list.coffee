@@ -8,24 +8,14 @@ class List extends Table
 
     @_createTable (table) =>
 
-      table.increments('id').unsigned()
+      table.increments('id')
 
-      table.integer('userId').unsigned()
+      table.integer('userId')
         .index()
         .references('id').inTable('user')
         .onDelete('cascade')
-        .onUpdate('cascade')
+        .notNullable()
 
-      table.string('name', 150)
-
-      # CREATE TABLE IF NOT EXISTS `list` (
-      #   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      #   `user_id` int(11) unsigned NOT NULL,
-      #   `name` varchar(150) NOT NULL DEFAULT '',
-      #   PRIMARY KEY (`id`),
-      #   CONSTRAINT `list_user_id` FOREIGN KEY (`user_id`)
-      #   REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-      # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
+      table.string('name', 150).notNullable()
 
 module.exports = List

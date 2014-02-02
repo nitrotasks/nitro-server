@@ -11,22 +11,12 @@ class Register extends Table
 
     @_createTable (table) =>
 
-      table.increments('id').unsigned()
-      table.string('token', 22)
-      table.string('name', 100)
-      table.string('email', 100)
-      table.string('password', 60)
-      table.timestamp('created_at').defaultTo @query.raw 'now()'
-
-      # CREATE TABLE IF NOT EXISTS `register` (
-      #   `id`           int(11)        unsigned   NOT NULL    AUTO_INCREMENT,
-      #   `token`        char(22)                  NOT NULL,
-      #   `name`         varchar(100)              NOT NULL,
-      #   `email`        varchar(100)              NOT NULL,
-      #   `password`     char(60)                  NOT NULL,
-      #   `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
-      #   PRIMARY KEY (`id`,`token`)
-      # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+      table.increments('id')
+      table.string('token', 22).notNullable()
+      table.string('name', 100).notNullable()
+      table.string('email', 100).notNullable()
+      table.string('password', 60).notNullable()
+      table.dateTime('created_at').defaultTo @query.raw 'getDate()'
 
   create: (data) ->
 

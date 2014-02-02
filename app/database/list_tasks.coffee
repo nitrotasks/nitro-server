@@ -10,25 +10,14 @@ class ListTasks extends Table
 
       table.primary(['listId', 'taskId'])
 
-      table.integer('listId').unsigned()
+      table.integer('listId')
+        .notNullable()
         .references('id').inTable('list')
-        .onDelete('cascade')
-        .onUpdate('cascade')
 
-      table.integer('taskId').unsigned()
+      table.integer('taskId')
+        .notNullable()
         .references('id').inTable('task')
         .onDelete('cascade')
-        .onUpdate('cascade')
-
-      # CREATE TABLE IF NOT EXISTS `list_tasks` (
-      #   `list_id` int(11) unsigned NOT NULL,
-      #   `task_id` int(11) unsigned NOT NULL,
-      #   PRIMARY KEY (`list_id`,`task_id`),
-      #   CONSTRAINT `list_tasks_task_id` FOREIGN KEY (`task_id`)
-      #   REFERENCES `task` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-      #   CONSTRAINT `list_tasks_list_id` FOREIGN KEY (`list_id`)
-      #   REFERENCES `list` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-      # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
   create: (list, task) ->
@@ -36,7 +25,6 @@ class ListTasks extends Table
     @_create 'taskId',
       listId: list
       taskId: task
-
 
   read: (list) ->
 

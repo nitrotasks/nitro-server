@@ -10,23 +10,13 @@ class Login extends Table
 
       table.primary(['userId', 'token'])
 
-      table.integer('userId').unsigned()
+      table.integer('userId')
+        .notNullable()
         .references('id').inTable('user')
         .onDelete('cascade')
-        .onUpdate('cascade')
 
-      table.string('token', 64)
-      table.timestamp('created_at').defaultTo @query.raw 'now()'
-
-      # CREATE TABLE IF NOT EXISTS `login` (
-      #   `userId`      int(11)        unsigned   NOT NULL,
-      #   `token`        char(64)                  NOT NULL,
-      #   `created_at`   timestamp                 NOT NULL    DEFAULT CURRENT_TIMESTAMP,
-      #   PRIMARY KEY (`userId`,`token`),
-      #   CONSTRAINT `login_userId` FOREIGN KEY (`userId`)
-      #   REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-      # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
+      table.string('token', 64).notNullable()
+      table.dateTime('created_at').defaultTo @query.raw 'getdate()'
 
   create: (id, token) ->
 

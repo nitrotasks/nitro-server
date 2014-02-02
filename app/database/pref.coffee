@@ -8,34 +8,19 @@ class Pref extends Table
 
     @_createTable (table) =>
 
-      table.integer('userId').unsigned()
+      table.integer('userId')
         .primary()
         .references('id').inTable('user')
         .onDelete('cascade')
-        .onUpdate('cascade')
+        .notNullable()
 
-      table.integer('sort').unsigned()
-      table.integer('night').unsigned()
-      table.string('language', 5)
-      table.integer('weekStart').unsigned()
-      table.string('dateFormat', 8)
-      table.integer('confirmDelete').unsigned()
-      table.integer('moveCompleted').unsigned()
-
-      # CREATE TABLE IF NOT EXISTS `pref` (
-      #   `user_id`       int(11)    unsigned NOT NULL      AUTO_INCREMENT,
-      #   `sort`          tinyint(1) unsigned DEFAULT NULL,
-      #   `night`         tinyint(1) unsigned DEFAULT NULL,
-      #   `language`      varchar(5)          DEFAULT '',
-      #   `weekStart`     tinyint(1) unsigned DEFAULT NULL,
-      #   `dateFormat`    char(8)             DEFAULT NULL,
-      #   `confirmDelete` tinyint(1) unsigned DEFAULT NULL,
-      #   `moveCompleted` tinyint(1) unsigned DEFAULT NULL,
-      #   PRIMARY KEY (`user_id`),
-      #   CONSTRAINT `pref_user_id` FOREIGN KEY (`user_id`)
-      #   REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-      # ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
+      table.integer('sort').nullable()
+      table.integer('night').nullable()
+      table.string('language', 5).nullable()
+      table.integer('weekStart').nullable()
+      table.string('dateFormat', 8).nullable()
+      table.integer('confirmDelete').nullable()
+      table.integer('moveCompleted').nullable()
 
   create: (data) ->
 

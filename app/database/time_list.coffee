@@ -8,14 +8,13 @@ class TimeList extends Table
 
     @_createTable (table) =>
 
-      table.integer('id').unsigned()
+      table.integer('id')
         .primary()
         .references('id').inTable('list')
         .onDelete('cascade')
-        .onUpdate('cascade')
         .notNullable()
 
-      table.integer('name').unsigned()
-      table.integer('tasks').unsigned()
+      table.integer('name').nullable()
+      table.integer('tasks').nullable()
 
 module.exports = TimeList

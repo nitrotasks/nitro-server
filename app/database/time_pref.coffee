@@ -12,15 +12,14 @@ class TimePref extends Table
         .primary()
         .references('userId').inTable('pref')
         .onDelete('cascade')
-        .onUpdate('cascade')
         .notNullable()
 
-      table.integer('sort').unsigned()
-      table.integer('night').unsigned()
-      table.integer('language').unsigned()
-      table.integer('weekStart').unsigned()
-      table.integer('dateFormat').unsigned()
-      table.integer('confirmDelete').unsigned()
-      table.integer('moveCompleted').unsigned()
+      table.integer('sort').nullable()
+      table.integer('night').nullable()
+      table.integer('language').nullable()
+      table.integer('weekStart').nullable()
+      table.integer('dateFormat').nullable()
+      table.integer('confirmDelete').nullable()
+      table.integer('moveCompleted').nullable()
 
 module.exports = TimePref

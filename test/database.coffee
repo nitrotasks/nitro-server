@@ -41,12 +41,14 @@ describe 'Database', ->
         id.should.be.a.Number
         user.id = id
         done()
+      .end()
 
     it 'should check if user exists', (done) ->
 
       db.user.exists(user.id).then (exists) ->
         exists.should.equal true
         done()
+      .end()
 
     it 'should store the creation time', (done) ->
 
@@ -54,12 +56,14 @@ describe 'Database', ->
         info.created_at.should.be.an.instanceOf Date
         user.created_at = info.created_at
         done()
+      .end()
 
     it 'should fetch all user information', (done) ->
 
       db.user.read(user.id).then (info) ->
         info.should.eql user
         done()
+      .end()
 
     it 'should update an existing user', (done) ->
 
@@ -644,7 +648,7 @@ describe 'Database', ->
 
       db.task.create(model).fail -> done()
 
-    it 'should deleting a task should remove it from a list', (done) ->
+    it 'deleting a task should remove it from a list', (done) ->
 
       task =
         userId: user.id

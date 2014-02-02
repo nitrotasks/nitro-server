@@ -8,18 +8,17 @@ class TimeTask extends Table
 
     @_createTable (table) =>
 
-      table.integer('id').unsigned()
+      table.integer('id')
         .primary()
         .references('id').inTable('task')
         .onDelete('cascade')
-        .onUpdate('cascade')
         .notNullable()
 
-      table.integer('listId').unsigned()
-      table.integer('name').unsigned()
-      table.integer('notes').unsigned()
-      table.integer('priority').unsigned()
-      table.integer('completed').unsigned()
-      table.integer('date').unsigned()
+      table.integer('listId').nullable()
+      table.integer('name').nullable()
+      table.integer('notes').nullable()
+      table.integer('priority').nullable()
+      table.integer('completed').nullable()
+      table.integer('date').nullable()
 
 module.exports = TimeTask

@@ -3,6 +3,8 @@ url    = require 'url'
 Knex   = require 'knex'
 config = require '../config'
 
+require 'knex-mssql'
+
 connect =
 
   ready: Q.defer()
