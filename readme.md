@@ -2,8 +2,8 @@
 
 [![Build Status](https://travis-ci.org/CaffeinatedCode/nitro-server.png)](https://travis-ci.org/CaffeinatedCode/nitro-server)
 [![Coverage Status](https://coveralls.io/repos/CaffeinatedCode/nitro-server/badge.png?branch=master)](https://coveralls.io/r/CaffeinatedCode/nitro-server?branch=master)
-[![Dependency Status](https://david-dm.org/CaffeinatedCode/nitro-server.png)](https://david-dm.org/CaffeinatedCode/nitro-server)
-[![devDependency Status](https://david-dm.org/CaffeinatedCode/nitro-server/dev-status.png)](https://david-dm.org/CaffeinatedCode/nitro-server#info=devDependencies)
+[![Dependency Status](https://david-dm.org/CaffeinatedCode/nitro-server.png?theme=shields.io)](https://david-dm.org/CaffeinatedCode/nitro-server)
+[![devDependency Status](https://david-dm.org/CaffeinatedCode/nitro-server/dev-status.png?theme=shields.io)](https://david-dm.org/CaffeinatedCode/nitro-server#info=devDependencies)
 
 ## Requirements ##
 - Node.js and NPM
