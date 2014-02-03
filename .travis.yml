@@ -10,7 +10,7 @@ after_script:
 deploy:
   provider: heroku
   api_key:
-    secure: D9RWv2y2BU55r2wJQxJIkg20OWmA+xlb2HY4gndWu9ghuZD3YRnMAQBmeaAl2sUZsLFiuMf03spPx+lEXVe7ISBy3tRmLdi5dsIxVROYYlYfaYKKR3kwoggNVmugYA9AXDPo9ioF/EAyv42T/WYweUVT4JJai0aom6R1eeVJDy8=
+    secure: QIWX4dxkLP2kH3XmpVIZVQTuI/LiHgpH5X0J8T+QySXINiq9XYVPF2sElGKqv1UutgJCuxhSCEtnDqQZVFJpW0dKKDv9WyrcKWsKb3tE8pBEmbaxafKTsGz+pf0zEjNm1yIomky+RqZe/TSn897nJXq8T2MXie83Hap3YIZOyZI=
   app: nitro-server
   on:
-    repo: stayradiated/nitro-server
+    repo: CaffeinatedCode/nitro-server
