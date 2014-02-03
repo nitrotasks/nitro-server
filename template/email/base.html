@@ -1,0 +1,21 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>{{ subject }}</title>
+    <link rel="stylesheet" href="base.css" />
+  </head>
+  <body>
+    <div class="content">
+      <h1>Nitro Tasks</h1>
+      Hi {{ user.name }}!
+      <br /><br />
+      Your email address ({{ user.email }}) was recently used to sign up to <a href="http://beta.nitrotasks.com">Nitro Tasks</a>.
+      <br /><br />
+      To verify that you own this email address, please go to: <a href="{{ url }}">{{ url }}</a>
+      <br /><br />
+      If you did not sign up to Nitro Tasks, then you can just ignore this email.
+      <br /><br />
+    </div>
+  </body>
+</html>

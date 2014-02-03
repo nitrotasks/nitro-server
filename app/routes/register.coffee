@@ -2,6 +2,7 @@ Log    = require '../utils/log'
 page   = require '../utils/page'
 config = require '../config'
 Auth   = require '../controllers/auth'
+mail   = require '../controllers/mail'
 
 log = Log 'Route -> Registration', 'green'
 
@@ -21,12 +22,28 @@ register = (req, res) ->
   Auth.register(user.name, user.email, user.password)
     .then (token) ->
       link = "#{ config.url }/register/#{ token }"
-      res.send link
-      log link
+
+      if DEBUG_ROUTES
+
+        return res.send link
+
+      res.send 'success'
+
+      mail.verify
+
+        subject: 'Nitro Tasks: Verify Email Address'
+        url: link
+        user:
+          name: user.name
+          email: user.email
+
     .fail (err) ->
       log err
       res.status 400
-      res.send err
+      if typeof err is 'string'
+        res.send err
+      else
+        res.send 'err_server'
 
 verifyRegistration = (req, res) ->
   token = req.params.token

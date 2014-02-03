@@ -11,6 +11,7 @@ else
   config.use 'testing'
 
 global.DEBUG = true
+global.DEBUG_ROUTES = true
 
 # Load controllers
 database = require '../app/controllers/query'

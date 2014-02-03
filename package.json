@@ -18,7 +18,8 @@
     "knex": "0.5.x",
     "mysql": "~2.0.1",
     "pg": "~2.11.1",
-    "knex-mssql": "0.0.x"
+    "knex-mssql": "0.0.x",
+    "swig-email-templates": "~1.0.0"
   },
   "devDependencies": {
     "supertest": "0.9.x",
