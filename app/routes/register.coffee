@@ -23,8 +23,7 @@ register = (req, res) ->
     .then (token) ->
       link = "#{ config.url }/register/#{ token }"
 
-      if DEBUG_ROUTES
-
+      if global.DEBUG_ROUTES
         return res.send link
 
       res.send 'success'
