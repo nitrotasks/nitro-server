@@ -1,3 +1,6 @@
+if process.env.NITRO_CONFIG is 'heroku'
+  require 'newrelic'
+
 config  = require './config'
 Log     = require './utils/log'
 connect = require './controllers/connect'
@@ -13,8 +16,6 @@ DEBUG = global.DEBUG ?= off
 # Enable debug mode if passed as argument
 if '--debug' in process.argv
   DEBUG = on
-
-
 
 if DEBUG
   warn 'Running in debug mode!'

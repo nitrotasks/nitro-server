@@ -16,10 +16,10 @@
     "jandal": "0.0.x",
     "xtype": "0.0.7",
     "knex": "0.5.x",
-    "mysql": "~2.0.1",
-    "pg": "~2.11.1",
+    "mysql": "2.0.x",
+    "pg": "2.11.x",
     "knex-mssql": "0.0.x",
-    "swig-email-templates": "~1.0.0"
+    "swig-email-templates": "1.0.x"
   },
   "devDependencies": {
     "supertest": "0.9.x",
@@ -28,7 +28,8 @@
     "blanket": "1.1.x",
     "forever": "0.10.x",
     "mocha-lcov-reporter": "0.0.x",
-    "coveralls": "2.7.x"
+    "coveralls": "2.7.x",
+    "newrelic": "1.3.x"
   },
   "config": {
     "blanket": {
