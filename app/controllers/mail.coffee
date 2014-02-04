@@ -23,8 +23,8 @@ smtpTransport = nodemailer.createTransport 'SMTP',
   secureConnection: yes
   port: 465
   auth:
-    user: keychain 'email_user'
-    pass: keychain 'email_pass'
+    user: process.env.EMAIL_USER || keychain 'email_user'
+    pass: process.env.EMAIL_PASS || keychain 'email_pass'
 
 ###
 mailOptions =
