@@ -23,7 +23,7 @@ sendEmail = (req, res) ->
   Auth.createResetToken(email)
     .then (token) ->
 
-      link = "<a href=\"#{ config.url + '/reset/' + token }\">Reset Password</a>"
+      link = config.url + '/reset/' + token
 
       if global.DEBUG_ROUTES
         return res.send link
@@ -33,7 +33,7 @@ sendEmail = (req, res) ->
         subject: 'Nitro Password Reset'
         html: """
           <p>To reset your password, click the link below</p>
-          <p>#{link}</p>
+          <p><a href=\"#{ link }\">Reset Password</a></p>"
           <p>If you did not request your password to be reset, you can just ignore this email and your password will remain the same.</p>
           <p>- Nitrotasks</p>
         """

@@ -1,21 +1,8 @@
 Q          = require 'kew'
 path       = require 'path'
 nodemailer = require 'nodemailer'
-emTemplate = require 'swig-email-templates'
 keychain   = require '../utils/keychain'
 Log        = require '../utils/log'
-
-# Setup templates
-
-template = Q.bindPromise emTemplate, undefined,
-  root: path.join __dirname, '../../template/email/'
-
-render = (filename, context) ->
-  template().then (rnd) ->
-    console.log 'got render function'
-    console.log 'calling render for', filename, context
-    Q.nfcall rnd, filename, context
-
 
 # create reusable transport method (opens pool of SMTP connections)
 smtpTransport = nodemailer.createTransport 'SMTP',

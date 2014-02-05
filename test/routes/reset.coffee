@@ -45,7 +45,7 @@ describe 'Route -> Reset', ->
       .send( email: data.email )
       .end (err, res) ->
         res.text.should.not.equal 'err_bad_email'
-        resetToken = res.text
+        resetToken = res.text.match(/\/(\w*)$/)[1]
         resetToken.should.match /^\d+_\w+$/
         resetToken.match(/[^_]*$/)[0].length.should.equal 22
         done()
