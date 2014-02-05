@@ -41,12 +41,11 @@ config =
 
     database_config:
       server: process.env.DATABASE_HOST
-      port: process.env.DATABASE_PORT
       user: process.env.DATABASE_USER
       password: process.env.DATABASE_PASS
       database: process.env.DATABASE_DB
       options:
-        instanceName: 'SQLEXPRESS'
+        encrypt: true
 
   development:
 
