@@ -1,4 +1,5 @@
 Q = require 'kew'
+config = require '../config'
 
 class Table
 
@@ -78,8 +79,10 @@ class Table
 
   _created_at: (table) ->
 
-    table.timestamp('created_at').defaultTo @query.raw 'now()'
-    # table.dateTime('created_at').defaultTo @query.raw 'getdate()'
+    if config.database_engine is 'mssql'
+      table.dateTime('created_at').defaultTo @query.raw 'getdate()'
+    else
+      table.timestamp('created_at').defaultTo @query.raw 'now()'
 
   _parseToken: (token) ->
     match = token.match(/^(\d+)_(\w+)$/)
