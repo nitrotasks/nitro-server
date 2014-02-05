@@ -29,12 +29,9 @@ register = (req, res) ->
       res.send 'success'
 
       mail.verify
-
         subject: 'Nitro Tasks: Verify Email Address'
-        url: link
-        user:
-          name: user.name
-          email: user.email
+        text: link
+        email: user.email
 
     .fail (err) ->
       log err
@@ -53,14 +50,14 @@ verifyRegistration = (req, res) ->
     .then (user) ->
       log 'verified user', user.id
 
-      if DEBUG
+      if global.DEBUG_ROUTES
         res.send 'success'
       else
         res.sendfile page 'auth_success'
 
     .fail (err) ->
       log err
-      if DEBUG
+      if global.DEBUG_ROUTES
         res.send 'error'
       else
         res.sendfile page 'error'

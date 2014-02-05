@@ -53,12 +53,10 @@ Mail =
     sendMail options
 
   verify: (context) ->
-    render('base.html', context).then (result) ->
-      console.log 'got result', result
-      Mail.send
-        to: context.user.email
-        subject: context.subject
-        html: result
+    Mail.send
+      to: context.email
+      subject: context.subject
+      text: context.text
 
 
 # if you don't want to use this transport object anymore, uncomment following line

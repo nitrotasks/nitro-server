@@ -1,6 +1,7 @@
 Q       = require 'kew'
 Auth    = require '../controllers/auth'
 Storage = require '../controllers/storage'
+Mail    = require '../controllers/mail'
 page    = require '../utils/page'
 Log     = require '../utils/log'
 config  = require '../config'
@@ -22,29 +23,28 @@ sendEmail = (req, res) ->
   Auth.createResetToken(email)
     .then (token) ->
 
-      log email, 'get a token', token
+      link = "<a href=\"#{ config.url + '/reset/' + token }\">Reset Password</a>"
 
-      # link = "<a href=\"#{ config.url + '/reset' + token }\">Reset Password</a>"
-      # Mail.send
-      #   to: email
-      #   subject: 'Nitro Password Reset'
-      #   html: """
-      #     <p>To reset your password, click the link below</p>
-      #     <p>#{link}</p>
-      #     <p>If you did not request your password to be reset, you can just ignore this email and your password will remain the same.</p>
-      #     <p>- Nitrotasks</p>
-      #   """
+      if global.DEBUG_ROUTES
+        return res.send link
 
-      if DEBUG
-        res.send token
-      else
-        res.sendfile page 'reset_email'
+      Mail.send
+        to: email
+        subject: 'Nitro Password Reset'
+        html: """
+          <p>To reset your password, click the link below</p>
+          <p>#{link}</p>
+          <p>If you did not request your password to be reset, you can just ignore this email and your password will remain the same.</p>
+          <p>- Nitrotasks</p>
+        """
+
+      res.sendfile page 'reset_email'
 
     .fail (err) ->
       log err
       log email, 'do not get a token'
       res.status 400
-      if DEBUG
+      if global.DEBUG_ROUTES
         res.send 'error'
       else
         res.sendfile page 'error'
@@ -56,7 +56,7 @@ confirmToken = (req, res) ->
     .then ->
       res.sendfile page 'reset_form'
     .fail (err) ->
-      if DEBUG
+      if global.DEBUG_ROUTES
         res.send 'error'
       else
         res.sendfile page 'error'
