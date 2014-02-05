@@ -1,6 +1,8 @@
 if process.env.NITRO_CONFIG is 'heroku'
   require 'newrelic'
 
+console.log process.env
+
 config  = require './config'
 Log     = require './utils/log'
 connect = require './controllers/connect'

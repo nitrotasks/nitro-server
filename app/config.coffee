@@ -35,7 +35,7 @@ config =
   azure:
 
     url: 'http://nitro.azurewebsites.net'
-    port: process.env.port
+    port: process.env.PORT
 
     database_engine: 'mssql'
 
