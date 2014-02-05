@@ -49,6 +49,8 @@ class Table
 
   wrap: (fn) ->
 
+    console.log fn.toString()
+
     deferred = Q.defer()
     fn.exec deferred.makeNodeResolver()
     return deferred.promise
