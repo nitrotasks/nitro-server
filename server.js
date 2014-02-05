@@ -4,6 +4,8 @@
 
 global.DEBUG = true;
 
+console.log('is this even working?');
+
 // Include the CoffeeScript interpreter so that .coffee files will work
 var coffee = require('coffee-script');
 
