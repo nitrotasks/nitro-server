@@ -1,5 +1,5 @@
 Q       = require 'kew'
-bcrypt  = require 'bcrypt'
+bcrypt  = require 'bcryptjs'
 crypto  = require 'crypto'
 Storage = require '../controllers/storage'
 Keys    = require '../utils/keychain'
