@@ -23,12 +23,6 @@ config =
       password: keychain 'sql_pass'
       database: keychain 'sql_db'
 
-      # engine: process.env.NITRO_ENGINE
-      # host: process.env.NITRO_SQL_HOST
-      # port: process.env.NITRO_SQL_PORT
-      # user: process.env.NITRO_SQL_USER
-      # password: process.env.NITRO_SQL_PASS
-      # database: process.env.NITRO_SQL_DB
 
   heroku:
 
@@ -40,15 +34,18 @@ config =
 
   azure:
 
+    url: 'http://nitro.azurewebsites.net'
+    port: process.env.port
+
     database_engine: 'mssql'
 
     database_config:
-      user: 'nodejs'
-      password: 'nodejs'
-      server: 'localhost'
-      database: 'Nitro'
+      server: process.env.DATABASE_HOST
+      port: process.env.DATABASE_PORT
+      user: process.env.DATABASE_USER
+      password: process.env.DATABASE_PASS
+      database: process.env.DATABASE_DB
       options:
-        port: ''
         instanceName: 'SQLEXPRESS'
 
   development:
