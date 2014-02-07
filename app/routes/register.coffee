@@ -26,6 +26,8 @@ register = (req, res) ->
       if global.DEBUG_ROUTES
         return res.send link
 
+      log link
+
       res.send 'success'
 
       mail.verify

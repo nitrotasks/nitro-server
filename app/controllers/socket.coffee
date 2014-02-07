@@ -364,7 +364,11 @@ class UserSocket extends Socket
 
     offset = Time.now() - clientTime
 
-    console.log 'Offset', offset
+    console.log
+      'Time.now': Time.now()
+      'clientTime': clientTime
+      'offset': offset
+
     console.log JSON.stringify queue
 
     # Make a new promise so we can do all this sequentially
