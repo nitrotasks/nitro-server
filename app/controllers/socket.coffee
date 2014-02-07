@@ -362,14 +362,8 @@ class UserSocket extends Socket
 
   queue_sync: (queue, clientTime, fn) =>
 
+    # Calculate timezone difference between server and client
     offset = Time.now() - clientTime
-
-    console.log
-      'Time.now': Time.now()
-      'clientTime': clientTime
-      'offset': offset
-
-    console.log JSON.stringify queue
 
     # Make a new promise so we can do all this sequentially
     pList = []
