@@ -19,6 +19,7 @@ class Task extends Table
       table.integer('userId').unsigned()
         .index()
         .references('id').inTable('user')
+        .onDelete('cascade')
         .notNullable()
 
       table.integer('listId').unsigned()

@@ -13,6 +13,7 @@ class ListTasks extends Table
       table.integer('listId').unsigned()
         .notNullable()
         .references('id').inTable('list')
+        .onDelete('cascade')
 
       table.integer('taskId').unsigned()
         .notNullable()

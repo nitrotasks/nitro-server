@@ -23,7 +23,6 @@ config =
       password: keychain 'sql_pass'
       database: keychain 'sql_db'
 
-
   heroku:
 
     url: 'http://nitro-server.herokuapp.com'
@@ -75,6 +74,15 @@ config =
       password: 'nodejs'
       database: 'Nitro_Test'
       charset: 'utf8'
+
+
+  testing_pg:
+
+    url: 'http://localhost:8080'
+    port: 8080
+
+    database_engine: 'pg'
+    database_config: "postgres://stayrad:@localhost/nitro_server"
 
   travis:
 
