@@ -82,22 +82,15 @@ config =
     port: 8080
 
     database_engine: 'pg'
-    database_config: "postgres://stayrad:@localhost/nitro_server"
+    database_config: 'postgres://stayrad:@localhost/nitro_server'
 
   travis:
 
     url: 'http://localhost:8080'
     port: 8080
 
-    database_engine: 'mysql'
-
-    database_config:
-      url: '127.0.0.1'
-      port: 3306
-      user: 'travis'
-      password: ''
-      database: 'nitro_travis'
-      encoding: 'utf8'
+    database_engine: 'pg'
+    database_config: 'postgres://postgres:@127.0.0.1/nitro_travis'
 
 
 module.exports = config
