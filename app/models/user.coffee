@@ -1,4 +1,4 @@
-Q = require 'kew'
+Promise = require 'bluebird'
 db = require '../controllers/query'
 time = require '../utils/time'
 Log = require '../utils/log'
@@ -121,12 +121,12 @@ class User
       userId: @id
 
   shouldOwnTask: (id) ->
-    @shouldOwnModel('task', id).fail ->
+    @shouldOwnModel('task', id).catch ->
       log '[task] does not own', id
       throw 'err_no_row'
 
   shouldOwnList: (id) ->
-    @shouldOwnModel('list', id).fail ->
+    @shouldOwnModel('list', id).catch ->
       log '[list] does not own', id
       throw 'err_no_row'
 
@@ -197,7 +197,7 @@ class User
       for task in tasks
         delete task.userId
       return tasks
-    .fail ->
+    .catch ->
       return []
 
   exportLists: ->
@@ -208,8 +208,8 @@ class User
         delete list.userId
         promises.push @readListTasks(list.id).then (tasks) ->
           list.tasks = tasks
-      Q.all(promises).then -> return lists
-    .fail ->
+      Promise.all(promises).then -> return lists
+    .catch ->
       return []
 
   exportPref: ->

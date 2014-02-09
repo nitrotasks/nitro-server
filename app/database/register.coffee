@@ -1,4 +1,4 @@
-Q = require 'kew'
+Promise = require 'bluebird'
 Table = require '../controllers/table'
 
 ERR_BAD_TOKEN = 'err_bad_token'
@@ -27,7 +27,7 @@ class Register extends Table
   read: (token) ->
 
     match = @_parseToken(token)
-    unless match then return Q.reject ERR_BAD_TOKEN
+    unless match then return Promise.reject ERR_BAD_TOKEN
 
     promise = @_search ['id', 'name', 'email', 'password'],
       id: match[0]
@@ -35,7 +35,7 @@ class Register extends Table
 
     promise
       .then (rows) -> return rows[0]
-      .fail -> throw ERR_BAD_TOKEN
+      .catch -> throw ERR_BAD_TOKEN
 
 
   update: ->

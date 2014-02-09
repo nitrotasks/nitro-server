@@ -1,4 +1,3 @@
-Q        = require 'kew'
 config   = require '../app/config'
 
 # -----------------------------------------------------------------------------
@@ -23,9 +22,7 @@ connect.init()
 module.exports = (done) ->
 
   database.connected
-    .then ->
-      database.resetTables()
-    .then ->
-      done()
-    .fail (err) ->
+    .then database.resetTables
+    .then -> done()
+    .catch (err) ->
       console.log 'Error: Setup', err

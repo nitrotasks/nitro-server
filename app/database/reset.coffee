@@ -1,4 +1,4 @@
-Q = require 'kew'
+Promise = require 'bluebird'
 Table = require '../controllers/table'
 
 ERR_BAD_TOKEN = 'err_bad_token'
@@ -34,7 +34,7 @@ class Reset extends Table
   read: (token) ->
 
     match = @_parseToken(token)
-    unless match then return Q.reject ERR_BAD_TOKEN
+    unless match then return Promise.reject ERR_BAD_TOKEN
 
     promise = @_search 'userId',
       userId: match[0]
@@ -42,7 +42,7 @@ class Reset extends Table
 
     promise
       .then (rows) -> return rows[0].userId
-      .fail -> throw ERR_BAD_TOKEN
+      .catch -> throw ERR_BAD_TOKEN
 
   update: ->
 
@@ -52,7 +52,7 @@ class Reset extends Table
   destroy: (token) ->
 
     match = @_parseToken(token)
-    unless match then return Q.reject ERR_BAD_TOKEN
+    unless match then return Promise.reject ERR_BAD_TOKEN
 
     @_delete
       userId: match[0]

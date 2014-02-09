@@ -54,7 +54,7 @@ class Login extends Table
 
     promise
       .then -> true
-      .fail -> false
+      .catch -> false
 
   update: ->
 

@@ -1,4 +1,3 @@
-Q       = require 'kew'
 Auth    = require '../controllers/auth'
 Storage = require '../controllers/storage'
 Mail    = require '../controllers/mail'
@@ -40,7 +39,7 @@ sendEmail = (req, res) ->
 
       res.sendfile page 'reset_email'
 
-    .fail (err) ->
+    .catch (err) ->
       log err
       log email, 'do not get a token'
       res.status 400
@@ -55,7 +54,7 @@ confirmToken = (req, res) ->
   Storage.checkResetToken(token)
     .then ->
       res.sendfile page 'reset_form'
-    .fail (err) ->
+    .catch (err) ->
       if global.DEBUG_ROUTES
         res.send 'error'
       else
@@ -84,7 +83,7 @@ resetPassword = (req, res) ->
       Auth.changePassword user, password
     .then ->
       res.sendfile page 'reset_success'
-    .fail (err) ->
+    .catch (err) ->
       log err
       res.status 401
       res.send err

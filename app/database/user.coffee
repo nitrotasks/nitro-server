@@ -30,6 +30,4 @@ class User extends Table
     promise.then (rows) ->
       return rows[0].id
 
-
-
 module.exports = User

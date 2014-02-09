@@ -35,7 +35,7 @@ class ListTasks extends Table
     promise
       .then (rows) ->
         rows.map (row) -> row.taskId
-      .fail ->
+      .catch ->
         return []
 
 

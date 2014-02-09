@@ -86,7 +86,7 @@ describe 'Socket', ->
         user.id = id
         user.token = token
         done()
-      .fail(log)
+      .done()
 
   describe '#auth', ->
 
@@ -333,7 +333,7 @@ describe 'Socket', ->
           user.clearAllData()
         .then ->
           done()
-        .fail(log)
+        .done()
 
       sortItems = (a, b) ->
         return a.name.localeCompare(b.name)

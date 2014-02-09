@@ -1,4 +1,4 @@
-Q = require 'kew'
+Promise = require 'bluebird'
 should = require 'should'
 db = require '../app/controllers/query'
 Log = require '../app/utils/log'
@@ -41,14 +41,12 @@ describe 'Database', ->
         id.should.be.a.Number
         user.id = id
         done()
-      .end()
 
     it 'should check if user exists', (done) ->
 
       db.user.exists(user.id).then (exists) ->
         exists.should.equal true
         done()
-      .end()
 
     it 'should store the creation time', (done) ->
 
@@ -56,14 +54,12 @@ describe 'Database', ->
         info.created_at.should.be.an.instanceOf Date
         user.created_at = info.created_at
         done()
-      .end()
 
     it 'should fetch all user information', (done) ->
 
       db.user.read(user.id).then (info) ->
         info.should.eql user
         done()
-      .end()
 
     it 'should update an existing user', (done) ->
 
@@ -95,18 +91,20 @@ describe 'Database', ->
         exists.should.equal false
         done()
 
-    it 'should fail when fetching a user that does not exist', (done) ->
+    it 'should throw err when fetching a user that does not exist', (done) ->
 
-      db.user.read(user.id, 'name').fail -> done()
-
-    it 'should fail when updating a user that does not exist', (done) ->
-
-      model = email: 'james@gmail.com'
-      db.user.update(user.id, model).fail (err) ->
+      db.user.read(user.id, 'name').catch (err) ->
         err.should.equal 'err_no_row'
         done()
 
-    it 'should not fail when destroying a user that does not exist', (done) ->
+    it 'should throw err when updating a user that does not exist', (done) ->
+
+      model = email: 'james@gmail.com'
+      db.user.update(user.id, model).catch (err) ->
+        err.should.equal 'err_no_row'
+        done()
+
+    it 'should not throw err when destroying a user that does not exist', (done) ->
 
       db.user.destroy(user.id).then -> done()
 
@@ -195,14 +193,14 @@ describe 'Database', ->
       .then (times) ->
         times.name.should.equal now
         done()
-      .fail(log)
+      .catch(log)
 
     it 'should destroy timestamps for an existing list', (done) ->
 
       db.time_list.destroy(list.id)
       .then ->
         db.time_list.read(list.id)
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
         done()
 
@@ -265,7 +263,7 @@ describe 'Database', ->
 
       db.time_task.create(model)
         .then -> done()
-        .fail(log)
+        .catch(log)
 
     it 'should read timestamps for an existing task', (done) ->
 
@@ -296,7 +294,7 @@ describe 'Database', ->
       db.time_task.destroy(task.id)
       .then ->
         db.time_task.read(task.id)
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
         done()
 
@@ -331,15 +329,15 @@ describe 'Database', ->
           password: user.password
         done()
 
-    it 'should fail when it cannot find a registration', (done) ->
+    it 'should throw err when it cannot find a registration', (done) ->
 
-      db.register.read(user.id + '_gibberish').fail (err) ->
+      db.register.read(user.id + '_gibberish').catch (err) ->
         err.should.equal 'err_bad_token'
         done()
 
-    it 'should fail when it cannot parse a token', (done) ->
+    it 'should throw err when it cannot parse a token', (done) ->
 
-      db.register.read('nonsense').fail (err) ->
+      db.register.read('nonsense').catch (err) ->
         err.should.equal 'err_bad_token'
         done()
 
@@ -348,15 +346,15 @@ describe 'Database', ->
       db.register.destroy(id)
         .then ->
           db.register.read(token)
-        .fail (err) ->
+        .catch (err) ->
           err.should.equal 'err_bad_token'
           done()
 
-    it 'should not fail when destroying a token that does not exist', (done) ->
+    it 'should not throw err when destroying a token that does not exist', (done) ->
 
       db.register.destroy(user.id + 20)
         .then -> done()
-        .fail(log)
+        .catch(log)
 
 
 
@@ -381,7 +379,7 @@ describe 'Database', ->
 
     it 'should only allow one pref per user', (done) ->
 
-      db.pref.create(pref).fail -> done()
+      db.pref.create(pref).catch -> done()
 
     it 'should update a pref', (done) ->
 
@@ -397,7 +395,7 @@ describe 'Database', ->
       .then (info) ->
         info.should.eql pref
         done()
-      .fail(log)
+      .catch(log)
 
     it 'should destroy a pref', (done) ->
 
@@ -458,7 +456,7 @@ describe 'Database', ->
       db.time_pref.destroy(user.id)
       .then ->
         db.time_pref.read(user.id)
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
         done()
 
@@ -545,9 +543,9 @@ describe 'Database', ->
         exists.should.equal false
         done()
 
-    it 'should fail when reading an entry that does not exist', (done) ->
+    it 'should throw err when reading an entry that does not exist', (done) ->
 
-      db.login.read(login.id, login.token).fail (err) ->
+      db.login.read(login.id, login.token).catch (err) ->
         err.should.equal 'err_no_row'
         done()
 
@@ -563,13 +561,13 @@ describe 'Database', ->
 
     it 'should delete all login token', (done) ->
 
-      promise = Q.all [
+      promise = Promise.all [
         db.login.exists login.id, login.token
         db.login.exists user.id, 'temp'
         db.login.exists user.id, 'orary'
       ]
 
-      promise.then ([a, b, c])->
+      promise.spread (a, b, c)->
 
         a.should.equal true
         b.should.equal true
@@ -579,13 +577,13 @@ describe 'Database', ->
 
       .then ->
 
-        Q.all [
+        Promise.all [
           db.login.exists login.id, login.token
           db.login.exists user.id, 'temp'
           db.login.exists user.id, 'orary'
         ]
 
-      .then ([a, b, c]) ->
+      .spread (a, b, c) ->
 
         a.should.equal false
         b.should.equal false
@@ -593,7 +591,7 @@ describe 'Database', ->
 
         done()
 
-      .fail(log)
+      .catch(log)
 
   describe '#reset', ->
 
@@ -619,9 +617,9 @@ describe 'Database', ->
         id.should.equal reset.id
         done()
 
-    it 'should fail when using an invalid token', (done) ->
+    it 'should throw err when using an invalid token', (done) ->
 
-      db.reset.read('blah').fail (err) ->
+      db.reset.read('blah').catch (err) ->
         err.should.equal 'err_bad_token'
         done()
 
@@ -629,9 +627,9 @@ describe 'Database', ->
 
       db.reset.destroy(token).then -> done()
 
-    it 'should fail when reading a token that does not exist', (done) ->
+    it 'should throw err when reading a token that does not exist', (done) ->
 
-      db.reset.read(token).fail (err) ->
+      db.reset.read(token).catch (err) ->
         err.should.equal 'err_bad_token'
         done()
 
@@ -646,7 +644,7 @@ describe 'Database', ->
         listId: 2000
         name: 'Task 2'
 
-      db.task.create(model).fail -> done()
+      db.task.create(model).catch -> done()
 
     it 'deleting a task should remove it from a list', (done) ->
 
@@ -679,4 +677,4 @@ describe 'Database', ->
         tasks.should.eql []
         done()
 
-      .fail(log)
+      .catch(log)

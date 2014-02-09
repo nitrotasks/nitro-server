@@ -10,7 +10,7 @@
 ###
 
 
-Q       = require 'kew'
+Promise = require 'bluebird'
 Log     = require '../utils/log'
 time    = require '../utils/time'
 
@@ -147,7 +147,7 @@ class Sync
     for key of changes
       timestamps[key] = now
 
-    Q.resolve timestamps
+    Promise.resolve timestamps
 
 
   model_update_timestamps: (classname, id, changes, timestamps) ->
@@ -157,7 +157,7 @@ class Sync
       keys = hasSameKeys(changes, timestamps)
 
       if keys is false
-        return Q.reject ERR_INVALID_MODEL
+        return Promise.reject ERR_INVALID_MODEL
 
       time.checkMultiple(classname, id, timestamps).then (oldKeys) ->
 
@@ -192,7 +192,7 @@ class Sync
     delete changes.id
 
     if Object.keys(changes).length is 0
-      return Q.reject ERR_INVALID_MODEL
+      return Promise.reject ERR_INVALID_MODEL
 
     # Make sure that the task exists and that the user owns it
     @user.shouldOwnTask(id).then =>
@@ -205,7 +205,7 @@ class Sync
 
       # Check list ID
       if not changes.listId
-        return Q.resolve()
+        return Promise.resolve()
 
       @user.shouldOwnList(changes.listId)
       .then =>
@@ -220,7 +220,7 @@ class Sync
       .then =>
         @user.addTaskToList id, changes.listId
 
-      .fail (err) ->
+      .catch (err) ->
         delete changes.listId
         delete timestamps.listId
 
@@ -257,7 +257,7 @@ class Sync
     delete changes.id
 
     if Object.keys(changes).length is 0
-      return Q.reject ERR_INVALID_MODEL
+      return Promise.reject ERR_INVALID_MODEL
 
     @user.shouldOwnList(id)
       .then =>
@@ -301,7 +301,7 @@ class Sync
   pref_update: (changes, timestamps) =>
 
     if Object.keys(changes).length is 0
-      return Q.reject ERR_INVALID_MODEL
+      return Promise.reject ERR_INVALID_MODEL
 
     @model_update_timestamps(PREF, @user.id, changes, timestamps)
     .then (timestamps) =>

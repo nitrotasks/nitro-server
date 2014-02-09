@@ -1,4 +1,4 @@
-Q       = require 'kew'
+Promise = require 'bluebird'
 bcrypt  = require 'bcryptjs'
 crypto  = require 'crypto'
 Storage = require '../controllers/storage'
@@ -10,9 +10,9 @@ Keys    = require '../utils/keychain'
 # -----------------------------------------------------------------------------
 
 bcrypt =
-  compare:  Q.bindPromise bcrypt.compare,  bcrypt
-  hash:     Q.bindPromise bcrypt.hash,     bcrypt
-  salt:     Q.bindPromise bcrypt.genSalt,  bcrypt
+  compare:  Promise.promisify(bcrypt.compare, bcrypt)
+  hash:     Promise.promisify(bcrypt.hash, bcrypt)
+  salt:     Promise.promisify(bcrypt.genSalt, bcrypt)
 
 
 # -----------------------------------------------------------------------------
@@ -35,51 +35,61 @@ ERR_BAD_NAME  = 'err_bad_name'
 Auth =
 
   ###
-   * Hash some data using bcrypt
-   * The salt is randomly generated.
+   * Auth.hash
+   *
+   * Hash some data using bcrypt with a randomly generated salt.
    *
    * - data (string)
-   * > encrypted data
+   * > hashed data (string)
   ###
 
   hash: (data) ->
-    bcrypt.salt(10).then (salt) -> bcrypt.hash data, salt
+    bcrypt.salt(10).then (salt) ->
+      bcrypt.hash(data, salt)
 
 
   ###
-   * Check a hash against some data
+   * Auth.compare
+   *
+   * Check to see if some data matches a hash.
    *
    * - data (string)
-   * - hash (buffer?)
+   * - hash (string)
+   * > boolean
   ###
 
   compare: (data, hash) ->
-    bcrypt.compare data, hash
+    bcrypt.compare(data, hash)
 
 
   ###
-   * Wrap crypto.randomBytes in a promise
+   * Auth.randomBytes
+   *
+   * Generates secure random data.
+   * Wrap crypto.randomBytes in a promise.
    *
    * - len (int) : number of bytes to get
-   * > buffer
+   * > random data (buffer)
   ###
 
-  randomBytes: Q.bindPromise crypto.randomBytes, crypto
+  randomBytes: Promise.promisify(crypto.randomBytes, crypto)
 
 
   ###
+   * Auth.randomToken
+   *
    * Generate a random string of a certain length.
-   * We generate a bunch of random bytes and then covert them to base64.
-   * We make sure to generate more bytes then we need and then cut
-   * the excess off. This way we don't get any of the base64 padding.
+   * It generates random bytes and then converts them to hexadecimal.
+   * It generates more bytes then it needs and then trims the excess off.
    *
    * - len (int) : The length of the string
+   * > random token (string)
   ###
 
-  createToken: (len) ->
-    byteLen = Math.ceil len / 2
+  randomToken: (len) ->
+    byteLen = Math.ceil(len / 2)
     Auth.randomBytes(byteLen).then (bytes) ->
-      return bytes.toString('hex')[0...len]
+      bytes.toString('hex')[0 ... len]
 
 
   ###
@@ -91,11 +101,11 @@ Auth =
 
   # Generate a reset password token for the user
   createResetToken: (email) ->
-    Q.all([
-      Auth.createToken RESET_TOKEN_LENGTH
-      Storage.getByEmail email
-    ]).then ([token, user]) ->
-      Storage.addResetToken user.id, token
+    Promise.all([
+      Auth.randomToken(RESET_TOKEN_LENGTH)
+      Storage.getByEmail(email)
+    ]).spread (token, user) ->
+      Storage.addResetToken(user.id, token)
 
 
   ###
@@ -106,7 +116,7 @@ Auth =
   ####
 
   createLoginToken: (id) ->
-    Auth.createToken(LOGIN_TOKEN_LENGTH).then (token) ->
+    Auth.randomToken(LOGIN_TOKEN_LENGTH).then (token) ->
       Storage.addLoginToken id, token
 
 
@@ -134,7 +144,7 @@ Auth =
       Auth.createLoginToken user.id
     .then (token) ->
       return [user.id, token]
-    .fail ->
+    .catch ->
       throw ERR_BAD_PASS
 
 
@@ -156,21 +166,21 @@ Auth =
     # Validation
 
     if name.length is 0
-      return Q.reject ERR_BAD_NAME
+      return Promise.reject(ERR_BAD_NAME)
 
     if email.length is 0
-      return Q.reject ERR_BAD_EMAIL
+      return Promise.reject(ERR_BAD_EMAIL)
 
     if pass.length is 0
-      return Q.reject ERR_BAD_PASS
+      return Promise.reject(ERR_BAD_PASS)
 
     # Hash password
 
-    Q.all([
-      Auth.createToken REGISTRATION_TOKEN_LENGTH
-      Auth.hash pass
-    ]).then ([token, hash]) ->
-      Storage.register token, name, email, hash
+    Promise.all([
+      Auth.randomToken(REGISTRATION_TOKEN_LENGTH)
+      Auth.hash(pass)
+    ]).spread (token, hash) ->
+      Storage.register(token, name, email, hash)
 
 
   ###

@@ -10,5 +10,5 @@
       .then (user) ->
         user.changeProStatus(1)
         res.end()
-      .fail ->
+      .catch ->
         res.status(400).send('err')

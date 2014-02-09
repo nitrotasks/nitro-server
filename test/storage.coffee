@@ -1,4 +1,3 @@
-Q        = require 'kew'
 should   = require 'should'
 setup    = require './setup'
 Storage  = require '../app/controllers/storage'
@@ -32,11 +31,10 @@ describe 'Storage API >', ->
             # Save user ID so we can use it future tests
             users[i].id = user.id
             if i is array.length - 1 then done()
-          .fail(log)
 
     it 'should not allow duplicate email addresses', (done) ->
       users.forEach (user, i, array) ->
-        Storage.add(user).fail (err) ->
+        Storage.add(user).catch (err) ->
           err.should.equal 'err_old_email'
           if i is array.length - 1 then done()
 
@@ -53,7 +51,6 @@ describe 'Storage API >', ->
         .then (exists) ->
           exists.should.be.false
           done()
-        .fail(log)
 
 
     it 'emailExists should return true if an email exists', (done) ->
@@ -82,12 +79,11 @@ describe 'Storage API >', ->
               pro: data.pro
             if i is array.length - 1 then done()
 
-        .fail(log)
 
     it 'should fail if you try and get a non-existant user by email', (done) ->
 
       Storage.getByEmail('john@example.com')
-        .fail (err) ->
+        .catch (err) ->
           done()
 
     it 'should get users by id', (done) ->
@@ -115,21 +111,18 @@ describe 'Storage API >', ->
       Storage.addLoginToken(user.id, token)
         .then ->
           done()
-        .fail(log)
 
     it 'check exists', (done) ->
       Storage.checkLoginToken(user.id, token)
         .then (exists) ->
           exists.should.be.true
           done()
-        .fail(log)
 
     it 'check does not exist', (done) ->
       Storage.checkLoginToken(user.id, token + 'x')
         .then (exists) ->
           exists.should.be.false
           done()
-        .fail(log)
 
     it 'remove', (done) ->
       Storage.destroyLoginToken(user.id, token)
@@ -138,7 +131,6 @@ describe 'Storage API >', ->
         .then (exists) ->
           exists.should.be.false
           done()
-        .fail(log)
 
 # -----------------------------------------------------------------------------
 # Reset Password
@@ -161,12 +153,12 @@ describe 'Storage API >', ->
         done()
 
     it 'should fail check if reset token does not exist', (done) ->
-      Storage.checkResetToken('12_abcd').fail (err) ->
+      Storage.checkResetToken('12_abcd').catch (err) ->
         err.should.equal 'err_bad_token'
         done()
 
     it 'should fail check if reset token is corrupt', (done) ->
-      Storage.checkResetToken('random').fail (err) ->
+      Storage.checkResetToken('random').catch (err) ->
         err.should.equal 'err_bad_token'
         done()
 
@@ -178,7 +170,7 @@ describe 'Storage API >', ->
       Storage.destroyResetToken('12_abcd').then -> done()
 
     it 'should fail destroy if reset token is not correct', (done) ->
-      Storage.destroyResetToken('random').fail (err) ->
+      Storage.destroyResetToken('random').catch (err) ->
         err.should.eql 'err_bad_token'
         done()
 
@@ -307,7 +299,7 @@ describe 'Storage API >', ->
     it 'should not be able to find deleted users', (done) ->
 
       users.forEach (user, i, array) ->
-        Storage.get(user.id).fail ->
+        Storage.get(user.id).catch ->
           if i is array.length - 1 then done()
 
 
@@ -331,7 +323,6 @@ describe 'Storage API >', ->
           _token.match(/\d+_(\w+)/)[1].should.equal token
           token = _token
           done()
-        .fail(log)
 
     it 'Get Registration', (done) ->
 
@@ -341,11 +332,9 @@ describe 'Storage API >', ->
           user.email.should.equal data.email
           user.password.should.equal data.password
           done()
-        .fail(log)
 
     it 'Missing Token', (done) ->
 
-      Storage.getRegistration('abc')
-        .fail (err) ->
-          err.should.equal 'err_bad_token'
-          done()
+      Storage.getRegistration('abc').catch (err) ->
+        err.should.equal 'err_bad_token'
+        done()

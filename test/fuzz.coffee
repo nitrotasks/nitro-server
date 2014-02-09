@@ -4,7 +4,7 @@
 
 global.DEBUG = true
 
-Q       = require 'kew'
+Promise = require 'bluebird'
 Jandal  = require 'jandal'
 Socket  = require '../app/controllers/socket'
 Auth    = require '../app/controllers/auth'
@@ -172,7 +172,7 @@ describe 'SLOW Fuzz', ->
     setup(done)
 
   exec = (command) ->
-    deferred = Q.defer()
+    deferred = Promise.defer()
     log '\n' + command
 
     socket.once 'message', (response) ->
@@ -207,14 +207,15 @@ describe 'SLOW Fuzz', ->
 
   it 'should fuzz', (done) ->
 
-    promise = Q.resolve()
+    promise = Promise.resolve()
 
     for i in [0..1000]
       promise = promise.then ->
         exec random.command()
 
-    promise.then ->
-      done()
+    promise
+      .then -> done()
+      .done()
 
-    promise.fail(log)
+
 

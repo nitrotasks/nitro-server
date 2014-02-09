@@ -17,7 +17,7 @@ login = (req, res) ->
     .then (data) ->
       log 'logging in', data[2]
       res.send data
-    .fail (err) ->
+    .catch (err) ->
       res.status 401
       res.send err
 

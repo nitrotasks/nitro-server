@@ -33,5 +33,5 @@
       Auth.oauth.login(service, access)
         .then (data) ->
           res.send data
-        .fail (err) ->
+        .catch (err) ->
           res.status(401).send(err)

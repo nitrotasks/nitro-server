@@ -1,4 +1,4 @@
-Q          = require 'kew'
+Promise    = require 'bluebird'
 path       = require 'path'
 nodemailer = require 'nodemailer'
 keychain   = require '../utils/keychain'
@@ -22,15 +22,7 @@ mailOptions =
   html: ''           # html body
 ###
 
-sendMail = (options) ->
-  deferred = Q.defer()
-  # send mail with defined transport object
-  smtpTransport.sendMail options, (error, response) ->
-    if error
-      Log error
-    else
-      Log 'Message sent: ' + response.message
-  deferred.promise
+sendMail = Promise.promisify(smtpTransport.sendMail, smtpTransport)
 
 Mail =
 

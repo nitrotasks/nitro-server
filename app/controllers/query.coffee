@@ -1,86 +1,54 @@
-Q        = require 'kew'
+Promise  = require 'bluebird'
 connect  = require '../controllers/connect'
 Log      = require '../utils/log'
+sequence = require '../utils/sequence'
 
 log = Log 'Database', 'blue'
 warn = Log 'Database', 'red'
 
 # tables
-tables =
-  user: require '../database/user'
-  list: require '../database/list'
-  task: require '../database/task'
-  pref: require '../database/pref'
-  login: require '../database/login'
-  reset: require '../database/reset'
-  register: require '../database/register'
-  list_tasks: require '../database/list_tasks'
-  time_task: require '../database/time_task'
-  time_list: require '../database/time_list'
-  time_pref: require '../database/time_pref'
+tables = [
+  require '../database/user'
+  require '../database/list'
+  require '../database/task'
+  require '../database/pref'
+  require '../database/login'
+  require '../database/reset'
+  require '../database/register'
+  require '../database/list_tasks'
+  require '../database/time_task'
+  require '../database/time_list'
+  require '../database/time_pref'
+]
 
+# Sequentially create each table
 createTables = ->
-  promise = Q.resolve()
-  for name, Table of tables
-    module.exports[name] = table = new Table(connect.db)
-    do (table) -> promise = promise.then -> table.setup()
-  return promise
 
+  sequence tables, (Table) ->
+
+    name = Table::table
+    table = module.exports[name] = new Table(connect.db)
+    table.setup()
+
+# Sequentially drop each table in reverse order
 resetTables = ->
-  # Sequentially drop each table in reverse order
-  promise = Q.resolve()
-  for name in Object.keys(tables) by -1
-    do (name) -> promise = promise.then -> module.exports[name]._dropTable()
-  promise.then -> createTables()
+
+  sequence tables.reverse(), (Table) ->
+
+    name = Table::table
+    table = module.exports[name]
+    table._dropTable()
+
+  .then ->
+
+    # Unreverse the tables
+    tables.reverse()
+    createTables()
 
 connected = connect.ready.then ->
 
   module.exports.query = connect.db
-  # deferred = Q.defer()
-
   return createTables(connect.db)
-
-  # switch connect.engine
-
-  #   when 'mysql'
-
-  #     query = Q.bindPromise db.query, db
-
-  #     # Export query
-  #     module.exports.query = query
-
-  #     db.connect  (err) ->
-  #       if err
-  #         warn 'Could not connect to database!'
-  #         return deferred.reject err
-
-  #       log 'Connected to MySQL server'
-
-  #       initiateTables(query)
-
-  #       deferred.resolve()
-
-
-  #   when 'mssql'
-
-  #     db.connect (err) ->
-
-  #       if err
-  #         warn 'Could not connect to database!'
-  #         return deferred.reject err
-
-  #       log 'Connected to Microsoft SQL Server'
-
-  #       query = Q.bindPromise db.request().query, db
-
-  #       # Export query
-  #       module.exports.query = query
-
-  #       initiateTables(query)
-
-  #       deferred.resolve()
-
-  # return deferred.promise
 
 module.exports =
   connected: connected

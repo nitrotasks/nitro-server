@@ -1,4 +1,3 @@
-Q = require 'kew'
 config = require '../config'
 
 class Table
@@ -10,6 +9,7 @@ class Table
   ###
 
   table: null
+  column: 'id'
 
   ###
    * Constants
@@ -21,10 +21,10 @@ class Table
   ###
    * Table Constructor
    *
-   * - query (function) : the Knex builder
+   * - knex (function) : the Knex builder
   ###
 
-  constructor: (@query) ->
+  constructor: (@knex) ->
 
 
   ###
@@ -41,21 +41,6 @@ class Table
 
 
   ###
-   * Wrap
-   *
-   * Converts the Knex builder into a Kew promise
-   *
-   * - fn (Knex) : The knex builder
-  ###
-
-  wrap: (fn) ->
-
-    deferred = Q.defer()
-    fn.exec deferred.makeNodeResolver()
-    return deferred.promise
-
-
-  ###
    * (private) Create Table
    *
    * Creates a table if it does not already exist
@@ -65,22 +50,21 @@ class Table
 
   _createTable: (fn) ->
 
-    promise = @query.schema.hasTable(@table)
-
-    @wrap(promise).then (exists) =>
-      return if exists
-      @wrap @query.schema.createTable(@table, fn)
+    @knex.schema.hasTable @table
+      .then (exists) =>
+        return if exists
+        @knex.schema.createTable(@table, fn)
 
   _dropTable: ->
 
-    @wrap @query.schema.dropTable(@table)
+    @knex.schema.dropTable(@table)
 
   _created_at: (table) ->
 
     if config.database_engine is 'mssql'
-      table.dateTime('created_at').defaultTo @query.raw 'getdate()'
+      table.dateTime('created_at').defaultTo @knex.raw 'getdate()'
     else
-      table.timestamp('created_at').defaultTo @query.raw 'now()'
+      table.timestamp('created_at').defaultTo @knex.raw 'now()'
 
   _parseToken: (token) ->
     match = token.match(/^(\d+)_(\w+)$/)
@@ -89,32 +73,37 @@ class Table
 
   _create: (returning, data) ->
 
-    promise = @query(@table).returning(returning).insert(data)
-    @wrap(promise).then (id) -> return id[0]
-
-
+    @knex @table
+      .returning returning
+      .insert data
+      .then (id) -> id[0]
 
   _search: (columns, data) ->
 
-    promise = @query(@table).select().column(columns).where(data)
-    @wrap(promise).then (rows) =>
-      unless rows.length then throw @ERR_NO_ROW
-      return rows
-
+    @knex @table
+      .select()
+      .column columns
+      .where data
+      .then (rows) =>
+        unless rows.length then throw @ERR_NO_ROW
+        return rows
 
   _update: (data, where) ->
 
-    promise = @query(@table).update(data).where(where)
-    @wrap(promise).then (rows) =>
-      unless rows then throw @ERR_NO_ROW
-      return rows
+    @knex @table
+      .update data
+      .where where
+      .then (rows) =>
+        unless rows then throw @ERR_NO_ROW
+        return rows
 
+  _delete: (where) ->
 
-  _delete: (data) ->
-
-    promise = @query(@table).del().where(data)
-    @wrap(promise).then (rows) =>
-      return rows > 0
+    @knex @table
+      .del()
+      .where where
+      .then (rows) ->
+        return rows > 0
 
 
   ###
@@ -128,7 +117,7 @@ class Table
 
   create: (data) ->
 
-    @_create('id', data)
+    @_create @column, data
 
 
   ###
@@ -144,16 +133,21 @@ class Table
 
   read: (id, columns) ->
 
-    promise = @_search columns, id: id
-    promise.then (rows) -> return rows[0]
+    obj = {}
+    obj[@column] = id
+    @_search columns, obj
+      .then (rows) -> rows[0]
 
 
+
+  # TODO: does anything use this anymore?
   exists: (id) ->
 
-    promise = @_search 'id', id: id
-    promise
+    obj = {}
+    obj[@column] = id
+    @_search @column, id: id
       .then -> true
-      .fail -> false
+      .catch -> false
 
 
   ###
@@ -169,8 +163,9 @@ class Table
 
   update: (id, data) ->
 
-    @_update data,
-      id: id
+    obj = {}
+    obj[@column] = id
+    @_update data, obj
 
 
   ###
@@ -185,8 +180,9 @@ class Table
 
   destroy: (id) ->
 
-    @_delete
-      id: id
+    obj = {}
+    obj[@column] = id
+    @_delete obj
 
 
 module.exports = Table

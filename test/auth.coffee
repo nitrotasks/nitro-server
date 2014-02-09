@@ -1,5 +1,5 @@
 should   = require 'should'
-Q        = require 'kew'
+Promise  = require 'bluebird'
 setup    = require './setup'
 Auth     = require '../app/controllers/auth'
 Log      = require '../app/utils/log'
@@ -32,7 +32,6 @@ describe 'Auth API', ->
         .then (same) ->
           same.should.be.true
           done()
-        .fail(log)
 
 
     it 'should compare correctly', (done) ->
@@ -46,7 +45,6 @@ describe 'Auth API', ->
         .then (same) ->
           same.should.be.false
           done()
-        .fail(log)
 
     it 'should generate random bytes', (done) ->
 
@@ -56,7 +54,6 @@ describe 'Auth API', ->
         .then (bytes) ->
           bytes.length.should.equal size
           done()
-        .fail(log)
 
 
 # -----------------------------------------------------------------------------
@@ -75,7 +72,6 @@ describe 'Auth API', ->
           token.should.be.type 'string'
           token.should.match(/^\d+_\w+$/)
           done()
-        .fail(log)
 
 
     it 'should verify the registration', (done) ->
@@ -88,7 +84,6 @@ describe 'Auth API', ->
           data.email.should.equal info.email
           data.password.should.not.equal info.password
           done()
-        .fail(log)
 
 
 # -----------------------------------------------------------------------------
@@ -104,11 +99,12 @@ describe 'Auth API', ->
         uid.should.be.type 'number'
         token.should.have.length 64
         done()
-      .fail (log)
 
     it 'Login with wrong password', (done) ->
 
-      Auth.login(data.email, 'hunter2').fail -> done()
+      Auth.login(data.email, 'hunter2').catch (err) ->
+        err.should.equal 'err_bad_pass'
+        done()
 
 
 # -----------------------------------------------------------------------------
@@ -119,21 +115,20 @@ describe 'Auth API', ->
 
     it 'should generate a random token', (done) ->
 
-      Q.all([
-        Auth.createToken 12
-        Auth.createToken 15
-        Auth.createToken 20
-        Auth.createToken 50
-        Auth.createToken 64
+      Promise.all([
+        Auth.randomToken 12
+        Auth.randomToken 15
+        Auth.randomToken 20
+        Auth.randomToken 50
+        Auth.randomToken 64
       ])
-      .then ([t12, t15, t20, t50, t64]) ->
+      .spread (t12, t15, t20, t50, t64) ->
         t12.should.have.length 12
         t15.should.have.length 15
         t20.should.have.length 20
         t50.should.have.length 50
         t64.should.have.length 64
         done()
-      .fail(log)
 
 # -----------------------------------------------------------------------------
 # Reset Password
@@ -147,12 +142,8 @@ describe 'Auth API', ->
         .then (token) ->
           token.should.match(/^\d+_\w+$/)
           done()
-        .fail(log)
 
     it 'should fail if email does not exist', (done) ->
-      Auth.createResetToken('gibberish').fail ->
-          done()
-
-
-
-
+      Auth.createResetToken('gibberish').catch (err) ->
+        err.should.equal 'err_no_user'
+        done()

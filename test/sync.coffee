@@ -1,10 +1,10 @@
-Sync   = require '../app/controllers/sync'
-Auth   = require '../app/controllers/auth'
-setup  = require './setup'
-should = require 'should'
-Q      = require 'kew'
-Log = require '../app/utils/log'
-time = require '../app/utils/time'
+Sync    = require '../app/controllers/sync'
+Auth    = require '../app/controllers/auth'
+setup   = require './setup'
+should  = require 'should'
+Promise = require 'bluebird'
+Log     = require '../app/utils/log'
+time    = require '../app/utils/time'
 
 log = Log 'sync - test'
 
@@ -31,7 +31,7 @@ describe 'Sync API', ->
     .then (_user) ->
       user = _user
       done()
-    .fail (log)
+    .done()
 
 
   beforeEach ->
@@ -42,7 +42,7 @@ describe 'Sync API', ->
     it 'should add lists and tasks', (done) ->
 
       # Create three lists
-      promise = Q.all [
+      promise = Promise.all [
         sync.list_create name: 'List 1'
         sync.list_create name: 'List 2'
         sync.list_create name: 'List 3'
@@ -54,7 +54,7 @@ describe 'Sync API', ->
         lists = _lists
 
         # Check lists exist
-        Q.all [
+        Promise.all [
           user.readList lists[0]
           user.readList lists[1]
           user.readList lists[2]
@@ -69,7 +69,7 @@ describe 'Sync API', ->
         ]
 
         # Create three tasks
-        Q.all [
+        Promise.all [
           sync.task_create name: 'Task 1', listId: lists[0]
           sync.task_create name: 'Task 2', listId: lists[0]
           sync.task_create name: 'Task 3', listId: lists[0]
@@ -81,7 +81,7 @@ describe 'Sync API', ->
         tasks = _tasks
 
         # Check tasks exists
-        Q.all [
+        Promise.all [
           user.readTask tasks[0]
           user.readTask tasks[1]
           user.readTask tasks[2]
@@ -108,13 +108,13 @@ describe 'Sync API', ->
         # TODO: TEST FOR SAME PROPERTIES
         done()
 
-      .fail(log)
+      .done()
 
 
     it 'should handle task and list updates', (done) ->
 
       # Update task names
-      promise = Q.all [
+      promise = Promise.all [
         sync.task_update id: tasks[0], name: 'Task 1 has been renamed'
         sync.task_update id: tasks[1], name: 'Task 2 has been renamed'
         sync.task_update id: tasks[2], name: 'Task 3 has been renamed'
@@ -122,7 +122,7 @@ describe 'Sync API', ->
 
       promise.then ->
 
-        Q.all [
+        Promise.all [
           user.readTask tasks[0]
           user.readTask tasks[1]
           user.readTask tasks[2]
@@ -136,7 +136,7 @@ describe 'Sync API', ->
         _tasks[2].name.should.equal 'Task 3 has been renamed'
 
         # Update list names
-        Q.all [
+        Promise.all [
           sync.list_update id: lists[0], name: 'List 1 has been renamed'
           sync.list_update id: lists[1], name: 'List 2 has been renamed'
           sync.list_update id: lists[2], name: 'List 3 has been renamed'
@@ -144,7 +144,7 @@ describe 'Sync API', ->
 
       .then ->
 
-        Q.all [
+        Promise.all [
           user.readList lists[0]
           user.readList lists[1]
           user.readList lists[2]
@@ -173,12 +173,12 @@ describe 'Sync API', ->
 
         done()
 
-      .fail(log)
+      .done()
 
 
     it 'should move a task to another list', (done) ->
 
-      promise = Q.all [
+      promise = Promise.all [
         user.readTask tasks[0]
         user.readListTasks lists[0]
         user.readListTasks lists[1]
@@ -197,7 +197,7 @@ describe 'Sync API', ->
 
       .then ->
 
-        Q.all [
+        Promise.all [
           user.readTask tasks[0]
           user.readListTasks lists[0]
           user.readListTasks lists[1]
@@ -212,7 +212,7 @@ describe 'Sync API', ->
 
         done()
 
-      .fail(log)
+      .done()
 
 
   describe '#timestamps', ->
@@ -226,7 +226,7 @@ describe 'Sync API', ->
         id: tasks[0], name: 'Task 1 in the past'
       }, {
         name: past
-      }).fail (err) ->
+      }).catch (err) ->
         err.should.equal 'err_old_event'
         done()
 
@@ -236,7 +236,7 @@ describe 'Sync API', ->
         id: lists[1], name: 'List 2 in the past'
       },{
         name: past
-      }).fail (err) ->
+      }).catch (err) ->
         err.should.equal 'err_old_event'
         done()
 
@@ -246,28 +246,32 @@ describe 'Sync API', ->
         sort: false
       }, {
         sort: past
-      }).fail (err) ->
+      }).catch (err) ->
         err.should.equal 'err_old_event'
         done()
 
 
   describe '#non-existant-models', ->
 
-    it 'should fail when updating a non-existant task', (done) ->
+    it 'should throw err when updating a non-existant task', (done) ->
 
       promise = sync.task_update
         id: tasks[2] + 10
         name: 'Task 4'
 
-      promise.fail -> done()
+      promise.catch (err) ->
+        err.should.equal 'err_no_row'
+        done()
 
-    it 'should fail when updating a non-existant list', (done) ->
+    it 'should throw err when updating a non-existant list', (done) ->
 
       promise = sync.list_update
         id: lists[2] + 10
         name: 'List 4'
 
-      promise.fail -> done()
+      promise.catch (err) ->
+        err.should.equal 'err_no_row'
+        done()
 
 
   describe '#destroying-models', ->
@@ -287,7 +291,7 @@ describe 'Sync API', ->
         # Check that the task has been deleted
         user.readTask tasks[0]
 
-      .fail (err) ->
+      .catch (err) ->
 
         err.should.equal 'err_no_row'
         user.readListTasks lists[1]
@@ -297,7 +301,7 @@ describe 'Sync API', ->
         tasks.should.eql []
 
         # Destroy two lists
-        Q.all [
+        Promise.all [
           sync.list_destroy lists[1]
           sync.list_destroy lists[2]
         ]
@@ -306,10 +310,10 @@ describe 'Sync API', ->
 
         # Check that the lists have been deleted
         user.readList lists[1]
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
         user.readList lists[2]
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
 
         # Destroy the last list that still has tasks in it
@@ -319,24 +323,28 @@ describe 'Sync API', ->
 
         # Check that everything has been deleted
         user.readList lists[0]
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
         user.readTask tasks[1]
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
         user.readTask tasks[2]
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
 
         done()
 
-      .fail(log)
+      .done()
 
 
-    it 'should fail when destroying a non-existant task', (done) ->
+    it 'should throw err when destroying a non-existant task', (done) ->
 
-      sync.task_destroy(tasks[2] + 10).fail -> done()
+      sync.task_destroy(tasks[2] + 10).catch (err) ->
+        err.should.equal 'err_no_row'
+        done()
 
-    it 'should fail when destroying a non-existant list', (done) ->
+    it 'should throw err when destroying a non-existant list', (done) ->
 
-      sync.list_destroy(lists[2] + 10).fail -> done()
+      sync.list_destroy(lists[2] + 10).catch (err) ->
+        err.should.equal 'err_no_row'
+        done()

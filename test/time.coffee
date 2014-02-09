@@ -53,7 +53,7 @@ describe 'Time', ->
         completed: now
         date: now
       done()
-    .fail(log)
+    .done()
 
   it 'should create timestamps for a list', (done) ->
 
@@ -66,7 +66,7 @@ describe 'Time', ->
         name: now
         tasks: now
       done()
-    .fail(log)
+    .done()
 
   it 'should create timestamps for a pref', (done) ->
 
@@ -87,7 +87,7 @@ describe 'Time', ->
         confirmDelete: now
         moveCompleted: now
       done()
-    .fail(log)
+    .done()
 
   it 'should read timestamps for a task', (done) ->
 
@@ -188,7 +188,7 @@ describe 'Time', ->
     time.checkMultiple('pref', userId, {
       sort: now
       sploodle: now
-    }).fail (err) ->
+    }).catch (err) ->
       done()
 
   it 'should destroy a task timestamp', (done) ->
@@ -196,7 +196,7 @@ describe 'Time', ->
     time.destroy('task', taskId)
     .then ->
       time.read('task', taskId)
-    .fail (err) ->
+    .catch (err) ->
       err.should.equal 'err_no_row'
       done()
 
@@ -205,7 +205,7 @@ describe 'Time', ->
     time.destroy('list', listId)
     .then ->
       time.read('list', listId)
-    .fail (err) ->
+    .catch (err) ->
       err.should.equal 'err_no_row'
       done()
 
@@ -214,7 +214,7 @@ describe 'Time', ->
     time.destroy('pref', userId)
     .then ->
       time.read('pref', userId)
-    .fail (err) ->
+    .catch (err) ->
       err.should.equal 'err_no_row'
       done()
 

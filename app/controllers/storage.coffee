@@ -1,7 +1,6 @@
-Q    = require 'kew'
-db   = require '../controllers/query'
-Log  = require '../utils/log'
-User = require '../models/user'
+db      = require '../controllers/query'
+Log     = require '../utils/log'
+User    = require '../models/user'
 
 log = Log 'Storage', 'green'
 
@@ -60,7 +59,7 @@ Storage =
       .then (data) ->
         db.register.destroy(data.id)
         return data
-      .fail ->
+      .catch ->
         throw ERR_BAD_TOKEN
 
 
@@ -124,10 +123,8 @@ Storage =
 
   emailExists: (email) ->
     db.user.search(email)
-      .then ->
-        return true
-      .fail ->
-        return false
+      .then -> true
+      .catch -> false
 
   ###
    * Completely remove a user from the system

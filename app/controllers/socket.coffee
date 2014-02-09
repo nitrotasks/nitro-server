@@ -1,5 +1,5 @@
 sockjs     = require 'sockjs'
-Q          = require 'kew'
+Promise    = require 'bluebird'
 Jandal     = require 'jandal'
 xType      = require 'xtype'
 Sync       = require '../controllers/sync'
@@ -175,7 +175,7 @@ class GuestSocket extends Socket
           @login(fn)
         else
           @kick()
-      .fail (err) =>
+      .catch (err) =>
         log err
         @kick(err)
 
@@ -197,7 +197,7 @@ class GuestSocket extends Socket
       .then (user) =>
         new UserSocket(socket, user)
         fn(null, true)
-      .fail (err) =>
+      .catch (err) =>
         log err
         @kick(err)
 
@@ -292,7 +292,7 @@ class UserSocket extends Socket
       @broadcast classname + '.create', model
       if fn then fn(null, id)
       return id
-    .fail ->
+    .catch ->
       if fn then fn(true)
 
   task_create: (model, fn, time) =>
@@ -314,7 +314,7 @@ class UserSocket extends Socket
     .then (model) =>
       @broadcast classname + '.update', model
       if fn then fn(null)
-    .fail (err) ->
+    .catch (err) ->
       if fn then fn(true)
 
 
@@ -341,7 +341,7 @@ class UserSocket extends Socket
     .then =>
       @broadcast classname + '.destroy', id: id
       if fn then fn(null)
-    .fail (err) ->
+    .catch (err) ->
       if fn then fn(true)
 
 
@@ -411,7 +411,7 @@ class UserSocket extends Socket
           when DESTROY
             pAll.push @list_destroy list, null, time
 
-    Q.all(pList)
+    Promise.all(pList)
     .then =>
 
       # TASKS
@@ -437,19 +437,19 @@ class UserSocket extends Socket
               pAll.push @task_destroy(task, null, time)
 
 
-      Q.all(pAll)
+      Promise.all(pAll)
 
     .then =>
 
       unless fn then throw 'no_fn'
 
-      Q.all [
+      Promise.all [
         @user.exportLists()
         @user.exportTasks()
         @user.exportPref()
       ]
 
-    .then ([lists, tasks, pref]) =>
+    .spread (lists, tasks, pref) =>
 
       fn null,
         list: lists

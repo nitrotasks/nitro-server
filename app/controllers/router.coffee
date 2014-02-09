@@ -1,4 +1,3 @@
-Q       = require 'kew'
 express = require 'express'
 cors    = require 'cors'
 Auth    = require '../controllers/auth'

@@ -109,7 +109,7 @@ describe 'User', ->
         })
       .then ->
         done()
-      .fail(log)
+      .done()
 
 
   describe '#listTasks', ->
@@ -170,7 +170,7 @@ describe 'User', ->
 
     it 'task - does not own', (done) ->
 
-      user.shouldOwnTask(-200).fail (err) ->
+      user.shouldOwnTask(-200).catch (err) ->
         err.should.equal 'err_no_row'
         done()
 
@@ -181,7 +181,7 @@ describe 'User', ->
 
     it 'list - does not own', (done) ->
 
-      user.shouldOwnList(-200).fail (err) ->
+      user.shouldOwnList(-200).catch (err) ->
         err.should.equal 'err_no_row'
         done()
 
@@ -290,7 +290,7 @@ describe 'User', ->
 
     it 'task - does not exist', (done) ->
 
-      user.updateTask(-200, { name: 'Updated task'}).fail (err) ->
+      user.updateTask(-200, { name: 'Updated task'}).catch (err) ->
         err.should.eql 'err_no_row'
         done()
 
@@ -305,7 +305,7 @@ describe 'User', ->
 
     it 'list - does not exist', (done) ->
 
-      user.updateList(-200, { name: 'Updated list'}).fail (err) ->
+      user.updateList(-200, { name: 'Updated list'}).catch (err) ->
         err.should.eql 'err_no_row'
         done()
 
@@ -338,13 +338,13 @@ describe 'User', ->
       user.destroyTask(taskId)
       .then ->
         user.readTask(taskId)
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
         done()
 
     it 'task - does not exist', (done) ->
 
-      user.destroyTask(-200).fail (err) ->
+      user.destroyTask(-200).catch (err) ->
         err.should.eql 'err_no_row'
         done()
 
@@ -353,13 +353,13 @@ describe 'User', ->
       user.destroyList(listId)
       .then ->
         user.readList(listId)
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
         done()
 
     it 'list - does not exist', (done) ->
 
-      user.destroyList(-200).fail (err) ->
+      user.destroyList(-200).catch (err) ->
         err.should.eql 'err_no_row'
         done()
 
@@ -368,7 +368,7 @@ describe 'User', ->
       user.destroyPref()
       .then ->
         user.readPref()
-      .fail (err) ->
+      .catch (err) ->
         err.should.equal 'err_no_row'
         done()
 
@@ -412,7 +412,7 @@ describe 'User', ->
             completed: null
             priority: null
         done()
-      .fail(log)
+      .done()
 
     it 'list', (done) ->
 
@@ -424,7 +424,7 @@ describe 'User', ->
             name: 'The Last List'
             tasks: [ taskId ]
         done()
-      .fail(log)
+      .done()
 
     it 'pref', (done) ->
 

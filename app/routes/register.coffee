@@ -35,7 +35,7 @@ register = (req, res) ->
         text: link
         email: user.email
 
-    .fail (err) ->
+    .catch (err) ->
       log err
       res.status 400
       if typeof err is 'string'
@@ -57,7 +57,7 @@ verifyRegistration = (req, res) ->
       else
         res.sendfile page 'auth_success'
 
-    .fail (err) ->
+    .catch (err) ->
       log err
       if global.DEBUG_ROUTES
         res.send 'error'
