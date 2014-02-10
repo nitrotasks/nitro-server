@@ -18,7 +18,7 @@ class User extends Table
       table.string('name', 100).notNullable()
       table.string('email', 100).index().unique().notNullable()
       table.string('password', 60).notNullable()
-      table.integer('pro').notNullable()
+      table.integer('pro').defaultTo(0).notNullable()
       @_created_at(table)
 
 

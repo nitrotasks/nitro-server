@@ -20,6 +20,7 @@ login = (req, res) ->
     .catch (err) ->
       res.status 401
       res.send err
+    .done()
 
 module.exports = [
 

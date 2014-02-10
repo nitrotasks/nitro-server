@@ -1,8 +1,9 @@
 Promise = require 'bluebird'
 bcrypt  = require 'bcryptjs'
 crypto  = require 'crypto'
-Storage = require '../controllers/storage'
+Users   = require '../controllers/users'
 Keys    = require '../utils/keychain'
+db      = require '../controllers/query'
 
 
 # -----------------------------------------------------------------------------
@@ -19,9 +20,8 @@ bcrypt =
 # Constants
 # -----------------------------------------------------------------------------
 
-RESET_TOKEN_LENGTH        = 22
-LOGIN_TOKEN_LENGTH        = 64
-REGISTRATION_TOKEN_LENGTH = 22
+RESET_TOKEN_LENGTH = 22
+LOGIN_TOKEN_LENGTH = 64
 
 ERR_BAD_PASS  = 'err_bad_pass'
 ERR_BAD_EMAIL = 'err_bad_email'
@@ -103,9 +103,9 @@ Auth =
   createResetToken: (email) ->
     Promise.all([
       Auth.randomToken(RESET_TOKEN_LENGTH)
-      Storage.getByEmail(email)
+      Users.search(email)
     ]).spread (token, user) ->
-      Storage.addResetToken(user.id, token)
+      db.reset.create(user.id, token)
 
 
   ###
@@ -117,7 +117,11 @@ Auth =
 
   createLoginToken: (id) ->
     Auth.randomToken(LOGIN_TOKEN_LENGTH).then (token) ->
-      Storage.addLoginToken id, token
+      db.login.create(id, token).return(token)
+
+  returnLoginToken: (id) ->
+    Auth.createLoginToken(id).then (token) ->
+      return [id, token]
 
 
   ###
@@ -126,24 +130,21 @@ Auth =
    *
    * - email (string)
    * - pass (string) : plaintext
-   * > user and token info
+   * > login_token
    * ! err_bad_pass
   ###
 
   # Gives the user a token to use to connect to SocketIO
   login: (email, pass) ->
-    user = null
-    Storage.getByEmail(email)
-    .then (_user) ->
-      user = _user
-      user.getPassword('password')
+    id = null
+    Users.search(email).then (user) ->
+      id = user.id
+      user.getPassword()
     .then (password) ->
       Auth.compare(pass, password)
     .then (same) ->
       if not same then throw ERR_BAD_PASS
-      Auth.createLoginToken user.id
-    .then (token) ->
-      return [user.id, token]
+      Auth.returnLoginToken(id)
     .catch ->
       throw ERR_BAD_PASS
 
@@ -155,13 +156,13 @@ Auth =
    * - name (string)
    * - email (string)
    * - pass (string) : plaintext
-   * > registration token
+   * > login token
    * ! err_bad_name
    * ! err_bad_email
    * ! err_bad_pass
   ###
 
-  register: (name, email, pass) ->
+  register: (name, email , pass) ->
 
     # Validation
 
@@ -176,28 +177,15 @@ Auth =
 
     # Hash password
 
-    Promise.all([
-      Auth.randomToken(REGISTRATION_TOKEN_LENGTH)
-      Auth.hash(pass)
-    ]).spread (token, hash) ->
-      Storage.register(token, name, email, hash)
+    Auth.hash(pass).then (hash) ->
+      Users.create
+        name: name
+        email: email
+        password: hash
 
-
-  ###
-   * Verify a registration using a token.
-   * Should be used to verify that the user owns the email address.
-   *
-   * - token (string) : the registration token
-   * > user info stored at registration
-  ###
-
-  verifyRegistration: (token) ->
-    Storage.getRegistration(token).then (user) ->
-      Storage.add
-        name: user.name
-        email: user.email
-        password: user.password
-
+    # Return login token
+    .then (user) ->
+      Auth.returnLoginToken(user.id)
 
   ###
    * Change a users password

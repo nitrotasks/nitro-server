@@ -299,65 +299,6 @@ describe 'Database', ->
         done()
 
 
-
-  describe '#register', ->
-
-    token = null
-    id = null
-
-    it 'should create a new entry', (done) ->
-
-      entry =
-        token: 'reddit'
-        name: user.name
-        email: user.email
-        password: user.password
-
-      db.register.create(entry).then (_token) ->
-        token = _token
-        token.should.match /^\d+_\w+$/
-        done()
-
-    it 'should read an existing entry', (done) ->
-
-      db.register.read(token).then (info) ->
-        id = info.id
-        info.should.eql
-          id: token.match(/(\d+)_/)[1]
-          name: user.name
-          email: user.email
-          password: user.password
-        done()
-
-    it 'should throw err when it cannot find a registration', (done) ->
-
-      db.register.read(user.id + '_gibberish').catch (err) ->
-        err.should.equal 'err_bad_token'
-        done()
-
-    it 'should throw err when it cannot parse a token', (done) ->
-
-      db.register.read('nonsense').catch (err) ->
-        err.should.equal 'err_bad_token'
-        done()
-
-    it 'should destroy an existing token', (done) ->
-
-      db.register.destroy(id)
-        .then ->
-          db.register.read(token)
-        .catch (err) ->
-          err.should.equal 'err_bad_token'
-          done()
-
-    it 'should not throw err when destroying a token that does not exist', (done) ->
-
-      db.register.destroy(user.id + 20)
-        .then -> done()
-        .catch(log)
-
-
-
   describe '#pref', ->
 
     pref =

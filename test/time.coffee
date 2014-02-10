@@ -1,5 +1,5 @@
 User    = require '../app/models/user'
-Storage = require '../app/controllers/storage'
+Users   = require '../app/controllers/users'
 time    = require '../app/utils/time'
 setup   = require './setup'
 should  = require 'should'
@@ -23,7 +23,7 @@ describe 'Time', ->
 
   before (done) -> setup ->
     user = null
-    Storage.add(_user)
+    Users.create(_user)
     .then (_user) ->
       user = _user
       userId = user.id
@@ -70,7 +70,8 @@ describe 'Time', ->
 
   it 'should create timestamps for a pref', (done) ->
 
-    # Storage.add auto adds a time_pref entry
+    # When a user is created they are automatically given the default prefs
+    # We need to destroy thoses defaults first.
     time.destroy('pref', userId)
     .then ->
       time.createPref(userId, now)

@@ -1,8 +1,9 @@
-User    = require '../app/models/user'
-Storage = require '../app/controllers/storage'
-setup   = require './setup'
-should  = require 'should'
-Log = require '../app/utils/log'
+User   = require '../app/models/user'
+Users  = require '../app/controllers/users'
+setup  = require './setup'
+should = require 'should'
+Time   = require '../app/utils/time'
+Log    = require '../app/utils/log'
 
 log = Log 'user - test'
 
@@ -12,16 +13,22 @@ describe 'User', ->
     name: 'The User'
     email: 'user@inter.net'
     password: 'hunter2'
+    pro: 0
 
-  user = {}
+  user =
+    id: null
 
   before (done) -> setup ->
-    Storage.add(_user).then (_user) ->
+    Users.create(_user).then (_user) ->
       user.id = _user.id
       done()
 
   beforeEach ->
     user = new User(user.id)
+
+# -----------------------------------------------------------------------------
+# User Info
+# -----------------------------------------------------------------------------
 
   describe '#info', ->
 
@@ -34,6 +41,10 @@ describe 'User', ->
           pro: _user.pro
         done()
 
+
+# -----------------------------------------------------------------------------
+# User Name
+# -----------------------------------------------------------------------------
 
   describe '#name', ->
 
@@ -49,6 +60,10 @@ describe 'User', ->
         done()
 
 
+# -----------------------------------------------------------------------------
+# User Email
+# -----------------------------------------------------------------------------
+
   describe '#email', ->
 
     it 'set', (done) ->
@@ -62,6 +77,9 @@ describe 'User', ->
         email.should.equal 'bruce@batman.com'
         done()
 
+# -----------------------------------------------------------------------------
+# User Password
+# -----------------------------------------------------------------------------
 
   describe '#password', ->
 
@@ -76,6 +94,10 @@ describe 'User', ->
         password.should.equal 'batmobile'
         done()
 
+
+# -----------------------------------------------------------------------------
+# User Create Task/List/Pref
+# -----------------------------------------------------------------------------
 
   describe '#create', ->
 
@@ -111,6 +133,10 @@ describe 'User', ->
         done()
       .done()
 
+
+# -----------------------------------------------------------------------------
+# User Add Task to List
+# -----------------------------------------------------------------------------
 
   describe '#listTasks', ->
 
@@ -148,6 +174,10 @@ describe 'User', ->
         done()
 
 
+# -----------------------------------------------------------------------------
+# User Should Own
+# -----------------------------------------------------------------------------
+
   describe '#shouldOwn', ->
 
     listId = null
@@ -184,6 +214,11 @@ describe 'User', ->
       user.shouldOwnList(-200).catch (err) ->
         err.should.equal 'err_no_row'
         done()
+
+
+# -----------------------------------------------------------------------------
+# User Read Task/List/Pref
+# -----------------------------------------------------------------------------
 
   describe '#read', ->
 
@@ -264,6 +299,10 @@ describe 'User', ->
         done()
 
 
+# -----------------------------------------------------------------------------
+# User Update Task/List/Pref
+# -----------------------------------------------------------------------------
+
   describe '#update', ->
 
     listId = null
@@ -318,6 +357,11 @@ describe 'User', ->
         pref.moveCompleted.should.equal 1
         done()
 
+
+# -----------------------------------------------------------------------------
+# User Destroy Task/List/Pref
+# -----------------------------------------------------------------------------
+
   describe '#destroy', ->
 
     listId = null
@@ -371,6 +415,11 @@ describe 'User', ->
       .catch (err) ->
         err.should.equal 'err_no_row'
         done()
+
+
+# -----------------------------------------------------------------------------
+# User Export Task/List/Pref
+# -----------------------------------------------------------------------------
 
   describe '#export', ->
 
@@ -439,3 +488,110 @@ describe 'User', ->
           moveCompleted: 1
         done()
 
+# -----------------------------------------------------------------------------
+# User Add/Remove Data
+# -----------------------------------------------------------------------------
+
+  describe 'User Data', ->
+
+    tasks = [
+      name: 'Task 1'
+      date: Time.now()
+      priority: '2'
+      notes: 'Just some notes'
+      completed: 0
+    ,
+      name: 'Task 2'
+      date: Time.now()
+      priority: '1'
+      notes: 'Not many notes'
+      completed: 0
+    ]
+
+    lists = [
+      name: 'list 1'
+    ,
+      name: 'list 2'
+    ]
+
+    before (done) ->
+      Users.read(user.id).then (_user) ->
+        user = _user
+        done()
+
+
+    it 'should create the first list', (done) ->
+
+      list = lists[0]
+
+      user.createList(list).then (id) ->
+        list.id = id
+        done()
+
+    it 'should read the first list', (done) ->
+
+      list = lists[0]
+
+      user.readList(list.id).then (data) ->
+        data.should.eql
+          id: list.id
+          name: list.name
+        done()
+
+    it 'should own first the list', (done) ->
+
+      list = lists[0]
+
+      user.shouldOwnList(list.id).then -> done()
+
+    it 'should create the second list', (done) ->
+
+      list = lists[1]
+
+      user.createList(list).then (id) ->
+        list.id = id
+        done()
+
+    it 'should read the second list', (done) ->
+
+      list = lists[1]
+
+      user.readList(list.id).then (data) ->
+        data.should.eql
+          id: list.id
+          name: list.name
+        done()
+
+    it 'should create the first task', (done) ->
+
+      task = tasks[0]
+      task.listId = lists[0].id
+
+      user.createTask(task).then (id) ->
+        task.id = id
+        done()
+
+    it 'should read the first task', (done) ->
+
+      task = tasks[0]
+
+      user.readTask(task.id).then (data) ->
+        data.should.eql task
+        done()
+
+    it 'should create the second task', (done) ->
+
+      task = tasks[1]
+      task.listId = lists[1].id
+
+      user.createTask(task).then (id) ->
+        task.id = id
+        done()
+
+    it 'should read the second task', (done) ->
+
+      task = tasks[1]
+
+      user.readTask(task.id).then (data) ->
+        data.should.eql task
+        done()

@@ -8,7 +8,6 @@ describe 'Route -> Reset', ->
   before setup
 
   resetToken = null
-  registerToken = null
   newPassword = 'xkcd'
 
   data =
@@ -22,15 +21,8 @@ describe 'Route -> Reset', ->
       .post('/register')
       .send(data)
       .end (req, res) ->
-        registerToken = res.text.match(/\/(\w*)$/)[1]
-        registerToken.should.match /^\d+_\w+$/
+        [id, token] = JSON.parse res.text
         done()
-
-  it 'should verify the user', (done) ->
-
-    request(app)
-      .get("/register/#{ registerToken }")
-      .expect('success', done)
 
   it 'should display the reset page', (done) ->
 

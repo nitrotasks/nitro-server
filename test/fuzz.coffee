@@ -8,7 +8,6 @@ Promise = require 'bluebird'
 Jandal  = require 'jandal'
 Socket  = require '../app/controllers/socket'
 Auth    = require '../app/controllers/auth'
-Storage = require '../app/controllers/storage'
 should  = require 'should'
 setup   = require './setup'
 mockjs  = require './mockjs'
@@ -190,14 +189,11 @@ describe 'SLOW Fuzz', ->
 
   it 'should create a new user', (done) ->
     Auth.register(user.name, user.email, user.pass)
-    .then (token) ->
-      Auth.verifyRegistration(token)
-    .then ->
-      Auth.login(user.email, user.pass)
     .then ([id, token]) ->
       user.id = id
       user.token = token
       done()
+    .done()
 
   it 'should login the user', (done) ->
     auth = client.user.auth(user.id, user.token)

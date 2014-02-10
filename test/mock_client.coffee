@@ -55,6 +55,9 @@ client =
 
   list:
 
+    fetch: ->
+      emit 'list.fetch'
+
     create: (model) ->
       emit 'list.create', model
 
@@ -65,6 +68,9 @@ client =
       emit 'list.destroy', model
 
   pref:
+
+    fetch: ->
+      emit 'pref.fetch'
 
     update: (model) ->
       emit 'pref.update', model

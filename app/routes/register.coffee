@@ -21,19 +21,7 @@ register = (req, res) ->
 
   Auth.register(user.name, user.email, user.password)
     .then (token) ->
-      link = "#{ config.url }/register/#{ token }"
-
-      if global.DEBUG_ROUTES
-        return res.send link
-
-      log link
-
-      res.send 'success'
-
-      mail.verify
-        subject: 'Nitro Tasks: Verify Email Address'
-        text: link
-        email: user.email
+      res.send token
 
     .catch (err) ->
       log err
@@ -43,38 +31,11 @@ register = (req, res) ->
       else
         res.send 'err_server'
 
-verifyRegistration = (req, res) ->
-  token = req.params.token
-
-  log 'verifying user with token', token
-
-  Auth.verifyRegistration(token)
-    .then (user) ->
-      log 'verified user', user.id
-
-      if global.DEBUG_ROUTES
-        res.send 'success'
-      else
-        res.sendfile page 'auth_success'
-
-    .catch (err) ->
-      log err
-      if global.DEBUG_ROUTES
-        res.send 'error'
-      else
-        res.sendfile page 'error'
-
 
 module.exports = [
 
   type: 'post'
   url: '/register'
   handler: register
-
-,
-
-  type: 'get'
-  url: '/register/:token'
-  handler: verifyRegistration
 
 ]

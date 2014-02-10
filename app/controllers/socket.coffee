@@ -3,8 +3,9 @@ Promise    = require 'bluebird'
 Jandal     = require 'jandal'
 xType      = require 'xtype'
 Sync       = require '../controllers/sync'
-Storage    = require '../controllers/storage'
+Users      = require '../controllers/users'
 Validation = require '../controllers/validation'
+db         = require '../controllers/query'
 Log        = require '../utils/log'
 Time       = require '../utils/time'
 
@@ -169,16 +170,12 @@ class GuestSocket extends Socket
 
   user_auth: (@userId, token, fn) =>
     clearTimeout @authTimeout
-    Storage.checkLoginToken(@userId, token)
+    db.login.exists(@userId, token)
       .then (exists) =>
         if exists
           @login(fn)
         else
           @kick()
-      .catch (err) =>
-        log err
-        @kick(err)
-
 
   ###
    * (Private) User Login
@@ -193,7 +190,7 @@ class GuestSocket extends Socket
   login: (fn) =>
     socket = @_socket
     @release()
-    Storage.get(@userId)
+    Users.read(@userId)
       .then (user) =>
         new UserSocket(socket, user)
         fn(null, true)
@@ -441,7 +438,7 @@ class UserSocket extends Socket
 
     .then =>
 
-      unless fn then throw 'no_fn'
+      unless fn then throw null
 
       Promise.all [
         @user.exportLists()
@@ -455,6 +452,10 @@ class UserSocket extends Socket
         list: lists
         task: tasks
         pref: pref
+
+    .catch ->
+      return
+
 
 module.exports =
   init: init

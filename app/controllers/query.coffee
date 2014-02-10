@@ -14,7 +14,6 @@ tables = [
   require '../database/pref'
   require '../database/login'
   require '../database/reset'
-  require '../database/register'
   require '../database/list_tasks'
   require '../database/time_task'
   require '../database/time_list'

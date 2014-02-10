@@ -1,9 +1,10 @@
-Auth    = require '../controllers/auth'
-Storage = require '../controllers/storage'
-Mail    = require '../controllers/mail'
-page    = require '../utils/page'
-Log     = require '../utils/log'
-config  = require '../config'
+Auth   = require '../controllers/auth'
+Users  = require '../controllers/users'
+Mail   = require '../controllers/mail'
+db     = require '../controllers/query'
+page   = require '../utils/page'
+Log    = require '../utils/log'
+config = require '../config'
 
 log = Log 'Route -> Reset', 'yellow'
 
@@ -51,7 +52,7 @@ sendEmail = (req, res) ->
 confirmToken = (req, res) ->
   token = req.params.token
 
-  Storage.checkResetToken(token)
+  db.reset.read(token)
     .then ->
       res.sendfile page 'reset_form'
     .catch (err) ->
@@ -73,11 +74,11 @@ resetPassword = (req, res) ->
     res.sendfile page 'reset_mismatch'
     return
 
-  Storage.checkResetToken(token)
+  db.reset.read(token)
     .then (id) ->
       log 'removing token', token
-      Storage.destroyResetToken token
-      Storage.get id
+      db.reset.destroy(token)
+      Users.read(id)
     .then (user) ->
       log 'changed password for', user.email
       Auth.changePassword user, password

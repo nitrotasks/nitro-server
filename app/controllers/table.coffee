@@ -135,18 +135,28 @@ class Table
 
     obj = {}
     obj[@column] = id
-    @_search columns, obj
+    @_search(columns, obj)
       .then (rows) -> rows[0]
 
 
+  ###
+   * Table::exists
+   *
+   * Check if a row exists in the database.
+   * By default it checks the @column, but you can
+   * pass a custom column to check.
+   *
+   * - id (dynamic) : value to check for
+   * - [column] (string) : column to check
+   * > boolean
+  ###
 
-  # TODO: does anything use this anymore?
-  exists: (id) ->
+  exists: (id, column=@column) ->
 
     obj = {}
-    obj[@column] = id
-    @_search @column, id: id
-      .then -> true
+    obj[column] = id
+    @_search(column, obj)
+      .return(true)
       .catch -> false
 
 

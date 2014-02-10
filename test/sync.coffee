@@ -1,5 +1,6 @@
 Sync    = require '../app/controllers/sync'
 Auth    = require '../app/controllers/auth'
+Users   = require '../app/controllers/users'
 setup   = require './setup'
 should  = require 'should'
 Promise = require 'bluebird'
@@ -26,8 +27,8 @@ describe 'Sync API', ->
 
   before (done) -> setup ->
     Auth.register('George', 'mail@example.com', 'password')
-    .then (token) ->
-      Auth.verifyRegistration(token)
+    .spread (id, token) ->
+      Users.read(id)
     .then (_user) ->
       user = _user
       done()

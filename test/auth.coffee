@@ -2,6 +2,7 @@ should   = require 'should'
 Promise  = require 'bluebird'
 setup    = require './setup'
 Auth     = require '../app/controllers/auth'
+Users    = require '../app/controllers/users'
 Log      = require '../app/utils/log'
 
 log = Log 'auth - test'
@@ -10,21 +11,35 @@ describe 'Auth API', ->
 
   before setup
 
-  data =
+  _user =
     email: 'user@nitrotasks.com'
     name: 'Mr. Nitro'
     password: 'password'
+
+  _id = null
+
+  beforeEach (done) ->
+    Auth.register(_user.name, _user.email, _user.password).spread (id, token) ->
+      _id = id
+      done()
+
+  afterEach (done) ->
+    Users.destroy(_id).return().then(done)
 
 
 # -----------------------------------------------------------------------------
 # Crypto
 # -----------------------------------------------------------------------------
 
-  describe 'Crypto', ->
+  describe '#crypto', ->
 
     it 'should hash some data', (done) ->
 
-      string = JSON.stringify data
+      string = JSON.stringify
+        this: 'is'
+        some: 'random'
+        data: 'that'
+        i: 'made'
 
       Auth.hash(string)
         .then (hash) ->
@@ -60,49 +75,56 @@ describe 'Auth API', ->
 # Registration
 # -----------------------------------------------------------------------------
 
-  describe 'Registration', ->
+  describe '#register', ->
 
-    token = null
+    user =
+      name: 'Jimmy'
+      email: 'jim@jimbo.com'
+      pass: 'my-secret-passphrase'
+
+    it 'should throw err_bad_name when registering', (done) ->
+
+      Auth.register('', user.email, user.pass).catch (err) ->
+        err.should.equal 'err_bad_name'
+        done()
+
+    it 'should throw err_bad_email when registering', (done) ->
+
+      Auth.register(user.name, '', user.pass).catch (err) ->
+        err.should.equal 'err_bad_email'
+        done()
+
+    it 'should throw err_bad_pass when registering', (done) ->
+
+      Auth.register(user.name, user.email, '').catch (err) ->
+        err.should.equal 'err_bad_pass'
+        done()
 
     it 'should be able to register a user', (done) ->
 
-      Auth.register(data.name, data.email, data.password)
-        .then (_token) ->
-          token = _token
-          token.should.be.type 'string'
-          token.should.match(/^\d+_\w+$/)
-          done()
-
-
-    it 'should verify the registration', (done) ->
-
-      Auth.verifyRegistration(token)
-        .then (user) ->
-          user.info()
-        .then (info) ->
-          data.name.should.equal info.name
-          data.email.should.equal info.email
-          data.password.should.not.equal info.password
-          done()
-
+      Auth.register(user.name, user.email, user.pass).spread (id, token) ->
+        id.should.be.a.Number
+        token.should.be.a.String
+        token.should.match /^[a-f0-9]+$/
+        done()
 
 # -----------------------------------------------------------------------------
 # Login
 # -----------------------------------------------------------------------------
 
-  describe 'Login', ->
+  describe '#login', ->
 
-    it 'Login with real password', (done) ->
+    it 'should return the user id and token', (done) ->
 
-      Auth.login(data.email, data.password).then (info) ->
-        [uid, token] = info
-        uid.should.be.type 'number'
+      Auth.login(_user.email, _user.password).spread (id, token) ->
+        id.should.be.a.Number
+        token.should.be.a.String
         token.should.have.length 64
         done()
 
-    it 'Login with wrong password', (done) ->
+    it 'should throw err if password does not match email', (done) ->
 
-      Auth.login(data.email, 'hunter2').catch (err) ->
+      Auth.login(_user.email, 'hunter2').catch (err) ->
         err.should.equal 'err_bad_pass'
         done()
 
@@ -111,7 +133,7 @@ describe 'Auth API', ->
 # Tokens
 # -----------------------------------------------------------------------------
 
-  describe 'Tokens', ->
+  describe '#randomToken', ->
 
     it 'should generate a random token', (done) ->
 
@@ -134,11 +156,11 @@ describe 'Auth API', ->
 # Reset Password
 # -----------------------------------------------------------------------------
 
-  describe 'Reset Password', ->
+  describe '#createResetToken', ->
 
     it 'should add a reset token for a user', (done) ->
 
-      Auth.createResetToken(data.email)
+      Auth.createResetToken(_user.email)
         .then (token) ->
           token.should.match(/^\d+_\w+$/)
           done()

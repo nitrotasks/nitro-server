@@ -53,7 +53,7 @@ class Login extends Table
       token: token
 
     promise
-      .then -> true
+      .return(true)
       .catch -> false
 
   update: ->

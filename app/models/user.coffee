@@ -1,11 +1,15 @@
 Promise = require 'bluebird'
-db = require '../controllers/query'
-time = require '../utils/time'
-Log = require '../utils/log'
+db      = require '../controllers/query'
+time    = require '../utils/time'
+Log     = require '../utils/log'
 
 log = Log('user', 'green')
 
+# Constants
+# TODO: Put these in a file
+
 ERR_NO_ROW = 'err_no_row'
+
 
 class User
 

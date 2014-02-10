@@ -7,8 +7,6 @@ describe 'Route -> Login', ->
 
   before setup
 
-  token = null
-
   data =
     name: 'George'
     email: 'example@email.com'
@@ -20,36 +18,35 @@ describe 'Route -> Login', ->
       .post('/register')
       .send( name: 'George', email: 'example@email.com', password: 'password' )
       .end (req, res) ->
-        token = res.text.match(/\/(\w*)$/)[1]
+        [id, token] = JSON.parse res.text
+        id.should.be.a.Number
+        token.should.be.a.String
+        token.should.match /^[a-f0-9]{64}$/
         done()
-
-  it 'should verify the user', (done) ->
-
-    request(app)
-      .get("/register/#{ token }")
-      .expect('success', done)
 
   it 'should allow users to login', (done) ->
 
-    request(app)
-      .post('/login')
-      .send( email: data.email, password: data.password )
+    request app
+      .post '/login'
+      .send email: data.email, password: data.password
       .end (err, res) ->
         [id, token] = res.body
-        token.should.have.length 64
+        id.should.be.a.Number
+        token.should.be.a.String
+        token.should.match /^[a-f0-9]{64}$/
         done()
 
   it 'should not allow users to login with the incorrect password', (done) ->
 
-    request(app)
-      .post('/login')
-      .send( email: data.email, password: 'hunter2' )
-      .expect('err_bad_pass', done)
+    request app
+      .post '/login'
+      .send email: data.email, password: 'hunter2'
+      .expect 'err_bad_pass', done
 
   it 'should not allow users to login with a non-existant email', (done) ->
 
-    request(app)
-      .post('/login')
-      .send( email: 'random@thing.net', password: 'hunter2' )
-      .expect('err_bad_pass', done)
+    request app
+      .post '/login'
+      .send email: 'random@thing.net', password: 'hunter2'
+      .expect 'err_bad_pass', done
 

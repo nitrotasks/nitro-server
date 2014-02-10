@@ -2,7 +2,7 @@
 global.DEBUG = true
 
 Socket  = require '../app/controllers/socket'
-Storage = require '../app/controllers/storage'
+Users   = require '../app/controllers/users'
 Auth    = require '../app/controllers/auth'
 should  = require 'should'
 Jandal  = require 'jandal'
@@ -78,10 +78,6 @@ describe 'Socket', ->
     it 'should create a new user', (done) ->
 
       Auth.register(user.name, user.email, user.pass)
-      .then (token) ->
-        Auth.verifyRegistration(token)
-      .then ->
-        Auth.login(user.email, user.pass)
       .then ([id, token]) ->
         user.id = id
         user.token = token
@@ -90,15 +86,23 @@ describe 'Socket', ->
 
   describe '#auth', ->
 
-    it 'should try to auth', (done) ->
+    it 'should fail login with wrong token', (done) ->
 
       socket.on 'close', ->
         socket.open.should.equal false
         done()
 
-      client.user.auth(20, "token")
+      client.user.auth(20, 'token')
 
-    it 'SLOW should be kicked after 3 seconds', (done) ->
+    it 'should fail login with wrong id', (done) ->
+
+      socket.on 'close', ->
+        socket.open.should.equal false
+        done()
+
+      client.user.auth(43, 'token')
+
+    it 'should be kicked after 3 seconds - SLOW', (done) ->
 
       @timeout 3200
       start = Date.now()
@@ -174,7 +178,7 @@ describe 'Socket', ->
 
       client.task.create task
 
-    it 'should fetch user data', (done) ->
+    it 'should fetch task data', (done) ->
 
       expect (err, info) ->
         should.equal null, err
@@ -182,6 +186,19 @@ describe 'Socket', ->
         done()
 
       client.task.fetch()
+
+    it 'should fetch list data', (done) ->
+
+      expect (err, info) ->
+        should.equal null, err
+        info.should.eql [
+          id: list.id
+          name: list.name
+          tasks: [ task.id ]
+        ]
+        done()
+
+      client.list.fetch()
 
     it 'should destroy user data', (done) ->
 
@@ -303,6 +320,22 @@ describe 'Socket', ->
         client.pref.update
           language: 'en-us'
 
+      it 'should fetch pref data', (done) ->
+
+        expect (err, info) ->
+          should.equal null, err
+          info.should.eql
+            sort: 1
+            night: null
+            language: 'en-us'
+            weekStart: null
+            dateFormat: 'yy/mm/dd'
+            confirmDelete: null
+            moveCompleted: null
+          done()
+
+        client.pref.fetch()
+
       it 'should destroy a task', (done) ->
 
         testBroadcast done, 'task.destroy', (task) ->
@@ -328,7 +361,7 @@ describe 'Socket', ->
       DESTROY = 2
 
       beforeEach (done) ->
-        Storage.get(user.id)
+        Users.read(user.id)
         .then (user) ->
           user.clearAllData()
         .then ->
