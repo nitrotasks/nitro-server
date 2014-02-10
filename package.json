@@ -2,7 +2,7 @@
   "name": "Nitro-Sync",
   "version": "2.1.0",
   "scripts": {
-    "test": "make test"
+    "test": "DISABLE_LOG=1 make test"
   },
   "repository": "https://github.com/CaffeinatedCode/nitro-server.git",
   "dependencies": {
