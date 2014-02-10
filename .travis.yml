@@ -4,7 +4,7 @@ node_js:
 before_script:
 - psql -c 'create database nitro_travis;' -U postgres
 after_success:
-- npm run-script coveralls
+- make coveralls
 deploy:
   provider: heroku
   api_key:
