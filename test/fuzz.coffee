@@ -154,7 +154,7 @@ random =
 # SETUP
 # -----------------------------------------------------------------------------
 
-describe 'SLOW Fuzz', ->
+describe 'Fuzz - SLOW', ->
   socket = null
 
   user =
@@ -202,6 +202,8 @@ describe 'SLOW Fuzz', ->
       done()
 
   it 'should fuzz', (done) ->
+
+    @timeout 4000
 
     promise = Promise.resolve()
 
