@@ -8,7 +8,7 @@ after_success:
 deploy:
   provider: heroku
   api_key:
-    secure: QIWX4dxkLP2kH3XmpVIZVQTuI/LiHgpH5X0J8T+QySXINiq9XYVPF2sElGKqv1UutgJCuxhSCEtnDqQZVFJpW0dKKDv9WyrcKWsKb3tE8pBEmbaxafKTsGz+pf0zEjNm1yIomky+RqZe/TSn897nJXq8T2MXie83Hap3YIZOyZI=
+    secure: GI16AYIG5XMozVTpZ2SihW8KdTVy6uCPkJiuOALPDnQA/hwoEWmhaQzW3xakDA0hMe02n539pMcFq2PvhIEkFYitduAe6TDy87/col9BRJBDagdpNAFglH4//bCG5Qh6ur0BC4zpCwMcmbQZUswXeG9EEOPNAQghvSyT8Prodp8=
   app: nitro-server
   on:
     repo: CaffeinatedCode/nitro-server
