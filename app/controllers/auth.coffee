@@ -1,9 +1,14 @@
 Promise = require 'bluebird'
-bcrypt  = require 'bcryptjs'
 crypto  = require 'crypto'
 Users   = require '../controllers/users'
 Keys    = require '../utils/keychain'
 db      = require '../controllers/query'
+
+# Fallback to bcryptjs if it bcrypt is not available
+try
+  bcrypt = require 'bcrypt'
+catch
+  bcrypt = require 'bcryptjs'
 
 
 # -----------------------------------------------------------------------------
