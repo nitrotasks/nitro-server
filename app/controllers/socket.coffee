@@ -247,11 +247,11 @@ class UserSocket extends Socket
     @sync = new Sync(@user)
 
     # Make a new visitor
-    @visitor.event('socket', 'login').send()
+    @visitor.event('socket', 'login', @user.id).send()
 
   broadcast: (event, arg1, arg2, arg3) =>
     [_ns, _ev] = event.split('.')
-    @visitor.event(_ns, _ev).send()
+    @visitor.event(_ns, _ev, @user.id).send()
     @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
 
 
