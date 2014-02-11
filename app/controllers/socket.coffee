@@ -4,11 +4,11 @@ Jandal     = require 'jandal'
 xType      = require 'xtype'
 Sync       = require '../controllers/sync'
 Users      = require '../controllers/users'
+analytics  = require '../controllers/analytics'
 Validation = require '../controllers/validation'
 db         = require '../controllers/query'
 Log        = require '../utils/log'
 Time       = require '../utils/time'
-Analytics  = require 'universal-analytics'
 
 log = Log 'Socket', 'yellow'
 Jandal.handle 'node'
@@ -155,8 +155,7 @@ class GuestSocket extends Socket
     log 'A new guest has connected'
     @authenticated = false
     @authTimeout = setTimeout @timeout, TIMEOUT_AUTH
-    @visitor = Analytics 'UA-47963532-1'
-    @visitor.event('socket', 'connect').send()
+    analytics 'socket.connect'
 
 
   ###
@@ -195,7 +194,7 @@ class GuestSocket extends Socket
     @release()
     Users.read(@userId)
       .then (user) =>
-        new UserSocket(socket, user, @visitor)
+        new UserSocket(socket, user)
         fn(null, true)
       .catch (err) =>
         log err
@@ -239,19 +238,17 @@ class UserSocket extends Socket
     task: ['create', 'update', 'destroy', 'fetch']
     pref: ['update', 'fetch']
 
-  constructor: (socket, @user, @visitor) ->
+  constructor: (socket, @user) ->
     super
     log 'A user has been authenticated'
     @authenticated = true
     @socket.join(@user.id)
     @sync = new Sync(@user)
+    analytics 'socket.login', @user.id
 
-    # Make a new visitor
-    @visitor.event('socket', 'login', @user.id).send()
 
   broadcast: (event, arg1, arg2, arg3) =>
-    [_ns, _ev] = event.split('.')
-    @visitor.event(_ns, _ev, @user.id).send()
+    analytics event, @user.id
     @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
 
 

@@ -1,5 +1,7 @@
 Promise = require 'bluebird'
 Knex    = require 'knex'
+redis   = require 'redis'
+url     = require 'url'
 config  = require '../config'
 
 require 'knex-mssql'
@@ -15,6 +17,15 @@ connect =
   ###
 
   init: () ->
+
+    if typeof config.redis_config is 'string'
+      {port, hostname, auth} = url.parse(config.redis_config)
+    else
+      port = config.redis_config.port
+      hostname = config.redis_config.host
+
+    @redis = redis.createClient(port, hostname)
+    if auth then @redis.auth(auth.split(':')[1])
 
     @db = Knex.initialize
       client: config.database_engine

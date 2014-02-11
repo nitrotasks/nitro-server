@@ -31,6 +31,8 @@ config =
     database_engine: 'pg'
     database_config: process.env.DATABASE_URL
 
+    redis_config: process.env.REDISTOGO_URL
+
   azure:
 
     url: 'http://nitro.azurewebsites.net'
@@ -60,6 +62,10 @@ config =
       password: 'nodejs'
       database: 'Nitro'
 
+    redis_config:
+      port: 6379
+      host: '127.0.0.1'
+
   testing:
 
     url: 'http://localhost:8080'
@@ -75,6 +81,9 @@ config =
       database: 'Nitro_Test'
       charset: 'utf8'
 
+    redis_config:
+      port: 6379
+      host: '127.0.0.1'
 
   testing_pg:
 
@@ -84,6 +93,9 @@ config =
     database_engine: 'pg'
     database_config: 'postgres://stayrad:@localhost/nitro_server'
 
+    redis_config:
+      port: 6379
+      host: '127.0.0.1'
 
   travis:
 
@@ -93,5 +105,8 @@ config =
     database_engine: 'pg'
     database_config: 'postgres://postgres:@127.0.0.1/nitro_travis'
 
+    redis_config:
+      port: 6379
+      host: '127.0.0.1'
 
 module.exports = config
