@@ -20,7 +20,8 @@
     "knex-mssql": "0.0.x",
     "mssql": "0.5.x",
     "newrelic": "1.3.x",
-    "bluebird": "1.0.x"
+    "bluebird": "1.0.x",
+    "universal-analytics": "~0.3.2"
   },
   "devDependencies": {
     "supertest": "0.9.x",
