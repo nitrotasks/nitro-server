@@ -14,10 +14,17 @@ colors =
   'cyan':       '\u001b[36m'
   'white':      '\u001b[37m'
 
-# Easy way to disable logging if needed
-module.exports = (name, color='reset') ->
-  prefix = "#{colors[color]}[#{name}]#{colors.reset}"
-  return (args...) =>
-    return if process.env.DISABLE_LOG
+muteFn = (->)
+
+createLogger = (name, color='reset') ->
+  if process.env.DISABLE_LOG then return muteFn
+
+  prefix = "#{ colors[color] }[#{ name }]#{ colors.reset }"
+
+  log = (args...) ->
     args.unshift(prefix)
     console.log(args...)
+
+  log.warn = if color is 'red' then log else createLogger(name, 'red')
+
+module.exports = createLogger

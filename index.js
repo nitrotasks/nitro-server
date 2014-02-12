@@ -2,8 +2,6 @@
  * Start Nitro Server
  */
 
-global.DEBUG = true;
-
 // Include the CoffeeScript interpreter so that .coffee files will work
 var coffee = require('coffee-script');
 
@@ -11,4 +9,7 @@ var coffee = require('coffee-script');
 if (typeof coffee.register !== 'undefined') coffee.register();
 
 // Include our application file
-var app = require('./app/init.coffee');
+var app = require('./source/index.coffee');
+
+// Start the application
+app();
