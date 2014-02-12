@@ -3,8 +3,10 @@ Knex    = require 'knex'
 redis   = require 'redis'
 url     = require 'url'
 config  = require '../config'
-
+Log     = require '../utils/log'
 require 'knex-mssql'
+
+warn = Log('connect', 'red')
 
 ready = Promise.defer()
 
@@ -24,7 +26,8 @@ connect =
       port = config.redis_config.port
       hostname = config.redis_config.host
 
-    @redis = redis.createClient(port, hostname)
+    @redis = redis.createClient(port, hostname, max_attempts: 3)
+    @redis.on 'error', -> warn 'Could not connect to Redis'
     if auth then @redis.auth(auth.split(':')[1])
 
     @db = Knex.initialize
