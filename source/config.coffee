@@ -1,4 +1,4 @@
-Log = require('./shared/log')('Config', 'blue')
+log = require('log_')('Config', 'blue')
 
 config =
 

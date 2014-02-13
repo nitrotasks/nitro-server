@@ -1,16 +1,21 @@
-sockjs     = require 'sockjs'
-Promise    = require 'bluebird'
-Jandal     = require 'jandal'
-xType      = require 'xtype'
-Sync       = require '../controllers/sync'
-Users      = require '../controllers/users'
-analytics  = require '../controllers/analytics'
-Validation = require '../controllers/validation'
-db         = require '../controllers/query'
-Log        = require '../utils/log'
-Time       = require '../utils/time'
+sockjs     = require('sockjs')
+Promise    = require('bluebird')
+Jandal     = require('jandal')
+xType      = require('xtype')
+log        = require('log_')('Socket', 'yellow');
 
-log = Log 'Socket', 'yellow'
+# Stuff that shouldn't be used
+Sync       = require('../controllers/sync')
+Users      = require('../controllers/users')
+db         = require('../controllers/query')
+Time       = require('../utils/time')
+
+# Stuff that should be used
+analytics  = require('../controllers/analytics')
+Validation = require('../controllers/validation')
+
+
+# Setup Jandal
 Jandal.handle 'node'
 
 

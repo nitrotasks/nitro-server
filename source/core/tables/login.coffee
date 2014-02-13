@@ -16,7 +16,7 @@ class Login extends Table
         .onDelete('cascade')
 
       table.string('token', 64).notNullable()
-      @_created_at(table)
+      table.timestamp('created_at').defaultTo @knex.raw 'now()'
 
   create: (id, token) ->
 
@@ -38,7 +38,7 @@ class Login extends Table
 
   read: (id, token, columns) ->
 
-    promise = @_search columns,
+    promise = @search columns,
       userId: id
       token: token
 
@@ -48,7 +48,7 @@ class Login extends Table
 
   exists: (id, token) ->
 
-    promise = @_search 'userId',
+    promise = @search 'userId',
       userId: id
       token: token
 
@@ -63,14 +63,14 @@ class Login extends Table
 
   destroy: (id, token) ->
 
-    @_delete
+    super
       userId: id
       token: token
 
 
   destroyAll: (id) ->
 
-    @_delete
+    super
       userId: id
 
 

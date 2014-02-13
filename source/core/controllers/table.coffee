@@ -1,5 +1,3 @@
-config = require '../config'
-
 class Table
 
   ###
@@ -55,21 +53,29 @@ class Table
         return if exists
         @knex.schema.createTable(@table, fn)
 
+
+  ###
+   * (private) Drop Table
+  ###
+
   _dropTable: ->
 
     @knex.schema.dropTable(@table)
 
-  _created_at: (table) ->
 
-    if config.database_engine is 'mssql'
-      table.dateTime('created_at').defaultTo @knex.raw 'getdate()'
-    else
-      table.timestamp('created_at').defaultTo @knex.raw 'now()'
+  ###
+   * (private) Parse Token
+  ###
 
   _parseToken: (token) ->
     match = token.match(/^(\d+)_(\w+)$/)
     if match is null then return null
     return [match[1], match[2]]
+
+
+  ###
+   * (private) Create
+  ###
 
   _create: (returning, data) ->
 
@@ -78,15 +84,10 @@ class Table
       .insert data
       .then (id) -> id[0]
 
-  _search: (columns, data) ->
 
-    @knex @table
-      .select()
-      .column columns
-      .where data
-      .then (rows) =>
-        unless rows.length then throw @ERR_NO_ROW
-        return rows
+  ###
+   * (private) Update
+  ###
 
   _update: (data, where) ->
 
@@ -97,13 +98,25 @@ class Table
         unless rows then throw @ERR_NO_ROW
         return rows
 
-  _delete: (where) ->
+
+  ###
+   * Search
+   *
+   * - columns (string|array<string>)
+   * - data (object)
+   * > array
+   * ! err_no_row
+  ###
+
+  search: (columns, data) ->
 
     @knex @table
-      .del()
-      .where where
-      .then (rows) ->
-        return rows > 0
+      .select()
+      .column columns
+      .where data
+      .then (rows) =>
+        unless rows.length then throw @ERR_NO_ROW
+        return rows
 
 
   ###
@@ -135,7 +148,7 @@ class Table
 
     obj = {}
     obj[@column] = id
-    @_search(columns, obj)
+    @search(columns, obj)
       .then (rows) -> rows[0]
 
 
@@ -143,21 +156,23 @@ class Table
    * Table::exists
    *
    * Check if a row exists in the database.
-   * By default it checks the @column, but you can
-   * pass a custom column to check.
+   * If obj is not an object, then it will match it against @column
    *
-   * - id (dynamic) : value to check for
-   * - [column] (string) : column to check
+   * - obj (dynamic) : value to check for
    * > boolean
   ###
 
-  exists: (id, column=@column) ->
+  exists: (obj) ->
 
-    obj = {}
-    obj[column] = id
-    @_search(column, obj)
+    if typeof obj isnt 'object'
+      _obj = obj
+      obj = {}
+      obj[@column] = _obj
+
+    @search(@column, obj)
       .return(true)
       .catch -> false
+
 
 
   ###
@@ -184,15 +199,25 @@ class Table
    * Destroy an existing row.
    *
    * - id (number) : id of row to destroy
+   * - strict (boolean) : throw an error if the row didn't exist
    * > true
    * ! err_no_row : row cannot be found
   ###
 
-  destroy: (id) ->
+  destroy: (obj, strict) ->
 
-    obj = {}
-    obj[@column] = id
-    @_delete obj
+    if typeof obj isnt 'object'
+      _obj = obj
+      obj = {}
+      obj[@column] = _obj
+
+    @knex @table
+      .del()
+      .where(obj)
+      .then (rows) ->
+        success = rows > 0
+        throw ERR_NO_ROW if strict and not success
+        return success
 
 
 module.exports = Table

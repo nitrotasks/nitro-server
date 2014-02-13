@@ -38,7 +38,8 @@
     "bluebird": "1.0.x",
     "universal-analytics": "0.3.x",
     "redis": "0.10.x",
-    "hiredis": "0.1.x"
+    "hiredis": "0.1.x",
+    "log_": "0.0.2"
   },
   "devDependencies": {
     "supertest": "0.9.x",

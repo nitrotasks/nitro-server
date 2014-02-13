@@ -1,6 +1,5 @@
 Log    = require '../utils/log'
 page   = require '../utils/page'
-config = require '../config'
 Auth   = require '../controllers/auth'
 mail   = require '../controllers/mail'
 

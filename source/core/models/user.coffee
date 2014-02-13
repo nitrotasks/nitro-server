@@ -1,15 +1,6 @@
-Promise = require 'bluebird'
-db      = require '../controllers/query'
-time    = require '../utils/time'
-Log     = require '../utils/log'
-
-log = Log('user', 'green')
-
-# Constants
-# TODO: Put these in a file
-
-ERR_NO_ROW = 'err_no_row'
-
+Promise = require('bluebird')
+dbi     = require('../controllers/database')
+time    = require('../utils/time')
 
 class User
 
@@ -21,13 +12,17 @@ class User
   ###
 
   constructor: (@id) ->
+    @pref = new Pref(@id)
+    @tasks = new Tasks(@id)
+    @lists = new Lists(@id)
+
 
   setup: ->
-    db.pref.create(userId: @id)
+    @pref.create()
     .then =>
       time.create('pref', @id, {})
-    .then =>
-      return this
+    .return(this)
+
 
   info: ->
     db.user.read @id, ['name', 'email', 'pro']
@@ -74,150 +69,5 @@ class User
   getPassword: ->
     db.user.read(@id, 'password').then (info) ->
       return info.password
-
-
-
-
-
-  createModel: (classname, properties) ->
-    db[classname].create(properties)
-
-  createList: (list) ->
-    @createModel 'list',
-      userId: @id
-      name: list.name
-
-  createTask: (task) ->
-    @createModel 'task',
-      userId: @id
-      listId: task.listId
-      name: task.name
-      notes: task.notes
-      date: task.date
-      priority: task.priority
-      completed: task.completed
-
-  createPref: (pref) ->
-    @createModel 'pref',
-      userId: @id
-      sort: pref.sort
-      night: pref.night
-      language: pref.language
-      weekStart: pref.weekStart
-      dateFormat: pref.dateFormat
-      confirmDelete: pref.confirmDelete
-      moveCompleted: pref.moveCompleted
-
-
-  addTaskToList: (taskId, listId) ->
-    db.list_tasks.create(listId, taskId)
-
-  removeTaskFromList: (taskId, listId) ->
-    db.list_tasks.destroy(listId, taskId)
-
-  readListTasks: (listId) ->
-    db.list_tasks.read(listId)
-
-
-  shouldOwnModel: (classname, id) ->
-    db[classname]._search 'id',
-      id: id
-      userId: @id
-
-  shouldOwnTask: (id) ->
-    @shouldOwnModel('task', id).catch ->
-      log '[task] does not own', id
-      throw 'err_no_row'
-
-  shouldOwnList: (id) ->
-    @shouldOwnModel('list', id).catch ->
-      log '[list] does not own', id
-      throw 'err_no_row'
-
-
-  readModel: (classname, id, columns) ->
-    db[classname].read(id, columns).then (obj) ->
-      delete obj.userId
-      return obj
-
-  readList: (id, columns) ->
-    @readModel('list', id, columns)
-
-  readTask: (id, columns) ->
-    @readModel('task', id, columns)
-
-  readPref: (columns) ->
-    @readModel('pref', @id, columns)
-
-
-  updateModel: (classname, id, changes) ->
-    db[classname].update(id, changes)
-
-  updateList: (id, changes) ->
-    @updateModel('list', id, changes)
-
-  updateTask: (id, changes) ->
-    @updateModel('task', id, changes)
-
-  updatePref: (changes) ->
-    @updateModel('pref', @id, changes)
-
-
-  destroyModel: (classname, id) ->
-    db[classname].destroy(id).then (success) ->
-      if not success then throw ERR_NO_ROW
-      return success
-
-  destroyList: (id) ->
-    @destroyModel('list', id)
-
-  destroyTask: (id) ->
-    @destroyModel('task', id)
-
-  destroyPref: ->
-    @destroyModel('pref', @id)
-
-
-  clearAllData: ->
-    db.task._delete(userId: @id)
-    .then =>
-      db.list._delete(userId: @id)
-    .then =>
-      db.pref._delete(userId: @id)
-    .then =>
-      @setup()
-
-
-  ###
-   * Get an array of all the active models in a class
-   *
-   * - classname (string)
-   * > object
-  ###
-
-  exportTasks: ->
-    db.task._search('*', userId: @id)
-    .then (tasks) ->
-      for task in tasks
-        delete task.userId
-      return tasks
-    .catch ->
-      return []
-
-  exportLists: ->
-    db.list._search('*', userId: @id)
-    .then (lists) =>
-      promises = []
-      lists.forEach (list) =>
-        delete list.userId
-        promises.push @readListTasks(list.id).then (tasks) ->
-          list.tasks = tasks
-      Promise.all(promises).then -> return lists
-    .catch ->
-      return []
-
-  exportPref: ->
-    @readPref()
-
 
 module.exports = User

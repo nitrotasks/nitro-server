@@ -40,7 +40,7 @@ class Pref extends Table
 
   read: (id, columns) ->
 
-    promise = @_search columns,
+    promise = @search columns,
       userId: id
 
     promise.then (rows) =>
@@ -76,7 +76,7 @@ class Pref extends Table
 
   destroy: (id) ->
 
-    @_delete
+    super
       userId: id
 
 

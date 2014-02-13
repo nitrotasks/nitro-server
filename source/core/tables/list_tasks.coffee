@@ -29,7 +29,7 @@ class ListTasks extends Table
 
   read: (list) ->
 
-    promise = @_search 'taskId',
+    promise = @search 'taskId',
       listId: list
 
     promise
@@ -46,14 +46,14 @@ class ListTasks extends Table
 
   destroy: (list, task) ->
 
-    @_delete
+    super
       listId: list
       taskId: task
 
 
   destroyAll: (list) ->
 
-    @_delete
+    super
       listId: list
 
 module.exports = ListTasks

@@ -19,12 +19,12 @@ class User extends Table
       table.string('email', 100).index().unique().notNullable()
       table.string('password', 60).notNullable()
       table.integer('pro').defaultTo(0).notNullable()
-      @_created_at(table)
+      table.timestamp('created_at').defaultTo @knex.raw 'now()'
 
 
   search: (email) ->
 
-    promise = @_search 'id',
+    promise = @search 'id',
       email: email
 
     promise.then (rows) ->

@@ -19,7 +19,7 @@ class Reset extends Table
         .onDelete('cascade')
 
       table.string('token', 22).notNullable()
-      @_created_at(table)
+      table.timestamp('created_at').defaultTo @knex.raw 'now()'
 
   create: (id, token) ->
 
@@ -36,7 +36,7 @@ class Reset extends Table
     match = @_parseToken(token)
     unless match then return Promise.reject ERR_BAD_TOKEN
 
-    promise = @_search 'userId',
+    promise = @search 'userId',
       userId: match[0]
       token: match[1]
 
@@ -54,7 +54,7 @@ class Reset extends Table
     match = @_parseToken(token)
     unless match then return Promise.reject ERR_BAD_TOKEN
 
-    @_delete
+    super
       userId: match[0]
       token: match[1]
 

@@ -1,13 +1,7 @@
-express = require 'express'
-cors    = require 'cors'
-Auth    = require '../controllers/auth'
-Mail    = require '../controllers/mail'
-User    = require '../models/user'
-Log     = require '../utils/log'
+express = require('express')
+cors    = require('cors')
+log     = require('log_')('Router', 'magenta')
 
-log = Log 'Router', 'magenta'
-
-app = express()
 
 app.configure ->
 
