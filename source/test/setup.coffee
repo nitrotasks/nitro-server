@@ -32,7 +32,7 @@ setup.createUser = ->
 
 setup.createPref = ->
 
-  setup.user.prefs.create
+  setup.user.pref.create
     sort: 0
     night: 0
     language: 'en-us'

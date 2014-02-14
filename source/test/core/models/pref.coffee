@@ -4,7 +4,7 @@ Pref  = require('../../../core/models/pref')
 
 describe 'Pref', ->
 
-  prefs = null
+  pref = null
 
   before (done) ->
     setup()
@@ -13,8 +13,9 @@ describe 'Pref', ->
     .done()
 
   beforeEach (done) ->
-    prefs = new Pref(setup.userId)
-    prefs.destroy()
+    pref = new Pref(setup.userId)
+    pref.destroy()
+    .catch (ignore) -> null
     .then(setup.createPref)
     .then -> done()
     .done()
@@ -22,13 +23,13 @@ describe 'Pref', ->
   describe ':create', ->
 
     beforeEach (done) ->
-      prefs.destroy()
+      pref.destroy()
       .then -> done()
       .done()
 
     it 'should create a pref', (done) ->
 
-      prefs.create
+      pref.create
         sort: 0
         night: 1
         language: 'en-nz'
@@ -38,7 +39,7 @@ describe 'Pref', ->
         moveCompleted: 7
       .then (id) ->
         id.should.equal(setup.userId)
-        prefs.get(id).call('read')
+        pref.read()
       .then (pref) ->
         pref.should.eql
           userId: setup.userId
@@ -54,11 +55,11 @@ describe 'Pref', ->
 
     it 'should not throw err when column does not exist', (done) ->
 
-      prefs.create
+      pref.create
         foo: 'bar'
       .then (id) ->
         id.should.equal(setup.userId)
-        prefs.get(id).call('read')
+        pref.read()
       .then (pref) ->
         pref.should.eql
           userId: setup.userId
@@ -72,30 +73,11 @@ describe 'Pref', ->
       .then -> done()
       .done()
 
-  describe ':get', ->
+  describe ':exists', ->
 
-    it 'should get a pref', (done) ->
+    it 'should check a pref exists', (done) ->
 
-      prefs.get(setup.prefId)
-      .then (pref) ->
-        pref.should.be.an.instanceOf(Pref)
-        pref.id.should.equal(setup.prefId)
-      .then -> done()
-      .done()
-
-    it 'should throw err if pref does not exist', (done) ->
-
-      prefs.get(-1)
-      .catch (err) ->
-        err.message.should.equal('err_does_not_own')
-        done()
-      .done()
-
-  describe ':owns', ->
-
-    it 'should own a pref', (done) ->
-
-      prefs.owns(setup.prefId)
+      pref.exists()
       .then (success) ->
         success.should.equal(true)
       .then -> done()
@@ -103,30 +85,40 @@ describe 'Pref', ->
 
     it 'should throw err when pref does not exist', (done) ->
 
-      prefs.destroy()
+      pref.destroy()
       .then ->
-        prefs.owns(setup.prefId)
+        pref.exists()
       .catch (err) ->
         err.message.should.equal('err_no_row')
         done()
       .done()
 
-    it 'should throw err when user does not own pref', (done) ->
+  describe ':read', ->
 
-      setup.createUser()
-      .then (id) ->
-        prefs.owns(id)
-      .catch (err) ->
-        err.message.should.equal('err_does_not_own')
-        done()
+    it 'should read a single column', (done) ->
+
+      pref.read('sort')
+      .then (data) ->
+        data.should.eql
+          sort: 0
+      .then -> done()
       .done()
 
-  describe ':all', ->
+    it 'should read multiple columns', (done) ->
 
-    it 'should get all users prefs', (done) ->
+      pref.read(['language', 'dateFormat'])
+      .then (data) ->
+        data.should.eql
+          language: 'en-us'
+          dateFormat: 'dd/mm/yy'
+      .then -> done()
+      .done()
 
-      prefs.all().then (prefs) ->
-        prefs.should.eql
+    it 'should read all the columns', (done) ->
+
+      pref.read()
+      .then (data) ->
+        data.should.eql
           userId: setup.prefId
           sort: 0
           night: 0
@@ -138,143 +130,62 @@ describe 'Pref', ->
       .then -> done()
       .done()
 
-    it 'should throw err if user does not have any prefs', (done) ->
+    it 'should throw err when pref does not exist', (done) ->
 
-      prefs.destroy()
-      .bind(prefs)
-      .then(prefs.all)
+      pref = new Pref(-1)
+      pref.read()
       .catch (err) ->
         err.message.should.equal('err_no_row')
+        done()
+      .done()
+
+  describe ':update', ->
+
+    it 'should update a single column', (done) ->
+
+      pref.update(sort: 2)
+      .then ->
+        pref.read('sort')
+      .then (data) ->
+        data.should.eql
+          sort: 2
+      .then -> done()
+      .done()
+
+    it 'should throw err when pref does not exist', (done) ->
+
+      pref = new Pref(-1)
+      pref.update(sort: 2)
+      .catch (err) ->
+        err.message.should.equal('err_no_row')
+        done()
+      .done()
+
+    it 'should throw err when column does not exist', (done) ->
+
+      pref.update(fake: 'err')
+      .catch (err) ->
+        err.message.should.eql('err_could_not_update_row')
         done()
       .done()
 
   describe ':destroy', ->
 
-    it 'should destroy all prefs owned by a user', (done) ->
+    it 'should destroy a pref', (done) ->
 
-      prefs.destroy()
-      .bind(prefs)
-      .then(prefs.all)
+      pref.destroy()
+      .then ->
+        pref.read()
       .catch (err) ->
-        err.message.should.equal('err_no_row')
+        err.message.should.eql 'err_no_row'
         done()
       .done()
 
-    it 'should throw err if user does not have any prefs', (done) ->
+    it 'should throw err when the pref does not exist', (done) ->
 
-      prefs.destroy()
-      .bind(prefs)
-      .then(prefs.destroy)
-      .then(prefs.all)
+      pref = new Pref(-1)
+      pref.destroy()
       .catch (err) ->
-        err.message.should.equal('err_no_row')
+        err.message.should.equal 'err_no_row'
         done()
       .done()
-
-  describe ':Pref', ->
-
-    pref = null
-
-    beforeEach (done) ->
-      prefs.get(setup.prefId)
-      .then (_pref) ->
-        pref = _pref
-      .then -> done()
-      .done()
-
-    describe ':read', ->
-
-      it 'should read a single column', (done) ->
-
-        pref.read('sort')
-        .then (data) ->
-          data.should.eql
-            sort: 0
-        .then -> done()
-        .done()
-
-      it 'should read multiple columns', (done) ->
-
-        pref.read(['language', 'dateFormat'])
-        .then (data) ->
-          data.should.eql
-            language: 'en-us'
-            dateFormat: 'dd/mm/yy'
-        .then -> done()
-        .done()
-
-      it 'should read all the columns', (done) ->
-
-        pref.read()
-        .then (data) ->
-          data.should.eql
-            userId: setup.prefId
-            sort: 0
-            night: 0
-            language: 'en-us'
-            weekStart: 0
-            dateFormat: 'dd/mm/yy'
-            confirmDelete: 0
-            moveCompleted: 0
-        .then -> done()
-        .done()
-
-      it 'should throw err when pref does not exist', (done) ->
-
-        pref = new Pref(-1)
-        pref.read()
-        .catch (err) ->
-          err.message.should.equal('err_no_row')
-          done()
-        .done()
-
-    describe ':update', ->
-
-      it 'should update a single column', (done) ->
-
-        pref.update(sort: 2)
-        .then ->
-          pref.read('sort')
-        .then (data) ->
-          data.should.eql
-            sort: 2
-        .then -> done()
-        .done()
-
-      it 'should throw err when pref does not exist', (done) ->
-
-        pref = new Pref(-1)
-        pref.update(sort: 2)
-        .catch (err) ->
-          err.message.should.equal('err_no_row')
-          done()
-        .done()
-
-      it 'should throw err when column does not exist', (done) ->
-
-        pref.update(fake: 'err')
-        .catch (err) ->
-          err.message.should.eql('err_could_not_update_row')
-          done()
-        .done()
-
-    describe ':destroy', ->
-
-      it 'should destroy a pref', (done) ->
-
-        pref.destroy()
-        .then ->
-          pref.read()
-        .catch (err) ->
-          err.message.should.eql 'err_no_row'
-          done()
-        .done()
-
-      it 'should throw err when the pref does not exist', (done) ->
-
-        pref = new Pref(-1)
-        pref.destroy()
-        .catch (err) ->
-          err.message.should.equal 'err_no_row'
-          done()
-        .done()

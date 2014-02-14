@@ -16,7 +16,6 @@ describe 'Users', ->
     .then -> done()
     .done()
 
-
   describe ':create', ->
 
     it 'should be able to add users', (done) ->

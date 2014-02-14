@@ -271,7 +271,7 @@ class Sync
     .then (timestamps) =>
       time.update(PREF, @user.id, timestamps)
     .then =>
-      @users.pref.update(data)
+      @user.pref.update(data)
     .then ->
       log '[pref] [update]', data
       return data
@@ -295,16 +295,18 @@ class Sync
 
   task_destroy: (id, timestamp) =>
 
-    @user.shouldOwnTask(id)
-    .then =>
+    task = null
 
+    @user.tasks.get(id)
+    .then (_task) =>
+
+      task = _task
       time.checkSingle(TASK, id, timestamp)
 
     .then =>
 
       log '[task] [destroy]', id
-
-      @user.destroyTask id
+      task.destroy()
 
   ###
    * Destroy List
@@ -315,16 +317,18 @@ class Sync
 
   list_destroy: (id, timestamp) =>
 
-    @user.shouldOwnList(id)
-    .then =>
+    list = null
 
+    @user.lists.get(id)
+    .then (_list) =>
+
+      list = _list
       time.checkSingle(LIST, id, timestamp)
 
     .then =>
 
       log '[list] [destroy]', id
-
-      @user.destroyList id
+      list.destroy()
 
 
 module.exports = Sync

@@ -123,11 +123,25 @@ describe 'Sync', ->
       sync.pref_update(data)
       .then (pref) ->
         pref.should.eql(data)
-        user.prefs.get(setup.userId).call('read')
+        user.pref.read()
       .then (pref) ->
         pref.sort.should.equal(1)
       .then -> done()
       .done()
+
+  describe ':task_destroy', ->
+
+    it 'should destroy a task', (done) ->
+
+      sync.task_destroy(setup.taskId)
+      .then (success) ->
+        console.log success
+        done()
+      .done()
+
+  describe ':list_destroy', ->
+
+    it 'should destroy a list'
 
 
   return

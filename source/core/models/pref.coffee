@@ -3,11 +3,11 @@ db = require '../controllers/database'
 
 class Pref
 
-  constructor: (@id) ->
+  constructor: (@userId) ->
 
   create: (pref) ->
     db.pref.create
-      userId: @id
+      userId: @userId
       sort: pref.sort
       night: pref.night
       language: pref.language
@@ -17,15 +17,15 @@ class Pref
       moveCompleted: pref.moveCompleted
 
   exists: ->
-    db.pref.search('*', { @id }).return(true)
+    db.pref.search('*', { @userId }).return(true)
 
   read: (columns) ->
-    db.pref.read(@id, columns)
+    db.pref.read(@userId, columns)
 
   update: (changes) ->
-    db.pref.update(@id, changes)
+    db.pref.update(@userId, changes)
 
   destroy: ->
-    db.pref.destroy(@id, true)
+    db.pref.destroy(@userId, true)
 
 module.exports = Pref

@@ -1,6 +1,6 @@
 db    = require('../controllers/database')
 Time  = require('../models/time')
-Prefs = require('../models/pref')
+Pref  = require('../models/pref')
 Lists = require('../models/list')
 Tasks = require('../models/task')
 
@@ -38,7 +38,7 @@ class User
     @lists = new Lists(@id)
 
   setup: ->
-    @prefs.create()
+    @pref.create({})
     .then => Time.createPref(@id, null)
     .return(this)
 
