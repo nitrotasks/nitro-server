@@ -37,17 +37,17 @@ class UserLists
     new List(id)
 
   owns: (id) ->
-    db.list.search('id', { id: id, userId: @userId }).return(true)
+    db.list.search('id', { id, @userId }).return(true)
 
   all: ->
-    db.list.search('*', userId: @userId).map (list) =>
+    db.list.search('*', { @userId }).map (list) =>
       @get(list.id).tasks()
       .then (tasks) -> list.tasks = tasks
       .return(list)
     .catch -> []
 
   destroy: ->
-    db.list.destroy(userId: @userId)
+    db.list.destroy({ @userId })
 
 
 module.exports = UserLists

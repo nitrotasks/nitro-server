@@ -28,6 +28,20 @@ setup.createUser = ->
   .then (id) ->
     setup.userId = id
 
+setup.createPref = ->
+
+  database.pref.create
+    userId: setup.userId
+    sort: 0
+    night: 0
+    language: 'en-us'
+    weekStart: 0
+    dateFormat: 'dd/mm/yy'
+    confirmDelete: 0
+    moveCompleted: 0
+  .then (id) ->
+    setup.prefId = id
+
 setup.createList = ->
 
   database.list.create

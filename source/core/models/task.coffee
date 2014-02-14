@@ -45,13 +45,13 @@ class UserTasks
     new Task(id)
 
   owns: (id) ->
-    db.task.search('id', { id: id, userId: @userId }).return(true)
+    db.task.search('id', { id, @userId }).return(true)
 
   all: ->
-    db.task.search('*', userId: @userId).catch -> []
+    db.task.search('*', { @userId }).catch -> []
 
   destroy: ->
-    db.task.destroy(userId: @userId)
+    db.task.destroy({ @userId })
 
 
 module.exports = UserTasks

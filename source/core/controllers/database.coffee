@@ -28,7 +28,8 @@ knex = null
 
 init = (config) ->
 
-  return if connected.promise.isFulfilled()
+  if connected.promise.isFulfilled()
+    return connected.promise
 
   knex = exports.knex = Knex.initialize
     client: config.database_engine

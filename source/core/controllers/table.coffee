@@ -78,11 +78,12 @@ class Table
 
   _create: (returning, data) ->
 
-    @knex @table
-      .returning returning
-      .insert data
-      .catch (err) -> throw new Error ERR_COULD_NOT_CREATE_ROW
-      .then (id) -> id[0]
+    @knex(@table)
+    .returning(returning)
+    .insert(data)
+    .catch (err) ->
+      throw new Error ERR_COULD_NOT_CREATE_ROW
+    .then (id) -> id[0]
 
 
   ###
@@ -91,14 +92,14 @@ class Table
 
   _update: (data, where) ->
 
-    @knex @table
-      .update data
-      .where where
-      .catch (err) ->
-        throw new Error ERR_COULD_NOT_UPDATE_ROW
-      .then (rows) ->
-        unless rows then throw new Error ERR_NO_ROW
-        return rows
+    @knex(@table)
+    .update(data)
+    .where(where)
+    .catch (err) ->
+      throw new Error ERR_COULD_NOT_UPDATE_ROW
+    .then (rows) ->
+      unless rows then throw new Error ERR_NO_ROW
+      return rows
 
 
   ###
@@ -112,13 +113,13 @@ class Table
 
   search: (columns, data) ->
 
-    @knex @table
-      .select()
-      .column columns
-      .where data
-      .then (rows) =>
-        unless rows.length then throw new Error ERR_NO_ROW
-        return rows
+    @knex(@table)
+    .select()
+    .column(columns)
+    .where(data)
+    .then (rows) =>
+      unless rows.length then throw new Error ERR_NO_ROW
+      return rows
 
 
   ###
@@ -132,7 +133,7 @@ class Table
 
   create: (data) ->
 
-    @_create @column, data
+    @_create(@column, data)
 
 
   ###
