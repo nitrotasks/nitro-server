@@ -37,7 +37,7 @@ describe 'Task', ->
       .then (_id) ->
         id = _id
         id.should.be.a.Number
-        tasks.get(id).read()
+        tasks.get(id).call('read')
       .then (task) ->
         task.should.eql
           id: id
@@ -61,7 +61,7 @@ describe 'Task', ->
       .then (_id) ->
         id = _id
         id.should.be.a.Number
-        tasks.get(id).read()
+        tasks.get(id).call('read')
       .then (task) ->
         task.should.eql
           id: id
@@ -77,17 +77,22 @@ describe 'Task', ->
 
   describe ':get', ->
 
-    it 'should get a task', ->
+    it 'should get a task', (done) ->
 
-      task = tasks.get(setup.taskId)
-      task.should.be.an.instanceOf(Tasks.Task)
-      task.id.should.equal(setup.taskId)
+      tasks.get(setup.taskId)
+      .then (task) ->
+        task.should.be.an.instanceOf(Tasks.Task)
+        task.id.should.equal(setup.taskId)
+      .then -> done()
+      .done()
 
-    it 'should not throw err if task does not exist', ->
+    it 'should throw err if task does not exist', (done) ->
 
-      task = tasks.get(-1)
-      task.should.be.an.instanceOf(Tasks.Task)
-      task.id.should.equal(-1)
+      tasks.get(-1)
+      .catch (err) ->
+        err.message.should.equal('err_no_row')
+        done()
+      .done()
 
   describe ':owns', ->
 
@@ -174,8 +179,13 @@ describe 'Task', ->
 
     task = null
 
-    beforeEach ->
-      task = tasks.get(setup.taskId)
+    beforeEach (done) ->
+      tasks.get(setup.taskId)
+      .then (_task) ->
+        task = _task
+      .then -> done()
+      .done()
+
 
     describe ':read', ->
 

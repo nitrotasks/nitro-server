@@ -3,6 +3,7 @@ Table = require '../controllers/table'
 class User extends Table
 
   table: 'user'
+  column: 'id'
 
   ###
    * Setup
@@ -20,6 +21,5 @@ class User extends Table
       table.string('password', 60).notNullable()
       table.integer('pro').defaultTo(0).notNullable()
       table.timestamp('created_at').defaultTo @knex.raw 'now()'
-
 
 module.exports = User

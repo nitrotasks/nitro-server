@@ -37,7 +37,7 @@ class UserPref
     Pref.create(pref)
 
   get: (id) ->
-    new Pref(id)
+    @owns(id).then -> new Pref(id)
 
   owns: (id) ->
     if id isnt @userId
@@ -45,7 +45,7 @@ class UserPref
     db.pref.search('*', { @userId }).return(true)
 
   all: ->
-    @get(@userId).read()
+    @get(@userId).call('read')
 
   destroy: ->
     db.pref.destroy({ @userId })

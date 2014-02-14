@@ -34,14 +34,15 @@ class UserLists
     List.create(list)
 
   get: (id) ->
-    new List(id)
+    @owns(id).then -> new List(id)
 
   owns: (id) ->
     db.list.search('id', { id, @userId }).return(true)
 
   all: ->
     db.list.search('*', { @userId }).map (list) =>
-      @get(list.id).tasks()
+      @get(list.id)
+      .call('tasks')
       .then (tasks) -> list.tasks = tasks
       .return(list)
     .catch -> []

@@ -39,7 +39,7 @@ describe 'Pref', ->
         moveCompleted: 7
       .then (id) ->
         id.should.equal(setup.userId)
-        prefs.get(id).read()
+        prefs.get(id).call('read')
       .then (pref) ->
         pref.should.eql
           userId: setup.userId
@@ -59,7 +59,7 @@ describe 'Pref', ->
         foo: 'bar'
       .then (id) ->
         id.should.equal(setup.userId)
-        prefs.get(id).read()
+        prefs.get(id).call('read')
       .then (pref) ->
         pref.should.eql
           userId: setup.userId
@@ -75,17 +75,22 @@ describe 'Pref', ->
 
   describe ':get', ->
 
-    it 'should get a pref', ->
+    it 'should get a pref', (done) ->
 
-      pref = prefs.get(setup.prefId)
-      pref.should.be.an.instanceOf(Prefs.Pref)
-      pref.id.should.equal(setup.prefId)
+      prefs.get(setup.prefId)
+      .then (pref) ->
+        pref.should.be.an.instanceOf(Prefs.Pref)
+        pref.id.should.equal(setup.prefId)
+      .then -> done()
+      .done()
 
-    it 'should not throw err if pref does not exist', ->
+    it 'should throw err if pref does not exist', (done) ->
 
-      pref = prefs.get(-1)
-      pref.should.be.an.instanceOf(Prefs.Pref)
-      pref.id.should.equal(-1)
+      prefs.get(-1)
+      .catch (err) ->
+        err.message.should.equal('err_does_not_own')
+        done()
+      .done()
 
   describe ':owns', ->
 
@@ -172,8 +177,12 @@ describe 'Pref', ->
 
     pref = null
 
-    beforeEach ->
-      pref = prefs.get(setup.prefId)
+    beforeEach (done) ->
+      prefs.get(setup.prefId)
+      .then (_pref) ->
+        pref = _pref
+      .then -> done()
+      .done()
 
     describe ':read', ->
 

@@ -33,7 +33,7 @@ describe 'List', ->
       .then (_id) ->
         id = _id
         id.should.be.a.Number
-        lists.get(id).read()
+        lists.get(id).call('read')
       .then (list) ->
         list.should.eql
           id: id
@@ -52,7 +52,7 @@ describe 'List', ->
       .then (_id) ->
         id = _id
         id.should.be.a.Number
-        lists.get(id).read()
+        lists.get(id).call('read')
       .then (list) ->
         list.should.eql
           id: id
@@ -63,17 +63,22 @@ describe 'List', ->
 
   describe ':get', ->
 
-    it 'should get a list', ->
+    it 'should get a list', (done) ->
 
-      list = lists.get(setup.listId)
-      list.should.be.an.instanceOf(Lists.List)
-      list.id.should.equal(setup.listId)
+      lists.get(setup.listId)
+      .then (list) ->
+        list.should.be.an.instanceOf(Lists.List)
+        list.id.should.equal(setup.listId)
+      .then -> done()
+      .done()
 
-    it 'should not throw err if list does not exist', ->
+    it 'should throw err if list does not exist', (done) ->
 
-      list = lists.get(-1)
-      list.should.be.an.instanceOf(Lists.List)
-      list.id.should.equal(-1)
+      lists.get(-1)
+      .catch (err) ->
+        err.message.should.equal('err_no_row')
+        done()
+      .done()
 
   describe ':owns', ->
 
@@ -155,8 +160,12 @@ describe 'List', ->
 
     list = null
 
-    beforeEach ->
-      list = lists.get(setup.listId)
+    beforeEach (done) ->
+      lists.get(setup.listId)
+      .then (_list) ->
+        list = _list
+      .then -> done()
+      .done()
 
     describe ':read', ->
 

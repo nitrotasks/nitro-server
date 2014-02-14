@@ -42,7 +42,7 @@ class UserTasks
     Task.create(task)
 
   get: (id) ->
-    new Task(id)
+    @owns(id).then -> new Task(id)
 
   owns: (id) ->
     db.task.search('id', { id, @userId }).return(true)

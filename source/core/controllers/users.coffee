@@ -85,6 +85,7 @@ Users =
   exists: (email) ->
     db.user.exists(email, 'email')
 
+
   ###
    * Users.destroy
    *
@@ -95,5 +96,6 @@ Users =
 
   destroy: (id) ->
     db.user.destroy(id).return(true)
+
 
 module.exports = Users
