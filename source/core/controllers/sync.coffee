@@ -1,22 +1,9 @@
-###
-           ___  __   __      __            __
-    |\ | |  |  |__) /  \    /__` \ / |\ | /  `
-    | \| |  |  |  \ \__/    .__/  |  | \| \__,
-
-    ------------------------------------------
-
-    This is the sync code. It's a wee bit crazy.
-
-###
-
-
-Promise = require 'bluebird'
-Log     = require '../utils/log'
-time    = require '../utils/time'
-
-log      = Log 'Sync', 'cyan'
-logEvent = Log 'Sync Event', 'yellow'
-warn     = Log 'Sync', 'red'
+Promise = require('bluebird')
+log     = require('log_')('Sync', 'cyan')
+time    = require('../models/time')
+{Task}  = require('../models/task')
+{List}  = require('../models/list')
+{Pref}  = require('../models/pref')
 
 # CONSTANTS
 
@@ -63,35 +50,31 @@ class Sync
    * > id (number)
   ###
 
-  task_create: (task, timestamp) =>
+  task_create: (data, timestamp) =>
 
     # Check that the list exists
-    @user.shouldOwnList(task.listId).then (exists) =>
+    @user.lists.owns(data.listId)
+    .then =>
 
-      unless exists
-        warn '[task] [create] can not find listId', task.listId
-        throw ERR_INVALID_MODEL
+      @user.tasks.create(data)
 
-      @user.createTask(task)
-
-    .then (id) =>
+    .then (id) ->
 
       # Set id
-      task.id = id
+      data.id = id
 
       timestamp ?= time.now()
-      time.createTask id, timestamp
+      time.createTask(id, timestamp)
 
-    .then (id) =>
+    .then (task) ->
 
       # Add the task to the list
-      @user.addTaskToList(task.id, task.listId)
+      Task::addToList.call(data, data.listId)
 
     .then ->
 
-      log '[task] [create]', task
-
-      return task.id
+      log '[task] [create]', data
+      return data.id
 
 
   ###
@@ -102,22 +85,23 @@ class Sync
    * > id (number)
   ###
 
-  list_create: (list, timestamp) =>
+  list_create: (data, timestamp) =>
 
-    @user.createList(list).then (id) ->
+    @user.lists.create(data)
+    .then (id) ->
 
       # Set id
-      list.id = id
+      data.id = id
 
       timestamp ?= time.now()
-      time.createList list.id, timestamp
+      time.createList(id, timestamp)
 
-    .then  ->
+    .then ->
 
-      log '[list] [create]', list
+      log '[list] [create]', data
 
       # Return new id
-      return list.id
+      return data.id
 
 
 
@@ -175,9 +159,6 @@ class Sync
       @model_update_create_timestamps(changes)
 
 
-
-
-
   ###
    * Update Task
    *
@@ -186,61 +167,44 @@ class Sync
    * > changes
   ###
 
-  task_update: (changes, timestamps) =>
+  task_update: (id, data, timestamps) =>
 
-    id = changes.id
-    delete changes.id
+    task = null
 
     if Object.keys(changes).length is 0
-      return Promise.reject ERR_INVALID_MODEL
+      return Promise.reject new Error(ERR_INVALID_MODEL)
 
     # Make sure that the task exists and that the user owns it
-    @user.shouldOwnTask(id).then =>
+    @user.tasks.get(id)
+    .then (_task) =>
+      task = _task
 
       # Check timestamps
-      @model_update_timestamps(TASK, id, changes, timestamps)
+      @model_update_timestamps(TASK, id, data, timestamps)
 
     .then (_timestamps) =>
       timestamps = _timestamps
 
-      # Check list ID
-      if not changes.listId
-        return Promise.resolve()
-
-      @user.shouldOwnList(changes.listId)
-      .then =>
-        @user.readTask(id, 'listId')
-
-      .then (old) =>
-        if old.listId is changes.listId
-          throw ERR_INVALID_MODEL
-
-        @user.removeTaskFromList id, old.listId
-
-      .then =>
-        @user.addTaskToList id, changes.listId
-
-      .catch (err) ->
-        delete changes.listId
+      # Move a task to another list
+      return unless data.listId
+      @user.lists.own(changes.listId)
+      .then ->
+        task.read('listId')
+      .then (current) ->
+        throw null if current.listId is data.listId
+        task.removeFromList(current.listId)
+      .then ->
+        task.addToList(data.listi)
+      .catch (ignore) ->
+        delete data.listId
         delete timestamps.listId
 
-    .then =>
-
-      # Set timestamps
+    .then => # Set timestamps
       time.update(TASK, id, timestamps)
-
-    .then =>
-
-      # Save changes
-      @user.updateTask(id, changes)
-
-    .then ->
-
-      changes.id = id
-
-      log '[task] [update]', changes
-
-      return changes
+    .then -> # Save changes
+      task.update(data)
+    .then -> # Return task
+      return data
 
 
   ###
@@ -264,7 +228,7 @@ class Sync
 
         # TODO: Handle tasks
         if changes.tasks
-          warn '[list] [update] TODO: Handle list.tasks'
+          log.warn '[list] [update] TODO: Handle list.tasks'
           delete changes.tasks
           delete timestamps.tasks
 

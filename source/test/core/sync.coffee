@@ -1,42 +1,74 @@
-Sync    = require '../app/controllers/sync'
-Auth    = require '../app/controllers/auth'
-Users   = require '../app/controllers/users'
-setup   = require './setup'
 should  = require 'should'
 Promise = require 'bluebird'
-Log     = require '../app/utils/log'
-time    = require '../app/utils/time'
+setup   = require '../setup'
+Sync    = require '../../core/controllers/sync'
+Users   = require '../../core/models/user'
+Time    = require '../../core/models/time'
 
-log = Log 'sync - test'
-
-LIST = 'list'
-TASK = 'task'
-PREF = 'pref'
-
-
-describe 'Sync API', ->
+describe 'Sync', ->
 
   user = null
   sync = null
+
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then(setup.createList)
+    .then(setup.createTask)
+    .then -> done()
+    .done()
+
+  beforeEach (done) ->
+    Users.get(setup.userId)
+    .then (_user) ->
+      user = _user
+      sync = new Sync(user)
+    .then -> done()
+    .done()
+
+  describe ':task_create', ->
+
+    it 'should create a task', (done) ->
+
+      data =
+        listId: setup.listId
+        name: 'sync_task_name'
+
+      sync.task_create(data)
+      .then (id) ->
+        user.tasks.get(id).call('read')
+      .then (task) ->
+        task.id.should.be.a.Number.and.greaterThan(setup.taskId)
+        task.userId.should.equal(setup.userId)
+        task.listId.should.equal(setup.listId)
+        task.name.should.equal('sync_task_name')
+      .then -> done()
+      .done()
+
+  describe ':list_create', ->
+
+    it 'should create a list', (done) ->
+
+      data =
+        name: 'sync_list_name'
+
+      sync.list_create(data)
+      .then (id) ->
+        user.lists.get(id).call('read')
+      .then (list) ->
+        list.id.should.be.a.Number.and.greaterThan(setup.listId)
+        list.userId.should.equal(setup.userId)
+        list.name.should.equal('sync_list_name')
+      .then -> done()
+      .done()
+
+  return
 
   lists = []
   tasks = []
 
   compareArray = (a, b) ->
     a.sort().should.eql b.sort()
-
-  before (done) -> setup ->
-    Auth.register('George', 'mail@example.com', 'password')
-    .spread (id, token) ->
-      Users.read(id)
-    .then (_user) ->
-      user = _user
-      done()
-    .done()
-
-
-  beforeEach ->
-    sync = new Sync(user)
 
   describe '#basic', ->
 
@@ -218,8 +250,11 @@ describe 'Sync API', ->
 
   describe '#timestamps', ->
 
-    # Travel 10 seconds back in time!
-    past = time.now() - 10
+    past = null
+
+    before ->
+      # Travel 10 seconds back in time!
+      past = time.now() - 10
 
     it 'should respect timestamps - task', (done) ->
 
