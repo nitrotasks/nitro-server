@@ -33,13 +33,13 @@ class User
   ###
 
   constructor: (@id) ->
-    @prefs = new Prefs(@id)
+    @pref  = new Pref(@id)
     @tasks = new Tasks(@id)
     @lists = new Lists(@id)
 
   setup: ->
     @prefs.create()
-    .then => Time.createPref(@id, {})
+    .then => Time.createPref(@id, null)
     .return(this)
 
   read: (columns) ->

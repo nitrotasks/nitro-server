@@ -1,6 +1,7 @@
 config   = require('../config')
 core     = require('../core/index')
 database = require('../core/controllers/database')
+Users    = require('../core/models/user')
 
 # -----------------------------------------------------------------------------
 # Setup
@@ -20,18 +21,18 @@ setup = ->
 
 setup.createUser = ->
 
-  database.user.create
+  Users.create
     name: 'user_name'
     email: 'user_email_' + Date.now()
     password: 'user_password'
     pro: 0
-  .then (id) ->
-    setup.userId = id
+  .then (user) ->
+    setup.user = user
+    setup.userId = user.id
 
 setup.createPref = ->
 
-  database.pref.create
-    userId: setup.userId
+  setup.user.prefs.create
     sort: 0
     night: 0
     language: 'en-us'
@@ -44,16 +45,14 @@ setup.createPref = ->
 
 setup.createList = ->
 
-  database.list.create
-    userId: setup.userId
+  setup.user.lists.create
     name: 'list_name'
   .then (id) ->
     setup.listId = id
 
 setup.createTask = ->
 
-  database.task.create
-    userId: setup.userId
+  setup.user.tasks.create
     listId: setup.listId
     name: 'task_name'
     notes: 'task_notes'

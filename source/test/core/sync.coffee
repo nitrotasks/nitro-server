@@ -62,6 +62,74 @@ describe 'Sync', ->
       .then -> done()
       .done()
 
+
+  describe ':task_update', ->
+
+    taskId = null
+
+    beforeEach (done) ->
+      sync.task_create(listId: setup.listId)
+      .then (id) ->
+        taskId = id
+      .then -> done()
+      .done()
+
+    it 'should update a task', (done) ->
+
+      data =
+        name: 'sync_task_name_updated'
+
+      sync.task_update(taskId, data)
+      .then (task) ->
+        task.should.eql(data)
+        user.tasks.get(taskId).call('read')
+      .then (task) ->
+        task.name.should.equal('sync_task_name_updated')
+      .then -> done()
+      .done()
+
+  describe ':list_update', ->
+
+    listId = null
+
+    beforeEach (done) ->
+      sync.list_create(name: 'sync_list_update')
+      .then (id) ->
+        listId = id
+      .then -> done()
+      .done()
+
+    it 'should update a list', (done) ->
+
+      data =
+        name: 'sync_list_name_updated'
+
+      sync.list_update(listId, data)
+      .then (list) ->
+        list.should.eql(data)
+        user.lists.get(listId).call('read')
+      .then (list) ->
+        list.name.should.equal('sync_list_name_updated')
+      .then -> done()
+      .done()
+
+  describe ':pref_update', ->
+
+    it 'should update a pref', (done) ->
+
+      data =
+        sort: 1
+
+      sync.pref_update(data)
+      .then (pref) ->
+        pref.should.eql(data)
+        user.prefs.get(setup.userId).call('read')
+      .then (pref) ->
+        pref.sort.should.equal(1)
+      .then -> done()
+      .done()
+
+
   return
 
   lists = []

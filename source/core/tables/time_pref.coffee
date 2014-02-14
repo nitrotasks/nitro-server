@@ -3,6 +3,7 @@ Table = require '../controllers/table'
 class TimePref extends Table
 
   table: 'time_pref'
+  column: 'id'
 
   setup: ->
 

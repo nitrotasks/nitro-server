@@ -171,7 +171,7 @@ class Sync
 
     task = null
 
-    if Object.keys(changes).length is 0
+    if Object.keys(data).length is 0
       return Promise.reject new Error(ERR_INVALID_MODEL)
 
     # Make sure that the task exists and that the user owns it
@@ -187,7 +187,7 @@ class Sync
 
       # Move a task to another list
       return unless data.listId
-      @user.lists.own(changes.listId)
+      @user.lists.own(data.listId)
       .then ->
         task.read('listId')
       .then (current) ->
@@ -201,9 +201,10 @@ class Sync
 
     .then => # Set timestamps
       time.update(TASK, id, timestamps)
-    .then -> # Save changes
+    .then -> # Save data
       task.update(data)
     .then -> # Return task
+      log '[task] [update]', data
       return data
 
 
@@ -215,43 +216,42 @@ class Sync
    * > changes
   ###
 
-  list_update: (changes, timestamps) =>
+  list_update: (id, data, timestamps) =>
 
-    id = changes.id
-    delete changes.id
+    list = null
 
-    if Object.keys(changes).length is 0
+    if Object.keys(data).length is 0
       return Promise.reject ERR_INVALID_MODEL
 
-    @user.shouldOwnList(id)
-      .then =>
+    @user.lists.get(id)
+    .then (_list) =>
 
-        # TODO: Handle tasks
-        if changes.tasks
-          log.warn '[list] [update] TODO: Handle list.tasks'
-          delete changes.tasks
-          delete timestamps.tasks
+      list = _list
 
-        # Check timestamps
-        @model_update_timestamps(LIST, id, changes, timestamps)
+      # TODO: Handle tasks
+      if data.tasks
+        log.warn '[list] [update] TODO: Handle list.tasks'
+        delete data.tasks
+        delete timestamps.tasks
 
-      .then (timestamps) =>
+      # Check timestamps
+      @model_update_timestamps(LIST, id, data, timestamps)
 
-        # Set timestamps
-        time.update(LIST, id, timestamps)
+    .then (timestamps) =>
 
-      .then =>
+      # Set timestamps
+      time.update(LIST, id, timestamps)
 
-        # Save changes
-        @user.updateList(id, changes)
+    .then ->
 
-      .then ->
+      # Save data
+      list.update(data)
 
-        changes.id = id
+    .then ->
 
-        log '[list] [update]', changes
+      log '[list] [update]', data
 
-        return changes
+      return data
 
 
   ###
@@ -262,25 +262,19 @@ class Sync
    * > changes
   ###
 
-  pref_update: (changes, timestamps) =>
+  pref_update: (data, timestamps) =>
 
-    if Object.keys(changes).length is 0
+    if Object.keys(data).length is 0
       return Promise.reject ERR_INVALID_MODEL
 
-    @model_update_timestamps(PREF, @user.id, changes, timestamps)
+    @model_update_timestamps(PREF, @user.id, data, timestamps)
     .then (timestamps) =>
-
       time.update(PREF, @user.id, timestamps)
-
     .then =>
-
-      @user.updatePref(changes)
-
+      @users.pref.update(data)
     .then ->
-
-      log '[pref] [update]', changes
-
-      return changes
+      log '[pref] [update]', data
+      return data
 
 
 

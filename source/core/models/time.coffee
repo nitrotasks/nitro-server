@@ -29,7 +29,7 @@ time =
       obj = {}
       obj[attr] = time
 
-    db[PREFIX + classname].update id, obj
+    db[PREFIX + classname].update(id, obj)
 
 
   ###
@@ -44,7 +44,6 @@ time =
   ###
 
   create: (classname, id, attrs) ->
-
     attrs.id = id
     db[PREFIX + classname].create(attrs)
 

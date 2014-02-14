@@ -1,6 +1,6 @@
 require('should')
 setup = require('../../setup')
-Prefs = require('../../../core/models/pref')
+Pref  = require('../../../core/models/pref')
 
 describe 'Pref', ->
 
@@ -9,12 +9,11 @@ describe 'Pref', ->
   before (done) ->
     setup()
     .then(setup.createUser)
-    .then(setup.createPref)
     .then -> done()
     .done()
 
   beforeEach (done) ->
-    prefs = new Prefs(setup.userId)
+    prefs = new Pref(setup.userId)
     prefs.destroy()
     .then(setup.createPref)
     .then -> done()
@@ -79,7 +78,7 @@ describe 'Pref', ->
 
       prefs.get(setup.prefId)
       .then (pref) ->
-        pref.should.be.an.instanceOf(Prefs.Pref)
+        pref.should.be.an.instanceOf(Pref)
         pref.id.should.equal(setup.prefId)
       .then -> done()
       .done()
@@ -115,7 +114,6 @@ describe 'Pref', ->
     it 'should throw err when user does not own pref', (done) ->
 
       setup.createUser()
-      .then(setup.createPref)
       .then (id) ->
         prefs.owns(id)
       .catch (err) ->
@@ -223,7 +221,7 @@ describe 'Pref', ->
 
       it 'should throw err when pref does not exist', (done) ->
 
-        pref = new Prefs.Pref(-1)
+        pref = new Pref(-1)
         pref.read()
         .catch (err) ->
           err.message.should.equal('err_no_row')
@@ -245,7 +243,7 @@ describe 'Pref', ->
 
       it 'should throw err when pref does not exist', (done) ->
 
-        pref = new Prefs.Pref(-1)
+        pref = new Pref(-1)
         pref.update(sort: 2)
         .catch (err) ->
           err.message.should.equal('err_no_row')
@@ -274,7 +272,7 @@ describe 'Pref', ->
 
       it 'should throw err when the pref does not exist', (done) ->
 
-        pref = new Prefs.Pref(-1)
+        pref = new Pref(-1)
         pref.destroy()
         .catch (err) ->
           err.message.should.equal 'err_no_row'

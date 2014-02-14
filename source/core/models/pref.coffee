@@ -3,9 +3,11 @@ db = require '../controllers/database'
 
 class Pref
 
-  @create: (pref) ->
+  constructor: (@id) ->
+
+  create: (pref) ->
     db.pref.create
-      userId: pref.userId
+      userId: @id
       sort: pref.sort
       night: pref.night
       language: pref.language
@@ -14,7 +16,8 @@ class Pref
       confirmDelete: pref.confirmDelete
       moveCompleted: pref.moveCompleted
 
-  constructor: (@id) ->
+  exists: ->
+    db.pref.search('*', { @id }).return(true)
 
   read: (columns) ->
     db.pref.read(@id, columns)
@@ -25,30 +28,4 @@ class Pref
   destroy: ->
     db.pref.destroy(@id, true)
 
-
-class UserPref
-
-  @Pref: Pref
-
-  constructor: (@userId) ->
-
-  create: (pref={}) ->
-    pref.userId = @userId
-    Pref.create(pref)
-
-  get: (id) ->
-    @owns(id).then -> new Pref(id)
-
-  owns: (id) ->
-    if id isnt @userId
-      return Promise.reject new Error('err_does_not_own')
-    db.pref.search('*', { @userId }).return(true)
-
-  all: ->
-    @get(@userId).call('read')
-
-  destroy: ->
-    db.pref.destroy({ @userId })
-
-
-module.exports = UserPref
+module.exports = Pref
