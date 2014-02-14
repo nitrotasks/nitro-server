@@ -1,3 +1,8 @@
+ERR_NO_ROW = 'err_no_row'
+ERR_COULD_NOT_UPDATE_ROW = 'err_could_not_update_row'
+ERR_COULD_NOT_CREATE_ROW = 'err_could_not_create_row'
+
+
 class Table
 
   ###
@@ -8,12 +13,6 @@ class Table
 
   table: null
   column: 'id'
-
-  ###
-   * Constants
-  ###
-
-  ERR_NO_ROW: 'err_no_row'
 
 
   ###
@@ -49,9 +48,9 @@ class Table
   _createTable: (fn) ->
 
     @knex.schema.hasTable @table
-      .then (exists) =>
-        return if exists
-        @knex.schema.createTable(@table, fn)
+    .then (exists) =>
+      return if exists
+      @knex.schema.createTable(@table, fn)
 
 
   ###
@@ -82,6 +81,7 @@ class Table
     @knex @table
       .returning returning
       .insert data
+      .catch (err) -> throw new Error ERR_COULD_NOT_CREATE_ROW
       .then (id) -> id[0]
 
 
@@ -94,8 +94,10 @@ class Table
     @knex @table
       .update data
       .where where
-      .then (rows) =>
-        unless rows then throw @ERR_NO_ROW
+      .catch (err) ->
+        throw new Error ERR_COULD_NOT_UPDATE_ROW
+      .then (rows) ->
+        unless rows then throw new Error ERR_NO_ROW
         return rows
 
 
@@ -115,7 +117,7 @@ class Table
       .column columns
       .where data
       .then (rows) =>
-        unless rows.length then throw @ERR_NO_ROW
+        unless rows.length then throw new Error ERR_NO_ROW
         return rows
 
 
@@ -216,7 +218,8 @@ class Table
       .where(obj)
       .then (rows) ->
         success = rows > 0
-        throw ERR_NO_ROW if strict and not success
+        if strict and not success
+          throw new Error ERR_NO_ROW
         return success
 
 

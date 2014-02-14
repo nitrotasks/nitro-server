@@ -9,6 +9,9 @@ TESTS=test/*
 test:
 	  $(MOCHA) -R spec $(TESTS) --bail
 
+watch:
+	  $(MOCHA) -R spec $(TESTS) --bail --watch
+
 blanket:
 		@DISABLE_LOG=1 \
 		$(MOCHA) -r blanket -R html-cov $(TESTS) > coverage.html

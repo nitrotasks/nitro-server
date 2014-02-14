@@ -1,28 +1,6 @@
 db = require '../controllers/database'
 
 
-class UserTasks
-
-  constructor: (@userId) ->
-
-  create: (task) ->
-    task.userId = @userId
-    Task.create(task)
-
-  get: (id) ->
-    new Task(id)
-
-  owns: (id) ->
-    db.task.exists(id: id, userId: @userId)
-
-  all: ->
-    db.task.search('*', userId: @userId).catch ->
-      return []
-
-  destroy: ->
-    db.task.destroy(userId: @userId, true)
-
-
 class Task
 
   @create: (task) ->
@@ -51,6 +29,29 @@ class Task
 
   removeFromList: (listId) ->
     db.list_tasks.destroy(listId, @id)
+
+
+class UserTasks
+
+  @Task: Task
+
+  constructor: (@userId) ->
+
+  create: (task) ->
+    task.userId = @userId
+    Task.create(task)
+
+  get: (id) ->
+    new Task(id)
+
+  owns: (id) ->
+    db.task.search('id', { id: id, userId: @userId }).return(true)
+
+  all: ->
+    db.task.search('*', userId: @userId).catch -> return []
+
+  destroy: ->
+    db.task.destroy(userId: @userId)
 
 
 module.exports = UserTasks

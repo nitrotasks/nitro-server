@@ -21,39 +21,26 @@ class ListTasks extends Table
         .onDelete('cascade')
 
 
-  create: (list, task) ->
+  create: (listId, taskId) ->
 
-    @_create 'taskId',
-      listId: list
-      taskId: task
+    @_create('taskId', {listId, taskId})
 
-  read: (list) ->
+  read: (listId) ->
 
-    promise = @search 'taskId',
-      listId: list
-
-    promise
-      .then (rows) ->
-        rows.map (row) -> row.taskId
-      .catch ->
-        return []
-
+    @search('taskId', {listId})
+    .catch -> []
+    .map (row) -> row.taskId
 
   update: ->
 
     throw new Error 'Cannot update list_tasks'
 
+  destroy: (listId, taskId) ->
 
-  destroy: (list, task) ->
+    super {listId, taskId}, true
 
-    super
-      listId: list
-      taskId: task
+  destroyAll: (listId) ->
 
-
-  destroyAll: (list) ->
-
-    super
-      listId: list
+    super {listId}
 
 module.exports = ListTasks

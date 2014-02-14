@@ -22,27 +22,32 @@ setup.createUser = ->
 
   database.user.create
     name: 'user_name'
-    email: 'user_email'
+    email: 'user_email_' + Date.now()
     password: 'user_password'
     pro: 0
+  .then (id) ->
+    setup.userId = id
 
 setup.createList = ->
 
   database.list.create
-    userId: 1
+    userId: setup.userId
     name: 'list_name'
+  .then (id) ->
+    setup.listId = id
 
 setup.createTask = ->
 
   database.task.create
-    userId: 1
-    listId: 1
+    userId: setup.userId
+    listId: setup.listId
     name: 'task_name'
     notes: 'task_notes'
     date: 0
     priority: 0
     completed: 0
-  .then ->
-    database.list_tasks.create(1, 1)
+  .then (id) ->
+    setup.taskId = id
+    database.list_tasks.create(setup.listId, id)
 
 module.exports = setup
