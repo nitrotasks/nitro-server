@@ -48,7 +48,7 @@ class UserTasks
     db.task.search('id', { id: id, userId: @userId }).return(true)
 
   all: ->
-    db.task.search('*', userId: @userId).catch -> return []
+    db.task.search('*', userId: @userId).catch -> []
 
   destroy: ->
     db.task.destroy(userId: @userId)

@@ -1,27 +1,271 @@
 require('should')
 setup = require('../../setup')
-List  = require('../../../core/models/list')
+Tasks = require('../../../core/models/task')
+Lists = require('../../../core/models/list')
 
 describe 'List', ->
+
+  lists = null
 
   before (done) ->
     setup()
     .then(setup.createUser)
     .then(setup.createList)
+    .then -> done()
+    .done()
+
+  beforeEach (done) ->
+    lists = new Lists(setup.userId)
+    lists.destroy()
+    .then(setup.createList)
     .then(setup.createTask)
-    .return()
-    .then(done)
+    .then -> done()
+    .done()
+
+  describe ':create', ->
+
+    it 'should create a list', (done) ->
+
+      id = null
+
+      lists.create
+        name: 'list_name'
+      .then (_id) ->
+        id = _id
+        id.should.be.a.Number
+        lists.get(id).read()
+      .then (list) ->
+        list.should.eql
+          id: id
+          userId: setup.userId
+          name: 'list_name'
+      .then -> done()
+      .done()
+
+    it 'should not throw err when column does not exist', (done) ->
+
+      id = null
+
+      lists.create
+        foo: 'bar'
+        name: 'list_name'
+      .then (_id) ->
+        id = _id
+        id.should.be.a.Number
+        lists.get(id).read()
+      .then (list) ->
+        list.should.eql
+          id: id
+          userId: setup.userId
+          name: 'list_name'
+      .then -> done()
+      .done()
+
+  describe ':get', ->
+
+    it 'should get a list', ->
+
+      list = lists.get(setup.listId)
+      list.should.be.an.instanceOf(Lists.List)
+      list.id.should.equal(setup.listId)
+
+    it 'should not throw err if list does not exist', ->
+
+      list = lists.get(-1)
+      list.should.be.an.instanceOf(Lists.List)
+      list.id.should.equal(-1)
+
+  describe ':owns', ->
+
+    it 'should own a list', (done) ->
+
+      lists.owns(setup.listId)
+      .then (success) ->
+        success.should.equal(true)
+      .then -> done()
+      .done()
+
+    it 'should throw err when list does not exist', (done) ->
+
+      lists.owns(-1)
+      .catch (err) ->
+        err.message.should.equal('err_no_row')
+        done()
+      .done()
+
+    it 'should throw err when user does not own list', (done) ->
+
+      setup.createUser()
+      .then(setup.createList)
+      .then (id) ->
+        lists.owns(id)
+      .catch (err) ->
+        err.message.should.equal('err_no_row')
+        done()
+      .done()
 
   describe ':all', ->
 
     it 'should get all users lists', (done) ->
 
-      list = new List(1)
-      list.all().then (lists) ->
+      lists.all().then (lists) ->
         lists.should.eql [
-          id: 1
-          userId: 1
+          id: setup.listId
+          userId: setup.userId
           name: 'list_name'
-          tasks: [ 1 ]
+          tasks: [ setup.taskId ]
         ]
-      .return().then(done).done()
+      .then -> done()
+      .done()
+
+    it 'should not throw err if user does not have any lists', (done) ->
+
+      lists.destroy()
+      .bind(lists)
+      .then(lists.all)
+      .then (lists) ->
+        lists.should.eql []
+      .then -> done()
+      .done()
+
+  describe ':destroy', ->
+
+    it 'should destroy all lists owned by a user', (done) ->
+
+      lists.destroy()
+      .bind(lists)
+      .then(lists.all)
+      .then (lists) ->
+        lists.should.eql []
+      .then -> done()
+      .done()
+
+    it 'should not throw err if user does not have any lists', (done) ->
+
+      lists.destroy()
+      .bind(lists)
+      .then(lists.destroy)
+      .then(lists.all)
+      .then (lists) ->
+        lists.should.eql []
+      .then -> done()
+      .done()
+
+  describe ':List', ->
+
+    list = null
+
+    beforeEach ->
+      list = lists.get(setup.listId)
+
+    describe ':read', ->
+
+      it 'should read a single column', (done) ->
+
+        list.read('name')
+        .then (data) ->
+          data.should.eql
+            name: 'list_name'
+        .then -> done()
+        .done()
+
+      it 'should read multiple columns', (done) ->
+
+        list.read(['id', 'name'])
+        .then (data) ->
+          data.should.eql
+            id: setup.listId
+            name: 'list_name'
+        .then -> done()
+        .done()
+
+      it 'should read all the columns', (done) ->
+
+        list.read()
+        .then (data) ->
+          data.should.eql
+            id: setup.listId
+            userId: setup.userId
+            name: 'list_name'
+        .then -> done()
+        .done()
+
+      it 'should throw err when list does not exist', (done) ->
+
+        list = new Lists.List(-1)
+        list.read()
+        .catch (err) ->
+          err.message.should.equal('err_no_row')
+          done()
+        .done()
+
+    describe ':update', ->
+
+      it 'should update a single column', (done) ->
+
+        list.update(name: 'list_name_updated')
+        .then ->
+          list.read('name')
+        .then (data) ->
+          data.should.eql
+            name: 'list_name_updated'
+        .then -> done()
+        .done()
+
+      it 'should throw err when list does not exist', (done) ->
+
+        list = new Lists.List(-1)
+        list.update(name: 'list_name_updated')
+        .catch (err) ->
+          err.message.should.equal('err_no_row')
+          done()
+        .done()
+
+      it 'should throw err when column does not exist', (done) ->
+
+        list.update(fake: 'err')
+        .catch (err) ->
+          err.message.should.eql('err_could_not_update_row')
+          done()
+        .done()
+
+    describe ':destroy', ->
+
+      it 'should destroy a list', (done) ->
+
+        list.destroy()
+        .then ->
+          list.read()
+        .catch (err) ->
+          err.message.should.eql 'err_no_row'
+          done()
+        .done()
+
+      it 'should throw err when the list does not exist', (done) ->
+
+        list = new Lists.List(-1)
+        list.destroy()
+        .catch (err) ->
+          err.message.should.equal 'err_no_row'
+          done()
+        .done()
+
+    describe ':tasks', ->
+
+      it 'should get the tasks in the list', (done) ->
+
+        list.tasks()
+        .then (tasks) ->
+          tasks.should.eql [ setup.taskId ]
+        .then -> done()
+        .done()
+
+      it 'should not throw err if list has not tasks', (done) ->
+
+        (new Tasks.Task(setup.taskId)).destroy()
+        .bind(list)
+        .then(list.tasks)
+        .then (tasks) ->
+          tasks.should.eql []
+        .then -> done()
+        .done()

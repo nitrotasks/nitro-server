@@ -1,7 +1,6 @@
 db = require '../controllers/database'
 
 
-
 class List
 
   @create: (list) ->
@@ -38,16 +37,16 @@ class UserLists
     new List(id)
 
   owns: (id) ->
-    db.list.exists(id: id, userId: @userId)
+    db.list.search('id', { id: id, userId: @userId }).return(true)
 
   all: ->
     db.list.search('*', userId: @userId).map (list) =>
       @get(list.id).tasks()
       .then (tasks) -> list.tasks = tasks
       .return(list)
-    .catch -> return []
+    .catch -> []
 
-  destroyAll: ->
+  destroy: ->
     db.list.destroy(userId: @userId)
 
 
