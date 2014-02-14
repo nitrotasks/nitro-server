@@ -1,4 +1,4 @@
-db = require '../controllers/query'
+db = require '../controllers/database'
 
 TIME = 'time'
 PREFIX = 'time_'

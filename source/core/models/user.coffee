@@ -1,6 +1,9 @@
-Promise = require('bluebird')
-dbi     = require('../controllers/database')
-time    = require('../utils/time')
+db   = require('../controllers/database')
+Time = require('../models/time')
+Prefs = require('../models/pref')
+Lists = require('../models/list')
+Tasks = require('../models/task')
+
 
 class User
 
@@ -12,62 +15,22 @@ class User
   ###
 
   constructor: (@id) ->
-    @pref = new Pref(@id)
+    @prefs = new Prefs(@id)
     @tasks = new Tasks(@id)
     @lists = new Lists(@id)
 
-
   setup: ->
     @pref.create()
-    .then =>
-      time.create('pref', @id, {})
+    .then => Time.create('pref', @id, {})
     .return(this)
 
+  read: (columns) ->
+    db.user.read(@id, columns)
 
-  info: ->
-    db.user.read @id, ['name', 'email', 'pro']
+  update: (changes) ->
+    db.user.update(@id, changes)
 
-
-  ###
-   * Set Name
-   *
-   * - name (string) : the users name
-  ###
-
-  setName: (name) ->
-    db.user.update @id, name: name
-
-  getName: ->
-    db.user.read(@id, 'name').then (info) ->
-      return info.name
-
-
-  ###
-   * Change a users email and update the email lookup table
-   *
-   * - email (string) : the email to change to
-  ###
-
-  setEmail: (email) ->
-    db.user.update @id, email: email
-
-  getEmail: ->
-    db.user.read(@id, 'email').then (info) ->
-      return info.email
-
-
-  ###
-   * Change a users password and remove all their login tokens
-   *
-   * - password (string) : the hash of the password
-  ###
-
-  setPassword: (password) ->
-    db.login.destroyAll @id
-    db.user.update @id, password: password
-
-  getPassword: ->
-    db.user.read(@id, 'password').then (info) ->
-      return info.password
+  destroy: ->
+    db.user.destroy(@id, true)
 
 module.exports = User

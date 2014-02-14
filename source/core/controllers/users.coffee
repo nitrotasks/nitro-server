@@ -67,9 +67,11 @@ Users =
   ###
 
   search: (email) ->
-    db.user.search(email)
-      .then(Users.read)
+    db.user.search('id', { email })
+      .then(rows) ->
+        Users.read(rows[0].id)
       .catch -> throw ERR_NO_USER
+
 
   ###
    * Users.exists

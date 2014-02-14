@@ -22,12 +22,4 @@ class User extends Table
       table.timestamp('created_at').defaultTo @knex.raw 'now()'
 
 
-  search: (email) ->
-
-    promise = @search 'id',
-      email: email
-
-    promise.then (rows) ->
-      return rows[0].id
-
 module.exports = User
