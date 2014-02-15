@@ -63,16 +63,6 @@ class Table
 
 
   ###
-   * (private) Parse Token
-  ###
-
-  _parseToken: (token) ->
-    match = token.match(/^(\d+)_(\w+)$/)
-    if match is null then return null
-    return [match[1], match[2]]
-
-
-  ###
    * (private) Create
   ###
 

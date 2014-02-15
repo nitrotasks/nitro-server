@@ -12,7 +12,7 @@ describe 'Database', ->
     .done()
 
   beforeEach (done) ->
-    db.login.destroyAll(setup.loginId)
+    db.login.destroyAll(setup.userId)
     .then(setup.createLogin)
     .then -> done()
     .done()
@@ -22,19 +22,19 @@ describe 'Database', ->
     describe ':create', ->
 
       beforeEach (done) ->
-        db.login.destroyAll(setup.loginId)
+        db.login.destroyAll(setup.userId)
         .then -> done()
         .done()
 
       it 'should create a new entry', (done) ->
 
-        db.login.create(setup._login.id, setup._login.token)
+        db.login.create(setup.userId, setup.loginToken)
         .then -> done()
         .done()
 
       it 'should create another login token', (done) ->
 
-        db.login.create(setup.userId, setup._login.token)
+        db.login.create(setup.userId, setup.loginToken)
         .then ->
           db.login.create(setup.userId, 'login_token_2')
         .then ->
@@ -53,10 +53,10 @@ describe 'Database', ->
 
       it 'should read the date the login token was created', (done) ->
 
-        db.login.read(setup.userId, setup._login.token)
+        db.login.read(setup.userId, setup.loginToken)
         .then (login) ->
           login.userId.should.equal(setup.userId)
-          login.token.should.equal(setup._login.token)
+          login.token.should.equal(setup.loginToken)
           login.created_at.should.be.an.instanceOf(Date)
         .then -> done()
         .done()
@@ -65,7 +65,7 @@ describe 'Database', ->
 
         db.login.destroyAll(setup.userId)
         .then ->
-          db.login.read(setup.userId, setup._login.token)
+          db.login.read(setup.userId, setup.loginToken)
         .catch (err) ->
           err.message.should.equal 'err_no_row'
         .then -> done()
@@ -75,7 +75,7 @@ describe 'Database', ->
 
       it 'should check if a login exists', (done) ->
 
-        db.login.exists(setup.userId, setup._login.token)
+        db.login.exists(setup.userId, setup.loginToken)
         .then (exists) ->
           exists.should.equal(true)
         .then -> done()
@@ -85,9 +85,9 @@ describe 'Database', ->
 
       it 'should destroy an existing entry', (done) ->
 
-        db.login.destroy(setup.userId, setup._login.token)
+        db.login.destroy(setup.userId, setup.loginToken)
         .then ->
-          db.login.read(setup.userId, setup._login.token)
+          db.login.read(setup.userId, setup.loginToken)
         .catch (err) ->
           err.message.should.equal('err_no_row')
         .then -> done()
@@ -97,7 +97,7 @@ describe 'Database', ->
 
         db.login.destroyAll(setup.userId)
         .then ->
-          db.login.exists(setup.userId, setup._login.token)
+          db.login.exists(setup.userId, setup.loginToken)
         .then (exists) ->
           exists.should.equal(false)
         .then -> done()

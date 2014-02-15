@@ -1,62 +1,43 @@
-Promise = require 'bluebird'
 Table = require '../controllers/table'
-
-ERR_BAD_TOKEN = 'err_bad_token'
 
 class Reset extends Table
 
   table: 'reset'
+  column: 'userId'
+  columns: ['userId', 'token', 'created_at']
 
   setup: ->
 
     @_createTable (table) =>
 
-      table.primary(['userId', 'token'])
-
       table.integer('userId').unsigned()
         .notNullable()
         .references('id').inTable('user')
         .onDelete('cascade')
+        .primary()
 
       table.string('token', 22).notNullable()
       table.timestamp('created_at').defaultTo @knex.raw 'now()'
 
-  create: (id, token) ->
+  create: (userId, token) ->
 
-    promise = @_create 'userId',
-      userId: id
-      token: token
-
-    promise.then ->
-      return id + '_' + token
-
+    super({ userId, token }).return(token)
 
   read: (token) ->
 
-    match = @_parseToken(token)
-    unless match then return Promise.reject ERR_BAD_TOKEN
-
-    promise = @search 'userId',
-      userId: match[0]
-      token: match[1]
-
-    promise
-      .then (rows) -> return rows[0].userId
-      .catch -> throw ERR_BAD_TOKEN
+    @search null, { token }
+    .then (rows) -> rows[0]
 
   update: ->
 
-    throw new Error 'Cannot update a reset token'
-
+    throw new Error('err_not_allowed')
 
   destroy: (token) ->
 
-    match = @_parseToken(token)
-    unless match then return Promise.reject ERR_BAD_TOKEN
+    super { token }
 
-    super
-      userId: match[0]
-      token: match[1]
+  destroyAll: (userId) ->
 
+    Table::destroy.call(this, userId)
 
 module.exports = Reset

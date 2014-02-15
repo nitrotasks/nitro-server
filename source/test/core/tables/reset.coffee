@@ -1,39 +1,77 @@
-  describe '#reset', ->
+should  = require('should')
+setup   = require('../../setup')
+db      = require('../../../core/controllers/database')
 
-    token = null
+describe 'Database', ->
 
-    reset =
-      id: null
-      token: 'actually'
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then(setup.createReset)
+    .then -> done()
+    .done()
 
-    before ->
-      reset.id = user.id
+  beforeEach (done) ->
+    db.reset.destroyAll(setup.userId)
+    .then(setup.createReset)
+    .then -> done()
+    .done()
 
-    it 'should create a reset token' , (done) ->
+  describe ':reset', ->
 
-      db.reset.create(reset.id, reset.token).then (_token) ->
-        token = _token
-        token.should.match /^\d+_\w+$/
-        done()
+    describe ':create', ->
 
-    it 'should read a reset token', (done) ->
+      beforeEach (done) ->
+        db.reset.destroyAll(setup.userId)
+        .then -> done()
+        .done()
 
-      db.reset.read(token).then (id) ->
-        id.should.equal reset.id
-        done()
+      it 'should create a reset token' , (done) ->
 
-    it 'should throw err when using an invalid token', (done) ->
+        db.reset.create(setup.userId, setup.resetToken)
+        .then (token) ->
+          token.should.equal(setup.resetToken)
+        .then -> done()
+        .done()
 
-      db.reset.read('blah').catch (err) ->
-        err.should.equal 'err_bad_token'
-        done()
+      it 'should only allow one reset token per user'
 
-    it 'should destroy a reset token', (done) ->
+    describe ':read', ->
 
-      db.reset.destroy(token).then -> done()
+      it 'should read a reset token', (done) ->
 
-    it 'should throw err when reading a token that does not exist', (done) ->
+        db.reset.read(setup.resetToken).then (row) ->
+          row.userId.should.equal(setup.userId)
+          row.token.should.equal(setup.resetToken)
+          row.created_at.should.be.an.instanceOf(Date)
+        .then -> done()
+        .done()
 
-      db.reset.read(token).catch (err) ->
-        err.should.equal 'err_bad_token'
-        done()
+      it 'should throw err when reading a token that does not exist', (done) ->
+
+        db.reset.destroyAll(setup.userId)
+        .then ->
+          db.reset.read(setup.resetToken)
+        .catch (err) ->
+          err.message.should.equal 'err_no_row'
+          done()
+        .done()
+
+    describe ':update', ->
+
+      it 'should not allow a reset token to be changed', (done) ->
+
+        try
+          db.reset.update()
+        catch e
+          e.message.should.equal('err_not_allowed')
+          done()
+
+    describe ':destroy', ->
+
+      it 'should destroy a reset token', (done) ->
+
+        db.reset.destroy(setup.resetToken)
+        .then -> done()
+        .done()
+

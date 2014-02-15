@@ -44,8 +44,8 @@ setup._task =
   priority: 0
   completed: 0
 
-setup._login =
-  token: 'login_token'
+setup.loginToken = 'login_token'
+setup.resetToken = 'reset_token'
 
 setup.createUser = ->
 
@@ -79,10 +79,10 @@ setup.createTask = ->
 
 setup.createLogin = ->
 
-  setup._login.id = setup.userId
+  database.login.create(setup.userId, setup.loginToken)
 
-  database.login.create(setup._login.id, setup._login.token)
-  .then (id) ->
-    setup.loginId = id
+setup.createReset = ->
+
+  database.reset.create(setup.userId, setup.resetToken)
 
 module.exports = setup
