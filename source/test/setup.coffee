@@ -19,9 +19,10 @@ setup = ->
   .then(database.resetTables)
   .return(setup)
 
+setup._email = 'user_email'
+
 setup._user =
   name: 'user_name'
-  email: 'user_email'
   password: 'user_password'
   pro: 0
 
@@ -68,7 +69,10 @@ setup._timePref =
   confirmDelete: 1
   moveCompleted: 1
 
-setup.createUser = ->
+setup.createUser = (email) ->
+
+  if typeof email isnt 'string' then email = ''
+  setup._user.email = setup._email + email
 
   Users.create(setup._user)
   .then (user) ->

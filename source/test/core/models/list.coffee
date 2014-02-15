@@ -100,7 +100,7 @@ describe 'List', ->
 
     it 'should throw err when user does not own list', (done) ->
 
-      setup.createUser()
+      setup.createUser('_test')
       .then(setup.createList)
       .then (id) ->
         lists.owns(id)
