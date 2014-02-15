@@ -3,6 +3,8 @@ Table = require '../controllers/table'
 class ListTasks extends Table
 
   table: 'list_tasks'
+  column: 'taskId'
+  columns: ['listId', 'taskId']
 
   setup: ->
 
@@ -20,20 +22,19 @@ class ListTasks extends Table
         .references('id').inTable('task')
         .onDelete('cascade')
 
-
   create: (listId, taskId) ->
 
-    @_create('taskId', {listId, taskId})
+    super {listId, taskId}
 
   read: (listId) ->
 
-    @search('taskId', {listId})
+    @search('taskId', { listId })
     .catch -> []
     .map (row) -> row.taskId
 
-  update: ->
+  update: (taskId, listId) ->
 
-    throw new Error 'Cannot update list_tasks'
+    @_update { listId }, { taskId }
 
   destroy: (listId, taskId) ->
 
@@ -41,6 +42,6 @@ class ListTasks extends Table
 
   destroyAll: (listId) ->
 
-    super {listId}
+    Table::destroy.call this, {listId}
 
 module.exports = ListTasks

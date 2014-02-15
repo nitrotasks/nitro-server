@@ -214,14 +214,14 @@ class Table
       obj = {}
       obj[@column] = _obj
 
-    @knex @table
-      .del()
-      .where(obj)
-      .then (rows) ->
-        success = rows > 0
-        if strict and not success
-          throw new Error ERR_NO_ROW
-        return success
+    @knex(@table)
+    .del()
+    .where(obj)
+    .then (rows) ->
+      success = rows > 0
+      if strict and not success
+        throw new Error ERR_NO_ROW
+      return success
 
 
 module.exports = Table

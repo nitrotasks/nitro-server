@@ -1,42 +1,83 @@
-  describe '#list', ->
+should  = require('should')
+setup   = require('../../setup')
+db      = require('../../../core/controllers/database')
 
-    before ->
-      list.userId = user.id
+describe 'Database', ->
 
-    it 'should create a new list', (done) ->
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then(setup.createList)
+    .then -> done()
+    .done()
 
-      db.list.create(list).then (id) ->
-        list.id = id
-        done()
+  beforeEach (done) ->
+    db.list.destroy(setup.listId)
+    .then(setup.createList)
+    .then -> done()
+    .done()
 
-    it 'should read an existing list', (done) ->
+  describe ':list', ->
 
-      db.list.read(list.id).then (info) ->
-        info.should.eql list
-        done()
+    describe ':create', ->
 
-    it 'should update an existing list', (done) ->
+      beforeEach (done) ->
+        db.list.destroy(setup.listId)
+        .then -> done()
+        .done()
 
-      list.name = 'List 1 - Updated'
-      model = name: list.name
-      db.list.update(list.id, model).then -> done()
+      it 'should create a new list', (done) ->
 
-    it 'should read an updated list', (done) ->
+        id = null
 
-      db.list.read(list.id, 'name').then (info) ->
-        info.should.eql
-          name: list.name
-        done()
+        db.list.create(setup._list)
+        .then (_id) ->
+          id =_id
+          id.should.be.a.Number
+          db.list.read(id)
+        .then (list) ->
+          list.should.eql
+            id: id
+            userId: setup.userId
+            name: 'list_name'
+        .then -> done()
+        .done()
 
-    it 'should destroy an existing list', (done) ->
+    describe ':read', ->
 
-      db.list.destroy(list.id).then -> done()
+      it 'should read an existing list', (done) ->
 
-    it 'should create another list', (done) ->
+        db.list.read(setup.listId)
+        .then (list) ->
+          list.should.eql
+            id: setup.listId
+            userId: setup.userId
+            name: 'list_name'
+        .then -> done()
+        .done()
 
-      delete list.id
-      db.list.create(list).then (id) ->
-        list.id = id
-        done()
+    describe ':update', ->
 
+      it 'should update an existing list', (done) ->
+
+        db.list.update setup.listId,
+          name: 'list_name_updated'
+        .then ->
+          db.list.read(setup.listId, 'name')
+        .then (list) ->
+          list.name.should.equal('list_name_updated')
+        .then -> done()
+        .done()
+
+    describe ':destroy', ->
+
+      it 'should destroy an existing list', (done) ->
+
+        db.list.destroy(setup.listId)
+        .then ->
+          db.list.read(setup.listId)
+        .catch (err) ->
+          err.message.should.equal('err_no_row')
+          done()
+        .done()
 

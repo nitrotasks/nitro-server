@@ -1,106 +1,147 @@
-  describe '#user', ->
+should  = require('should')
+setup   = require('../../setup')
+db      = require('../../../core/controllers/database')
 
-    it 'should create a new user', (done) ->
+describe 'Database', ->
 
-      db.user.create(user)
-      .then (id) ->
-        id.should.be.a.Number
-        user.id = id
-      .then -> done()
-      .done()
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then -> done()
+    .done()
 
-    it 'should check if user exists', (done) ->
+  beforeEach (done) ->
+    db.user.destroy(setup.userId)
+    .then(setup.createUser)
+    .then -> done()
+    .done()
 
-      db.user.exists(user.id).then (exists) ->
-        exists.should.equal true
-      .then -> done()
-      .done()
+  describe ':user', ->
 
-    it 'should store the creation time', (done) ->
+    describe ':create', ->
 
-      db.user.read(user.id, 'created_at').then (info) ->
-        info.created_at.should.be.an.instanceOf Date
-        user.created_at = info.created_at
-      .then -> done()
-      .done()
+      userId = null
 
-    it 'should fetch all user information', (done) ->
+      beforeEach (done) ->
+        db.user.destroy(setup.userId)
+        .then -> done()
+        .done()
 
-      db.user.read(user.id).then (info) ->
-        info.should.eql user
-      .then -> done()
-      .done()
+      afterEach (done) ->
+        db.user.destroy(userId)
+        .then -> done()
+        .done()
 
-    it 'should update an existing user', (done) ->
+      it 'should create a new user', (done) ->
 
-      user.name = 'James'
-      model = name: user.name
-      db.user.update(user.id, model)
-      .then -> done()
-      .done()
+        db.user.create(setup._user)
+        .then (id) ->
+          userId = id
+          id.should.be.a.Number
+        .then -> done()
+        .done()
 
-    it 'should fetch a updated information', (done) ->
+    describe ':exists', ->
 
-      db.user.read(user.id, 'name')
-      .then (info) ->
-        info.name.should.equal user.name
-      .then -> done()
-      .done()
+      it 'should check if user exists', (done) ->
 
-    it 'should fetch multiple values', (done) ->
+        db.user.exists(setup.userId).then (exists) ->
+          exists.should.equal(true)
+        .then -> done()
+        .done()
 
-      db.user.read(user.id, ['name', 'email'])
-      .then (info) ->
-        info.should.eql
-          name: user.name
-          email: user.email
-      .then -> done()
-      .done()
+      it 'should check if a user does not exist', (done) ->
 
-    it 'should delete an existing user', (done) ->
+        db.user.destroy(setup.userId)
+        .then ->
+          db.user.exists(setup.userId)
+        .then (exists) ->
+          exists.should.equal(false)
+        .then -> done()
+        .done()
 
-      db.user.destroy(user.id)
-      .then -> done()
-      .done()
+    describe ':read', ->
 
-    it 'should check if a user does not exist', (done) ->
+      it 'should store the creation time', (done) ->
 
-      db.user.exists(user.id)
-      .then (exists) ->
-        exists.should.equal false
-      .then -> done()
-      .done()
+        db.user.read(setup.userId, 'created_at')
+        .then (info) ->
+          info.created_at.should.be.an.instanceOf(Date)
+        .then -> done()
+        .done()
 
-    it 'should throw err when fetching a user that does not exist', (done) ->
+      it 'should fetch multiple values', (done) ->
 
-      db.user.read(user.id, 'name')
-      .catch (err) ->
-        err.message.should.equal 'err_no_row'
-        done()
-      .done()
+        db.user.read(setup.userId, ['name', 'email'])
+        .then (info) ->
+          info.should.eql
+            name: 'user_name'
+            email: 'user_email'
+        .then -> done()
+        .done()
 
-    it 'should throw err when updating a user that does not exist', (done) ->
+      it 'should fetch all user information', (done) ->
 
-      model = email: 'james@gmail.com'
-      db.user.update(user.id, model).catch (err) ->
-        err.message.should.equal 'err_no_row'
-        done()
-      .done()
+        db.user.read(setup.userId)
+        .then (info) ->
+          info.id.should.equal(setup.userId)
+          info.name.should.equal(setup._user.name)
+          info.email.should.equal(setup._user.email)
+          info.password.should.equal(setup._user.password)
+          info.created_at.should.be.a.Date
+        .then -> done()
+        .done()
 
-    it 'should not throw err when destroying a user that does not exist', (done) ->
+      it 'should throw err when fetching a user that does not exist', (done) ->
 
-      db.user.destroy(user.id)
-      .then -> done()
-      .done()
+        db.user.destroy(setup.userId)
+        .then ->
+          db.user.read(setup.userId, 'name')
+        .catch (err) ->
+          err.message.should.equal 'err_no_row'
+          done()
+        .done()
 
-    it 'should create another user', (done) ->
+    describe ':update', ->
 
-      delete user.id
-      delete user.created_at
+      it 'should update an existing user', (done) ->
 
-      db.user.create(user)
-      .then (id) ->
-        user.id = id
-      .then -> done()
-      .done()
+        db.user.update setup.userId,
+          name: 'user_name_updated'
+        .then ->
+          db.user.read(setup.userId, 'name')
+        .then (info) ->
+          info.name.should.equal('user_name_updated')
+        .then -> done()
+        .done()
 
+      it 'should throw err when updating a user that does not exist', (done) ->
+
+        db.user.destroy(setup.userId)
+        .then ->
+          db.user.update setup.userId,
+            name: 'user_name_updated'
+        .catch (err) ->
+          err.message.should.equal 'err_no_row'
+          done()
+        .done()
+
+    describe ':destroy', ->
+
+      it 'should delete an existing user', (done) ->
+
+        db.user.destroy(setup.userId)
+        .then ->
+          db.user.read(setup.userId)
+        .catch (err) ->
+          err.message.should.equal('err_no_row')
+          done()
+        .done()
+
+      it 'should not throw err when destroying a user that does not exist', (done) ->
+
+        db.user.destroy(setup.userId)
+        .then ->
+          db.user.destroy(setup.userId)
+        .then -> done()
+        .done()

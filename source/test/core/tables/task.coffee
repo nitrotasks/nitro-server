@@ -1,40 +1,83 @@
-  describe '#task', ->
+should  = require('should')
+setup   = require('../../setup')
+db      = require('../../../core/controllers/database')
 
-    before ->
-      task.userId = user.id
-      task.listId = list.id
+describe 'Database', ->
 
-    it 'should create a new task', (done) ->
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then(setup.createList)
+    .then(setup.createTask)
+    .then -> done()
+    .done()
 
-      db.task.create(task).then (id) ->
-        task.id = id
-        done()
+  beforeEach (done) ->
+    db.task.destroy(setup.taskId)
+    .then(setup.createTask)
+    .then -> done()
+    .done()
 
-    it 'should read an existing task', (done) ->
+  describe ':task', ->
 
-      db.task.read(task.id).then (info) ->
-        task.should.eql info
-        done()
+    describe ':create', ->
 
-    it 'should update an existing task', (done) ->
+      beforeEach (done) ->
+        db.task.destroy(setup.taskId)
+        .then -> done()
+        .done()
 
-      task.name = 'Task 1 - Updated'
-      model = name: task.name
-      db.task.update(task.id, model).then -> done()
+      it 'should create a new task', (done) ->
 
-    it 'should read an updated task', (done) ->
+        db.task.create
+          userId: setup.userId
+          listId: setup.listId
+          name: 'this is my list'
+        .then (id) ->
+          id.should.be.a.Number
+        .then -> done()
+        .done()
 
-      db.task.read(task.id, 'name').then (info) ->
-        info.name.should.equal task.name
-        done()
+    describe ':read', ->
 
-    it 'should destroy an existing task', (done) ->
+      it 'should read an existing task', (done) ->
 
-      db.task.destroy(task.id).then -> done()
+        db.task.read(setup.taskId)
+        .then (task) ->
+          task.should.eql
+            id: setup.taskId
+            userId: setup.userId
+            listId: setup.listId
+            name: 'task_name'
+            notes: 'task_notes'
+            date: 0
+            completed: 0
+            priority: 0
+        .then -> done()
+        .done()
 
-    it 'should create another task', (done) ->
+    describe ':update', ->
 
-      delete task.id
-      db.task.create(task).then (id) ->
-        task.id = id
-        done()
+      it 'should update an existing task', (done) ->
+
+        db.task.update setup.taskId,
+          name: 'task_name_updated'
+        .then ->
+          db.task.read(setup.taskId, 'name')
+        .then (task) ->
+          task.name.should.equal('task_name_updated')
+        .then -> done()
+        .done()
+
+    describe ':destroy', ->
+
+      it 'should destroy an existing task', (done) ->
+
+        db.task.destroy(setup.taskId)
+        .then ->
+          db.task.read(setup.taskId)
+        .catch (err) ->
+          err.message.should.equal('err_no_row')
+          done()
+        .done()
+

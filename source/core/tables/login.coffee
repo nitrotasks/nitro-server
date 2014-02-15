@@ -3,6 +3,8 @@ Table = require '../controllers/table'
 class Login extends Table
 
   table: 'login'
+  column: 'userId'
+  columns: ['userId', 'token']
 
   setup: ->
 
@@ -18,11 +20,9 @@ class Login extends Table
       table.string('token', 64).notNullable()
       table.timestamp('created_at').defaultTo @knex.raw 'now()'
 
-  create: (id, token) ->
+  create: (userId, token) ->
 
-    @_create 'userId',
-      userId: id
-      token: token
+    @_create('userId', {userId, token}).return(userId)
 
 
   ###
@@ -36,42 +36,26 @@ class Login extends Table
    * ! err_no_row : row cannot be found
   ###
 
-  read: (id, token, columns) ->
+  read: (userId, token) ->
 
-    promise = @search columns,
-      userId: id
-      token: token
+    @search null, { userId, token }
+    .then (rows) -> return rows[0]
 
-    promise.then (rows) ->
-      return rows[0]
+  readAll: (userId) ->
 
-
-  exists: (id, token) ->
-
-    promise = @search 'userId',
-      userId: id
-      token: token
-
-    promise
-      .return(true)
-      .catch -> false
+    @search null, { userId }
 
   update: ->
 
     throw new Error 'Cannot update login row'
 
+  destroy: (userId, token) ->
 
-  destroy: (id, token) ->
+    super { userId, token }
 
-    super
-      userId: id
-      token: token
+  destroyAll: (userId) ->
 
-
-  destroyAll: (id) ->
-
-    super
-      userId: id
+    Table::destroy.call this, { userId }
 
 
 module.exports = Login

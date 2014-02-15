@@ -1,94 +1,119 @@
-  describe '#login', ->
+should  = require('should')
+setup   = require('../../setup')
+db      = require('../../../core/controllers/database')
 
-    login =
-      id: null
-      token: 'battery-horse-staple'
+describe 'Database', ->
 
-    before ->
-      login.id = user.id
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then(setup.createLogin)
+    .then -> done()
+    .done()
 
-    it 'should create a new entry', (done) ->
+  beforeEach (done) ->
+    db.login.destroyAll(setup.loginId)
+    .then(setup.createLogin)
+    .then -> done()
+    .done()
 
-      db.login.create(login.id, login.token).then -> done()
+  describe ':login', ->
 
-    it 'should read the date the login token was created', (done) ->
+    describe ':create', ->
 
-      db.login.read(login.id, login.token, 'created_at').then (info) ->
-        login.created_at = info.created_at
-        login.created_at.should.be.an.instanceOf Date
-        done()
+      beforeEach (done) ->
+        db.login.destroyAll(setup.loginId)
+        .then -> done()
+        .done()
 
-    it 'should read an existing entry', (done) ->
+      it 'should create a new entry', (done) ->
 
-      db.login.read(login.id, login.token).then (info) ->
-        info.should.eql
-          userId: login.id
-          token: login.token
-          created_at: login.created_at
-        done()
+        db.login.create(setup._login.id, setup._login.token)
+        .then -> done()
+        .done()
 
-    it 'should check if a login exists', (done) ->
+      it 'should create another login token', (done) ->
 
-      db.login.exists(login.id, login.token).then (exists) ->
-        exists.should.equal true
-        done()
+        db.login.create(setup.userId, setup._login.token)
+        .then ->
+          db.login.create(setup.userId, 'login_token_2')
+        .then ->
+          db.login.create(setup.userId, 'login_token_3')
+        .then ->
+          db.login.readAll(setup.userId)
+        .then (tokens) ->
+          tokens.length.should.equal(3)
+          tokens[0].token.should.equal('login_token')
+          tokens[1].token.should.equal('login_token_2')
+          tokens[2].token.should.equal('login_token_3')
+        .then -> done()
+        .done()
 
-    it 'should destroy an existing entry', (done) ->
+    describe ':read', ->
 
-      db.login.destroy(login.id, login.token).then -> done()
+      it 'should read the date the login token was created', (done) ->
 
-    it 'should check if a login does not exist', (done) ->
+        db.login.read(setup.userId, setup._login.token)
+        .then (login) ->
+          login.userId.should.equal(setup.userId)
+          login.token.should.equal(setup._login.token)
+          login.created_at.should.be.an.instanceOf(Date)
+        .then -> done()
+        .done()
 
-      db.login.exists(login.id, login.token).then (exists) ->
-        exists.should.equal false
-        done()
+      it 'should throw err when reading an entry that does not exist', (done) ->
 
-    it 'should throw err when reading an entry that does not exist', (done) ->
+        db.login.destroyAll(setup.userId)
+        .then ->
+          db.login.read(setup.userId, setup._login.token)
+        .catch (err) ->
+          err.message.should.equal 'err_no_row'
+        .then -> done()
+        .done()
 
-      db.login.read(login.id, login.token).catch (err) ->
-        err.should.equal 'err_no_row'
-        done()
+    describe ':exists', ->
 
-    it 'should create another login token', (done) ->
+      it 'should check if a login exists', (done) ->
 
-      db.login.create(login.id, login.token)
-      .then ->
-        db.login.create(login.id, 'temp')
-      .then ->
-        db.login.create(login.id, 'orary')
-      .then ->
-        done()
+        db.login.exists(setup.userId, setup._login.token)
+        .then (exists) ->
+          exists.should.equal(true)
+        .then -> done()
+        .done()
 
-    it 'should delete all login token', (done) ->
+    describe ':destroy', ->
 
-      promise = Promise.all [
-        db.login.exists login.id, login.token
-        db.login.exists user.id, 'temp'
-        db.login.exists user.id, 'orary'
-      ]
+      it 'should destroy an existing entry', (done) ->
 
-      promise.spread (a, b, c)->
+        db.login.destroy(setup.userId, setup._login.token)
+        .then ->
+          db.login.read(setup.userId, setup._login.token)
+        .catch (err) ->
+          err.message.should.equal('err_no_row')
+        .then -> done()
+        .done()
 
-        a.should.equal true
-        b.should.equal true
-        c.should.equal true
+      it 'should check if a login does not exist', (done) ->
 
-        db.login.destroyAll(user.id)
+        db.login.destroyAll(setup.userId)
+        .then ->
+          db.login.exists(setup.userId, setup._login.token)
+        .then (exists) ->
+          exists.should.equal(false)
+        .then -> done()
+        .done()
 
-      .then ->
+    describe ':destroyAll', (done) ->
 
-        Promise.all [
-          db.login.exists login.id, login.token
-          db.login.exists user.id, 'temp'
-          db.login.exists user.id, 'orary'
-        ]
+      it 'should delete all login token', (done) ->
 
-      .spread (a, b, c) ->
+        db.login.destroyAll(setup.userId)
+        .catch (err) ->
+          throw new Error 'could not destroy tokens'
+        .then ->
+          db.login.readAll(setup.userId)
+        .catch (err) ->
+          err.message.should.equal('err_no_row')
+        .then -> done()
+        .done()
 
-        a.should.equal false
-        b.should.equal false
-        c.should.equal false
-
-        done()
-
-      .catch(log)

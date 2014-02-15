@@ -1,44 +1,98 @@
+should  = require('should')
+setup   = require('../../setup')
+db      = require('../../../core/controllers/database')
 
-  describe '#pref', ->
+describe 'Database', ->
 
-    pref =
-      userId: null
-      sort: 0
-      night: 0
-      language: 'en-NZ'
-      weekStart: 1
-      dateFormat: 'dd/mm/yy'
-      confirmDelete: 1
-      moveCompleted: 1
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then -> done()
+    .done()
 
-    before ->
-      pref.userId = user.id
+  beforeEach (done) ->
+    db.pref.destroy(setup.userId)
+    .then(setup.createPref)
+    .then -> done()
+    .done()
 
-    it 'should create a new pref', (done) ->
+  describe ':pref', ->
 
-      db.pref.create(pref).then -> done()
+    describe ':create', ->
 
-    it 'should only allow one pref per user', (done) ->
+      beforeEach (done) ->
+        db.pref.destroy(setup.prefId)
+        .then -> done()
+        .done()
 
-      db.pref.create(pref).catch -> done()
+      it 'should create a new pref', (done) ->
 
-    it 'should update a pref', (done) ->
+        db.pref.create(setup._pref)
+        .then (id) ->
+          id.should.equal(setup.userId)
+          db.pref.read(setup.prefId)
+        .then (pref) ->
+          pref.should.eql
+            userId: setup.userId
+            sort: 0
+            night: 0
+            language: 'en-us'
+            weekStart: 0
+            dateFormat: 'dd/mm/yy'
+            confirmDelete: 0
+            moveCompleted: 0
+        .then -> done()
+        .done()
 
-      pref.sort = 1
-      changes = sort: pref.sort
+      it 'should only allow one pref per user', (done) ->
 
-      db.pref.update(user.id, changes).then ->
-        done()
+        db.pref.create(setup._pref)
+        .then ->
+          db.pref.create(setup._pref)
+        .catch (err) ->
+          err.message.should.equal('err_could_not_create_row')
+          done()
+        .done()
 
-    it 'should read from a pref', (done) ->
+    describe ':read', ->
 
-      db.pref.read(user.id)
-      .then (info) ->
-        info.should.eql pref
-        done()
-      .catch(log)
+      it 'should read from a pref', (done) ->
 
-    it 'should destroy a pref', (done) ->
+        db.pref.read(setup.prefId)
+        .then (info) ->
+          info.should.eql
+            userId: setup.userId
+            sort: 0
+            night: 0
+            language: 'en-us'
+            weekStart: 0
+            dateFormat: 'dd/mm/yy'
+            confirmDelete: 0
+            moveCompleted: 0
+        .then -> done()
+        .done()
 
-      db.pref.destroy(user.id).then ->
-        done()
+    describe ':update', ->
+
+      it 'should update a pref', (done) ->
+
+        db.pref.update setup.prefId,
+          sort: 2
+        .then ->
+          db.pref.read(setup.prefId, 'sort')
+        .then (pref) ->
+          pref.sort.should.equal(2)
+        .then -> done()
+        .done()
+
+    describe ':destroy', ->
+
+      it 'should destroy a pref', (done) ->
+
+        db.pref.destroy(setup.prefId)
+        .then ->
+          db.pref.read(setup.prefId)
+        .catch (err) ->
+          err.message.should.equal('err_no_row')
+          done()
+        .done()
