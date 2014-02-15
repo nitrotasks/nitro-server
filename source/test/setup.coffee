@@ -47,6 +47,27 @@ setup._task =
 setup.loginToken = 'login_token'
 setup.resetToken = 'reset_token'
 
+setup._timeList =
+  name: 1
+  tasks: 1
+
+setup._timeTask =
+  listId: 1
+  name: 1
+  notes: 1
+  date: 1
+  priority: 1
+  completed: 1
+
+setup._timePref =
+  sort: 1
+  night: 1
+  language: 1
+  weekStart: 1
+  dateFormat: 1
+  confirmDelete: 1
+  moveCompleted: 1
+
 setup.createUser = ->
 
   Users.create(setup._user)
@@ -84,5 +105,20 @@ setup.createLogin = ->
 setup.createReset = ->
 
   database.reset.create(setup.userId, setup.resetToken)
+
+setup.createTimeList = ->
+
+  setup._timeList.id = setup.listId
+  database.time_list.create(setup._timeList)
+
+setup.createTimeTask = ->
+
+  setup._timeTask.id = setup.taskId
+  database.time_task.create(setup._timeTask)
+
+setup.createTimePRef = ->
+
+  setup._timePref.id = setup.userId
+  database.time_pref.create(setup._timePref)
 
 module.exports = setup

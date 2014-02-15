@@ -1,47 +1,79 @@
-  describe '#time_task', ->
+should  = require('should')
+setup   = require('../../setup')
+db      = require('../../../core/controllers/database')
 
-    it 'should add timestamps to an existing task', (done) ->
+describe 'Database', ->
 
-      model =
-        id: task.id
-        listId: now
-        name: now
-        notes: now
-        priority: now
-        date: now
-        completed: now
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then(setup.createList)
+    .then(setup.createTask)
+    .then(setup.createTimeTask)
+    .then -> done()
+    .done()
 
-      db.time_task.create(model)
+  beforeEach (done) ->
+    db.time_task.destroy(setup.taskId)
+    .then(setup.createTimeTask)
+    .then -> done()
+    .done()
+
+  describe ':time_task', ->
+
+    describe ':create', ->
+
+      beforeEach (done) ->
+        db.time_task.destroy(setup.taskId)
         .then -> done()
-        .catch(log)
+        .done()
 
-    it 'should read timestamps for an existing task', (done) ->
+      it 'should add timestamps to an existing task', (done) ->
 
-      db.time_task.read(task.id).then (times) ->
-        times.should.eql
-          id: task.id
-          listId: now
-          name: now
-          notes: now
-          priority: now
-          date: now
-          completed: now
-        done()
+        db.time_task.create(setup._timeTask)
+        .then -> done()
+        .done()
 
-    it 'should update timestamps for an existing task', (done) ->
+    describe ':read', ->
 
-      db.time_task.update(task.id, { listId: now })
-      .then ->
-        db.time_task.read(task.id, 'listId')
-      .then (times) ->
-        times.listId.should.equal now
-        done()
+      it 'should read timestamps for an existing task', (done) ->
 
-    it 'should destroy timestamps for an existing task', (done) ->
+        db.time_task.read(setup.taskId)
+        .then (times) ->
+          times.should.eql
+            id: setup.taskId
+            listId: 1
+            name: 1
+            notes: 1
+            priority: 1
+            date: 1
+            completed: 1
+        .then -> done()
+        .done()
 
-      db.time_task.destroy(task.id)
-      .then ->
-        db.time_task.read(task.id)
-      .catch (err) ->
-        err.should.equal 'err_no_row'
-        done()
+    describe ':update', ->
+
+      it 'should update timestamps for an existing task', (done) ->
+
+        db.time_task.update setup.taskId,
+          listId: 3
+          name: 3
+        .then ->
+          db.time_task.read(setup.taskId, ['listId', 'name'])
+        .then (times) ->
+          times.listId.should.equal(3)
+          times.name.should.equal(3)
+        .then -> done()
+        .done()
+
+    describe ':destroy', ->
+
+      it 'should destroy timestamps for an existing task', (done) ->
+
+        db.time_task.destroy(setup.taskId)
+        .then ->
+          db.time_task.read(setup.taskId)
+        .catch (err) ->
+          err.message.should.equal('err_no_row')
+          done()
+        .done()

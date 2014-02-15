@@ -1,42 +1,70 @@
-describe '#time_list', ->
+should  = require('should')
+setup   = require('../../setup')
+db      = require('../../../core/controllers/database')
 
-  it 'should add timestamps to an existing list', (done) ->
+describe 'Database', ->
 
-    model =
-      id: list.id
-      name: now
-      tasks: now
-
-    db.time_list.create(model)
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then(setup.createList)
+    .then(setup.createTimeList)
     .then -> done()
     .done()
 
-  it 'should read timestamps for an existing list', (done) ->
-
-    db.time_list.read(list.id)
-    .then (times) ->
-      times.should.eql
-        id: list.id
-        name: now
-        tasks: now
+  beforeEach (done) ->
+    db.time_list.destroy(setup.listId)
+    .then(setup.createTimeList)
     .then -> done()
     .done()
 
-  it 'should update timestamps for an existing list', (done) ->
+  describe ':time_list', ->
 
-    db.time_list.update(list.id, { name: now })
-    .then ->
-      db.time_list.read(list.id, 'name')
-    .then (times) ->
-      times.name.should.equal now
-    .then -> done()
-    .done()
+    describe ':create', ->
 
-  it 'should destroy timestamps for an existing list', (done) ->
+      beforeEach (done) ->
+        db.time_list.destroy(setup.listId)
+        .then -> done()
+        .done()
 
-    db.time_list.destroy(list.id)
-    .then ->
-      db.time_list.read(list.id)
-    .catch (err) ->
-      err.should.equal 'err_no_row'
-      done()
+      it 'should add timestamps to an existing list', (done) ->
+
+        db.time_list.create(setup._timeList)
+        .then -> done()
+        .done()
+
+    describe ':read', ->
+
+      it 'should read timestamps for an existing list', (done) ->
+
+        db.time_list.read(setup.listId)
+        .then (times) ->
+          times.should.eql
+            id: setup.listId
+            name: 1
+            tasks: 1
+        .then -> done()
+        .done()
+
+    describe ':update', ->
+
+      it 'should update timestamps for an existing list', (done) ->
+
+        db.time_list.update(setup.listId, { name: 2 })
+        .then ->
+          db.time_list.read(setup.listId, 'name')
+        .then (times) ->
+          times.name.should.equal(2)
+        .then -> done()
+        .done()
+
+    describe ':destroy', ->
+
+      it 'should destroy timestamps for an existing list', (done) ->
+
+        db.time_list.destroy(setup.listId)
+        .then ->
+          db.time_list.read(setup.listId)
+        .catch (err) ->
+          err.message.should.equal('err_no_row')
+          done()

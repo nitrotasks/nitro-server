@@ -34,7 +34,15 @@ describe 'Database', ->
         .then -> done()
         .done()
 
-      it 'should only allow one reset token per user'
+      it 'should only allow one reset token per user', (done) ->
+
+        db.reset.create(setup.userId, setup.resetTokenm)
+        .then ->
+          db.reset.create(setup.userId, 'another_token')
+        .catch (err) ->
+          err.message.should.equal('err_could_not_create_row')
+          done()
+        .done()
 
     describe ':read', ->
 
