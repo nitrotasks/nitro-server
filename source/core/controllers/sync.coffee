@@ -93,20 +93,20 @@ class Sync
 
       time.task.checkMultiple(id, data, times)
 
-    .then (_times) ->
+    .then (_times) =>
       times = _times
 
       # Move a task to another list
       return unless data.listId
 
-      @user.lists.own(data.listId)
+      @user.lists.owns(data.listId)
       .then ->
         task.read('listId')
       .then (current) ->
         throw null if current.listId is data.listId
         task.removeFromList(current.listId)
       .then ->
-        task.addToList(data.listi)
+        task.addToList(data.listId)
       .catch (ignore) ->
         delete data.listId
         delete times?.listId
