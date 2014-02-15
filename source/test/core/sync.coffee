@@ -62,7 +62,6 @@ describe 'Sync', ->
       .then -> done()
       .done()
 
-
   describe ':task_update', ->
 
     taskId = null
@@ -135,7 +134,7 @@ describe 'Sync', ->
 
       sync.task_destroy(setup.taskId)
       .then (success) ->
-        console.log success
+        success.should.equal(true)
       .then -> done()
       .done()
 
@@ -145,7 +144,7 @@ describe 'Sync', ->
 
       sync.list_destroy(setup.listId)
       .then (success) ->
-        console.log success
+        success.should.equal(true)
       .then -> done()
       .done()
 

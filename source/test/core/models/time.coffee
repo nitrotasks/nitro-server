@@ -137,12 +137,12 @@ describe 'Time', ->
           done()
         .done()
 
-      it 'an equal time should fail', (done) ->
+      it 'an equal time should pass', (done) ->
 
         time.checkSingle(setup.taskId, 100)
-        .catch (err) ->
-          err.message.should.equal('err_old_time')
-          done()
+        .then (pass) ->
+          pass.should.equal(true)
+        .then -> done()
         .done()
 
       it 'only needs to be lower than a single to fail', (done) ->
@@ -159,7 +159,15 @@ describe 'Time', ->
 
       it 'should check multiple values', (done) ->
 
-        time.checkMultiple setup.taskId,
+        data =
+          listId: 3
+          name: 'task_name_updated'
+          notes: 'task_notes_updated'
+          priority: 3
+          completed: 111
+          date: 111
+
+        time.checkMultiple setup.taskId, data,
           listId: 110
           name: 110
           notes: 110
@@ -171,21 +179,30 @@ describe 'Time', ->
             listId: 110
             name: 110
             notes: 110
+            priority: 100
         .then -> done()
         .done()
 
-      it 'should return an empty object when all values are old', (done) ->
+      it 'should throw err when all values are old', (done) ->
 
-        time.checkMultiple setup.taskId,
+        data =
+          listId: 3
+          name: 'task_name_updated'
+          notes: 'task_notes_updated'
+          priority: 3
+          completed: 111
+          date: 111
+
+        time.checkMultiple setup.taskId, data,
           listId: 90
           name: 90
           notes: 90
           priority: 90
           completed: 90
           date: 90
-        .then (times) ->
-          times.should.eql {}
-        .then -> done()
+        .catch (err) ->
+          err.message.should.equal 'err_old_time'
+          done()
         .done()
 
     describe ':updateMultiple', ->

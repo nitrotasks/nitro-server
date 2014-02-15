@@ -39,27 +39,13 @@ class Sync
 
     # Check that the list exists
     @user.lists.owns(data.listId)
-    .then =>
-
-      @user.tasks.create(data)
-
+    .then => @user.tasks.create(data)
     .then (id) ->
-
-      # Set id
-      data.id = id
-
-      timestamp ?= time.now()
-      time.createTask(id, timestamp)
-
-    .then (task) ->
-
-      # Add the task to the list
-      Task::addToList.call(data, data.listId)
-
-    .then ->
-
-      log '[task] [create]', data
-      return data.id
+      log '[task] [create]', id, data
+      Promise.all([
+        time.task.create(id, timestamp)
+        Task::addToList.call({ id }, data.listId)
+      ]).return(id)
 
 
   ###
@@ -72,22 +58,9 @@ class Sync
 
   list_create: (data, timestamp) =>
 
-    @user.lists.create(data)
-    .then (id) ->
-
-      # Set id
-      data.id = id
-
-      timestamp ?= time.now()
-      time.createList(id, timestamp)
-
-    .then ->
-
-      log '[list] [create]', data
-
-      # Return new id
-      return data.id
-
+    @user.lists.create(data).then (id) ->
+      log '[list] [create]', id, data
+      time.list.create(id, timestamp).return(id)
 
 
   ####################################
@@ -106,7 +79,7 @@ class Sync
    * > changes
   ###
 
-  task_update: (id, data, timestamps) =>
+  task_update: (id, data, times) =>
 
     task = null
 
@@ -117,6 +90,11 @@ class Sync
     @user.tasks.get(id)
     .then (_task) =>
       task = _task
+
+      time.task.checkMultiple(id, data, times)
+
+    .then (_times) ->
+      times = _times
 
       # Move a task to another list
       return unless data.listId
@@ -131,10 +109,10 @@ class Sync
         task.addToList(data.listi)
       .catch (ignore) ->
         delete data.listId
-        delete timestamps.listId
+        delete times?.listId
 
-    .then => # Set timestamps
-      time.task.updateMultiple(id, data, timestamps)
+    .then => # Set times
+      time.task.update(id, times)
     .then -> # Save data
       task.update(data)
     .then -> # Return task
@@ -223,15 +201,11 @@ class Sync
   task_destroy: (id, timestamp) =>
 
     task = null
-
     @user.tasks.get(id)
     .then (_task) =>
-
       task = _task
-      time.checkSingle(TASK, id, timestamp)
-
+      time.task.checkSingle(id, timestamp)
     .then =>
-
       log '[task] [destroy]', id
       task.destroy()
 
@@ -245,15 +219,11 @@ class Sync
   list_destroy: (id, timestamp) =>
 
     list = null
-
     @user.lists.get(id)
     .then (_list) =>
-
       list = _list
-      time.checkSingle(LIST, id, timestamp)
-
+      time.list.checkSingle(id, timestamp)
     .then =>
-
       log '[list] [destroy]', id
       list.destroy()
 
