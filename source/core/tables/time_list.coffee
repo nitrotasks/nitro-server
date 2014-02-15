@@ -3,6 +3,8 @@ Table = require '../controllers/table'
 class TimeList extends Table
 
   table: 'time_list'
+  column: 'id'
+  columns: ['name', 'tasks']
 
   setup: ->
 

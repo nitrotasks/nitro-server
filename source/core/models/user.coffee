@@ -39,7 +39,7 @@ class User
 
   setup: ->
     @pref.create({})
-    .then => Time.createPref(@id, null)
+    .then => Time.pref.create(@id, null)
     .return(this)
 
   read: (columns) ->

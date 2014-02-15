@@ -15,24 +15,9 @@ ERR_INVALID_MODEL = 'err_invalid_model'
 ERR_OLD_EVENT = 'err_old_event'
 
 
-hasSameKeys = (a, b) ->
-
-  aKeys = Object.keys(a)
-  bKeys = Object.keys(b)
-
-  if aKeys.length is bKeys.length
-    if aKeys.every( (key) -> b.hasOwnProperty(key) )
-      return aKeys
-
-  return false
-
-
-
-# Does all the useful stuff
 class Sync
 
   constructor: (@user) ->
-
 
   #####################################
   #    __   __   ___      ___  ___    #
@@ -112,52 +97,6 @@ class Sync
   #                                  #
   ####################################
 
-  ###
-   * (private) Model Update Timestamps
-   *
-   * Handle timestamps for an update event
-   *
-   * - classname (string)
-   * - id (string)
-   * - changes (object)
-   * - timestamps (object)
-   * > timestamps
-  ###
-
-  model_update_create_timestamps: (changes) ->
-
-    timestamps = {}
-    now = time.now()
-    for key of changes
-      timestamps[key] = now
-
-    Promise.resolve timestamps
-
-
-  model_update_timestamps: (classname, id, changes, timestamps) ->
-
-    if timestamps
-
-      keys = hasSameKeys(changes, timestamps)
-
-      if keys is false
-        return Promise.reject ERR_INVALID_MODEL
-
-      time.checkMultiple(classname, id, timestamps).then (oldKeys) ->
-
-        for key in oldKeys
-          delete timestamps[key]
-          delete changes[key]
-
-        if oldKeys.length is keys.length
-          throw ERR_OLD_EVENT
-
-        return timestamps
-
-
-    else
-      @model_update_create_timestamps(changes)
-
 
   ###
    * Update Task
@@ -179,14 +118,9 @@ class Sync
     .then (_task) =>
       task = _task
 
-      # Check timestamps
-      @model_update_timestamps(TASK, id, data, timestamps)
-
-    .then (_timestamps) =>
-      timestamps = _timestamps
-
       # Move a task to another list
       return unless data.listId
+
       @user.lists.own(data.listId)
       .then ->
         task.read('listId')
@@ -200,7 +134,7 @@ class Sync
         delete timestamps.listId
 
     .then => # Set timestamps
-      time.update(TASK, id, timestamps)
+      time.task.updateMultiple(id, data, timestamps)
     .then -> # Save data
       task.update(data)
     .then -> # Return task
@@ -234,13 +168,8 @@ class Sync
         delete data.tasks
         delete timestamps.tasks
 
-      # Check timestamps
-      @model_update_timestamps(LIST, id, data, timestamps)
-
-    .then (timestamps) =>
-
-      # Set timestamps
-      time.update(LIST, id, timestamps)
+      # Update timestamps
+      time.list.updateMultiple(id, data, timestamps)
 
     .then ->
 
@@ -267,9 +196,7 @@ class Sync
     if Object.keys(data).length is 0
       return Promise.reject ERR_INVALID_MODEL
 
-    @model_update_timestamps(PREF, @user.id, data, timestamps)
-    .then (timestamps) =>
-      time.update(PREF, @user.id, timestamps)
+    time.pref.updateMultiple(@user.id, data, timestamps)
     .then =>
       @user.pref.update(data)
     .then ->

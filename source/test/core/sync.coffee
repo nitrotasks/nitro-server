@@ -136,12 +136,18 @@ describe 'Sync', ->
       sync.task_destroy(setup.taskId)
       .then (success) ->
         console.log success
-        done()
+      .then -> done()
       .done()
 
   describe ':list_destroy', ->
 
-    it 'should destroy a list'
+    it 'should destroy a list', (done) ->
+
+      sync.list_destroy(setup.listId)
+      .then (success) ->
+        console.log success
+      .then -> done()
+      .done()
 
 
   return

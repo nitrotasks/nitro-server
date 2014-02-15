@@ -7,6 +7,7 @@ TESTS=test/*
 
 
 test:
+		@BLUEBIRD_DEBUG=1 \
 	  $(MOCHA) -R spec $(TESTS) --bail
 
 watch:

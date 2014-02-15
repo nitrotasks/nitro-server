@@ -4,6 +4,11 @@ class TimePref extends Table
 
   table: 'time_pref'
   column: 'id'
+  columns: [
+    'sort', 'night', 'language',
+    'weekStart', 'dateFormat',
+    'confirmDelete', 'moveCompleted'
+  ]
 
   setup: ->
 
