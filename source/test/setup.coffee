@@ -91,6 +91,7 @@ setup.createList = ->
 
   setup.user.lists.create(setup._list)
   .then (id) ->
+    setup._list.id = id
     setup.listId = id
 
 setup.createTask = ->
@@ -99,6 +100,7 @@ setup.createTask = ->
 
   setup.user.tasks.create(setup._task)
   .then (id) ->
+    setup._task.id = id
     setup.taskId = id
     database.list_tasks.create(setup.listId, id)
 

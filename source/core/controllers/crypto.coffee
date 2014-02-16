@@ -43,6 +43,15 @@ crypto =
     bcrypt.compareAsync(data, hash)
 
 
+  fastHash: (data) ->
+    nodeCrypto.createHash('sha256')
+    .update(data)
+    .digest('base64')
+
+  fastCompare: (data, hash) ->
+    crypto.fastHash(data) is hash
+
+
   ###
    * crypto.randomBytes
    *
@@ -71,6 +80,5 @@ crypto =
     byteLen = Math.ceil(len / 2)
     crypto.randomBytes(byteLen).then (bytes) ->
       bytes.toString('hex')[0 ... len]
-
 
 module.exports = crypto

@@ -30,6 +30,8 @@ describe 'Database', ->
 
         id = null
 
+        console.log setup._list
+
         db.list.create(setup._list)
         .then (_id) ->
           id =_id

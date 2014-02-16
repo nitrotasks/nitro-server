@@ -22,7 +22,7 @@ describe 'Users', ->
 
       Users.create
         name: 'user_name'
-        email: 'user_email'
+        email: 'user_email_custom'
         password: 'user_password'
         pro: 1
       .then (user) ->

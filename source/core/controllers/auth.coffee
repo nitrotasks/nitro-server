@@ -1,10 +1,13 @@
 Promise = require('bluebird')
 crypto  = require('../controllers/crypto')
-Users   = require('../models/users')
+db      = require('../controllers/database')
+Users   = require('../models/user')
 
 ERR_BAD_PASS  = 'err_bad_pass'
 ERR_BAD_EMAIL = 'err_bad_email'
 ERR_BAD_NAME  = 'err_bad_name'
+
+TOKEN_LENGTH = 64
 
 
 # -----------------------------------------------------------------------------
@@ -28,14 +31,12 @@ auth =
     id = null
     Users.search(email).then (user) ->
       id = user.id
-      user.getPassword()
-    .then (password) ->
-      crypto.compare(pass, password)
+      user.read('password').get('password')
+    .then (hash) ->
+      crypto.compare(pass, hash)
     .then (same) ->
-      if not same then throw ERR_BAD_PASS
+      if not same then throw new Error(ERR_BAD_PASS)
       auth.returnLoginToken(id)
-    .catch ->
-      throw ERR_BAD_PASS
 
 
   ###
@@ -56,17 +57,19 @@ auth =
     # Validation
 
     if name.length is 0
-      return Promise.reject(ERR_BAD_NAME)
+      return Promise.reject(new Error(ERR_BAD_NAME))
 
     if email.length is 0
-      return Promise.reject(ERR_BAD_EMAIL)
+      return Promise.reject(new Error(ERR_BAD_EMAIL))
 
     if pass.length is 0
-      return Promise.reject(ERR_BAD_PASS)
+      return Promise.reject(new Error(ERR_BAD_PASS))
 
     # Hash password
 
-    crypto.hash(pass).then (hash) ->
+    crypto.hash(pass)
+    .then (hash) ->
+
       Users.create
         name: name
         email: email
@@ -97,7 +100,7 @@ auth =
   # Generate a reset password token for the user
   createResetToken: (email) ->
     Promise.all([
-      crypto.randomToken(RESET_TOKEN_LENGTH)
+      crypto.randomToken(TOKEN_LENGTH)
       Users.search(email)
     ]).spread (token, user) ->
       db.reset.create(user.id, token)
@@ -111,11 +114,11 @@ auth =
   ####
 
   createLoginToken: (id) ->
-    crypto.randomToken(LOGIN_TOKEN_LENGTH).then (token) ->
+    crypto.randomToken(TOKEN_LENGTH).then (token) ->
       db.login.create(id, token).return(token)
 
   returnLoginToken: (id) ->
-    crypto.createLoginToken(id).then (token) ->
+    auth.createLoginToken(id).then (token) ->
       return [id, token]
 
 

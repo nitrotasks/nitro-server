@@ -114,7 +114,7 @@ describe 'Task', ->
 
     it 'should throw err when user does not own task', (done) ->
 
-      setup.createUser()
+      setup.createUser('_custom')
       .then(setup.createList)
       .then(setup.createTask)
       .then (id) ->

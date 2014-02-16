@@ -23,7 +23,7 @@ class User
       name: user.name
       email: user.email
       password: user.password
-      pro: user.pro
+      pro: user.pro or 0
 
   ###
    * Create a new User instance

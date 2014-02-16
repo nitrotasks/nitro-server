@@ -34,6 +34,27 @@ describe 'Crypto', ->
       .then -> done()
       .done()
 
+  describe ':fastHash', ->
+
+    it 'should quickly hash data', (done) ->
+
+      crypto.randomToken(64)
+      .then (string) ->
+        crypto.fastHash(string)
+      .then -> done()
+      .done()
+
+  describe ':fastCompare', ->
+
+    it 'should quickly compare data', (done) ->
+
+      crypto.randomToken(64)
+      .then (string) ->
+        hash = crypto.fastHash(string)
+        crypto.fastCompare(string, hash).should.equal(true)
+      .then -> done()
+      .done()
+
   describe ':randomBytes', ->
 
     it 'should generate random bytes', (done) ->
@@ -57,6 +78,6 @@ describe 'Crypto', ->
 
       .map (token, size) ->
         token.should.have.length(size)
-      
+
       .then -> done()
       .done()
