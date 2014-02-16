@@ -44,6 +44,12 @@ describe 'Crypto', ->
       .then -> done()
       .done()
 
+    it 'should hash strings as utf-8', ->
+
+      string = 'aabbccddeeff'
+      hash = crypto.fastHash(string)
+      hash.should.equal('wXmVZPLu/K9j3S5cwIVz5jhWIiojLastkaF7Iygw1DA=')
+
   describe ':fastCompare', ->
 
     it 'should quickly compare data', (done) ->
@@ -78,6 +84,7 @@ describe 'Crypto', ->
 
       .map (token, size) ->
         token.should.have.length(size)
+        token.should.match(/^[\w-]*$/)
 
       .then -> done()
       .done()

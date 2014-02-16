@@ -81,6 +81,14 @@ describe 'Database', ->
         .then -> done()
         .done()
 
+    describe ':update', ->
+
+      it 'should not allow updating a token', ->
+
+        ( ->
+          db.login.update(setup.userId, token: 'abc')
+        ).should.throw(/cannot update login row/i)
+
     describe ':destroy', ->
 
       it 'should destroy an existing entry', (done) ->

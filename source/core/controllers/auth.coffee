@@ -87,8 +87,8 @@ auth =
   ###
 
   changePassword: (user, pass) ->
-    crypto.hash(pass).then (hash) ->
-      user.setPassword hash
+    crypto.hash(pass).then (password) ->
+      user.update { password }
 
   ###
    * Generate a password reset token for a user

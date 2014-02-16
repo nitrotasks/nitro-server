@@ -107,7 +107,7 @@ class Table
     .select()
     .column(columns)
     .where(data)
-    .then (rows) =>
+    .then (rows) ->
       unless rows.length then throw new Error ERR_NO_ROW
       return rows
 
