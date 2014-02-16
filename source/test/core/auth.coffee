@@ -1,31 +1,16 @@
-should   = require 'should'
-Promise  = require 'bluebird'
-setup    = require './setup'
-Auth     = require '../app/controllers/auth'
-Users    = require '../app/controllers/users'
-Log      = require '../app/utils/log'
+should   = require('should')
+Promise  = require('bluebird')
+setup    = require('../setup')
+Auth     = require('../../core/controllers/auth')
+Users    = require('../../core/models/users')
 
-log = Log 'auth - test'
+describe 'Auth', ->
 
-describe 'Auth API', ->
-
-  before setup
-
-  _user =
-    email: 'user@nitrotasks.com'
-    name: 'Mr. Nitro'
-    password: 'password'
-
-  _id = null
-
-  beforeEach (done) ->
-    Auth.register(_user.name, _user.email, _user.password).spread (id, token) ->
-      _id = id
-      done()
-
-  afterEach (done) ->
-    Users.destroy(_id).return().then(done)
-
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then -> done()
+    .done()
 
 # -----------------------------------------------------------------------------
 # Crypto
