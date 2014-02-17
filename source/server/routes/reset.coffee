@@ -28,18 +28,6 @@ sendEmail = (req, res) ->
       if global.DEBUG_ROUTES
         return res.send link
 
-      Mail.send
-        to: email
-        subject: 'Nitro Password Reset'
-        html: """
-          <p>To reset your password, click the link below</p>
-          <p><a href=\"#{ link }\">Reset Password</a></p>"
-          <p>If you did not request your password to be reset, you can just ignore this email and your password will remain the same.</p>
-          <p>- Nitrotasks</p>
-        """
-
-      res.sendfile page 'reset_email'
-
     .catch (err) ->
       log err
       log email, 'do not get a token'

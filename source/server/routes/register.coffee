@@ -1,9 +1,5 @@
-Log    = require '../utils/log'
-page   = require '../utils/page'
-Auth   = require '../controllers/auth'
-mail   = require '../controllers/mail'
-
-log = Log 'Route -> Registration', 'green'
+Log  = require('log_')('Route -> Registration', 'green')
+core = require('../../core/api')
 
 # -----------------------------------------------------------------------------
 # Registration
@@ -18,17 +14,21 @@ register = (req, res) ->
 
   log 'registering user', user.name
 
-  Auth.register(user.name, user.email, user.password)
-    .then (token) ->
-      res.send token
+  core.auth.register(user)
+  .then (id) ->
+    req.session.passport = user: id
+    res.send(id)
 
-    .catch (err) ->
-      log err
-      res.status 400
-      if typeof err is 'string'
-        res.send err
-      else
-        res.send 'err_server'
+  .catch (err) ->
+    log.warn(err)
+    res.status(400)
+
+    message = err.message
+
+    if not message.match(/^err_/)
+      message = 'err_server'
+
+    res.send(message)
 
 
 module.exports = [
