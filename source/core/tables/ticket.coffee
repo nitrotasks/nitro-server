@@ -1,10 +1,10 @@
 Table = require '../controllers/table'
 
-class Login extends Table
+class Ticket extends Table
 
-  table: 'login'
+  table: 'ticket'
   column: 'userId'
-  columns: ['userId', 'token']
+  columns: ['userId', 'token', 'created_at']
 
   setup: ->
 
@@ -24,18 +24,6 @@ class Login extends Table
 
     @_create('userId', {userId, token}).return(userId)
 
-
-  ###
-   * Read
-   *
-   * Retrieve data from an existing row.
-   *
-   * - id (number) : id of the row
-   * - [columns] (array|string) : columns to retrieve
-   * > row (object) : the row data
-   * ! err_no_row : row cannot be found
-  ###
-
   read: (userId, token) ->
 
     @search null, { userId, token }
@@ -47,7 +35,7 @@ class Login extends Table
 
   update: ->
 
-    throw new Error 'Cannot update login row'
+    throw new Error 'Cannot update ticket'
 
   destroy: (userId, token) ->
 
@@ -58,4 +46,4 @@ class Login extends Table
     Table::destroy.call this, { userId }
 
 
-module.exports = Login
+module.exports = Ticket

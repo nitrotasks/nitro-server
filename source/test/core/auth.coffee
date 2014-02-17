@@ -16,7 +16,8 @@ describe 'Auth', ->
     Users.destroyAll()
     .then ->
       auth.register(setup._user.name, setup._user.email, setup._user.password)
-    .spread (id, token) ->
+    .then (id) ->
+      console.log 'spreading'
       setup.user = new Users.User(id)
     .then -> done()
     .done()
@@ -60,11 +61,11 @@ describe 'Auth', ->
     it 'should be able to register a user', (done) ->
 
       auth.register(user.name, user.email, user.pass)
-      .spread (id, token) ->
+      .then (id) ->
         id.should.be.a.Number
-        token.should.be.a.String
-        token.should.have.length(64)
-        token.should.match /^[\w-]+$/
+        # token.should.be.a.String
+        # token.should.have.length(64)
+        # token.should.match /^[\w-]+$/
       .then -> done()
       .done()
 
@@ -73,10 +74,10 @@ describe 'Auth', ->
     it 'should return the user id and token', (done) ->
 
       auth.login(setup._email, setup._user.password)
-      .spread (id, token) ->
+      .then (id) ->
         id.should.be.a.Number
-        token.should.be.a.String
-        token.should.have.length(64)
+        # token.should.be.a.String
+        # token.should.have.length(64)
       .then -> done()
       .done()
 
@@ -121,7 +122,7 @@ describe 'Auth', ->
       .then (hash) ->
         original.should.not.equal(hash)
         auth.login(setup._email, 'potatopie')
-      .spread (id, token) ->
+      .then (id) ->
         id.should.equal(setup.user.id)
       .then -> done()
       .done()

@@ -78,6 +78,7 @@ config =
       password: 'nodejs'
       database: 'Nitro_Test'
       charset: 'utf8'
+      debug: false
 
   testing_pg:
 

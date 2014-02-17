@@ -199,6 +199,7 @@ class Table
 
   destroy: (obj, strict) ->
 
+
     if typeof obj isnt 'object'
       _obj = obj
       obj = {}
@@ -209,8 +210,7 @@ class Table
     .where(obj)
     .then (rows) ->
       success = rows > 0
-      if strict and not success
-        throw new Error ERR_NO_ROW
+      throw new Error(ERR_NO_ROW) if not success and strict
       return success
 
 

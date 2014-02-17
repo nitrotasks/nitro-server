@@ -22,7 +22,7 @@ auth =
    *
    * - email (string)
    * - pass (string) : plaintext
-   * > login_token
+   * > user id
    * ! err_bad_pass
   ###
 
@@ -36,7 +36,7 @@ auth =
       crypto.compare(pass, hash)
     .then (same) ->
       if not same then throw new Error(ERR_BAD_PASS)
-      auth.returnLoginToken(id)
+      return id
 
 
   ###
@@ -46,13 +46,15 @@ auth =
    * - name (string)
    * - email (string)
    * - pass (string) : plaintext
-   * > login token
+   * > user id
    * ! err_bad_name
    * ! err_bad_email
    * ! err_bad_pass
   ###
 
   register: (name, email , pass) ->
+
+    console.log { name, email, pass }
 
     # Validation
 
@@ -77,7 +79,7 @@ auth =
 
     # Return login token
     .then (user) ->
-      auth.returnLoginToken(user.id)
+      return user.id
 
   ###
    * Change a users password

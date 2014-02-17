@@ -9,7 +9,7 @@ sequence = require('../utils/sequence')
 # Tables
 tables = [
   'user', 'list', 'task', 'pref',
-  'login', 'reset', 'list_tasks',
+  'ticket', 'reset', 'list_tasks',
   'time_task', 'time_list', 'time_pref'
 ].map (table) ->
   require '../tables/' + table

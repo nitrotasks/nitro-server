@@ -7,65 +7,65 @@ describe 'Database', ->
   before (done) ->
     setup()
     .then(setup.createUser)
-    .then(setup.createLogin)
+    .then(setup.createTicket)
     .then -> done()
     .done()
 
   beforeEach (done) ->
-    db.login.destroyAll(setup.userId)
-    .then(setup.createLogin)
+    db.ticket.destroyAll(setup.userId)
+    .then(setup.createTicket)
     .then -> done()
     .done()
 
-  describe ':login', ->
+  describe ':ticket', ->
 
     describe ':create', ->
 
       beforeEach (done) ->
-        db.login.destroyAll(setup.userId)
+        db.ticket.destroyAll(setup.userId)
         .then -> done()
         .done()
 
       it 'should create a new entry', (done) ->
 
-        db.login.create(setup.userId, setup.loginToken)
+        db.ticket.create(setup.userId, setup.ticketToken)
         .then -> done()
         .done()
 
-      it 'should create another login token', (done) ->
+      it 'should create another ticket token', (done) ->
 
-        db.login.create(setup.userId, setup.loginToken)
+        db.ticket.create(setup.userId, setup.ticketToken)
         .then ->
-          db.login.create(setup.userId, 'login_token_2')
+          db.ticket.create(setup.userId, 'ticket_token_2')
         .then ->
-          db.login.create(setup.userId, 'login_token_3')
+          db.ticket.create(setup.userId, 'ticket_token_3')
         .then ->
-          db.login.readAll(setup.userId)
+          db.ticket.readAll(setup.userId)
         .then (tokens) ->
           tokens.length.should.equal(3)
-          tokens[0].token.should.equal('login_token')
-          tokens[1].token.should.equal('login_token_2')
-          tokens[2].token.should.equal('login_token_3')
+          tokens[0].token.should.equal('ticket_token')
+          tokens[1].token.should.equal('ticket_token_2')
+          tokens[2].token.should.equal('ticket_token_3')
         .then -> done()
         .done()
 
     describe ':read', ->
 
-      it 'should read the date the login token was created', (done) ->
+      it 'should read the date the ticket token was created', (done) ->
 
-        db.login.read(setup.userId, setup.loginToken)
-        .then (login) ->
-          login.userId.should.equal(setup.userId)
-          login.token.should.equal(setup.loginToken)
-          login.created_at.should.be.an.instanceOf(Date)
+        db.ticket.read(setup.userId, setup.ticketToken)
+        .then (ticket) ->
+          ticket.userId.should.equal(setup.userId)
+          ticket.token.should.equal(setup.ticketToken)
+          ticket.created_at.should.be.an.instanceOf(Date)
         .then -> done()
         .done()
 
       it 'should throw err when reading an entry that does not exist', (done) ->
 
-        db.login.destroyAll(setup.userId)
+        db.ticket.destroyAll(setup.userId)
         .then ->
-          db.login.read(setup.userId, setup.loginToken)
+          db.ticket.read(setup.userId, setup.ticketToken)
         .catch (err) ->
           err.message.should.equal 'err_no_row'
         .then -> done()
@@ -73,9 +73,9 @@ describe 'Database', ->
 
     describe ':exists', ->
 
-      it 'should check if a login exists', (done) ->
+      it 'should check if a ticket exists', (done) ->
 
-        db.login.exists(setup.userId, setup.loginToken)
+        db.ticket.exists(setup.userId, setup.ticketToken)
         .then (exists) ->
           exists.should.equal(true)
         .then -> done()
@@ -86,26 +86,26 @@ describe 'Database', ->
       it 'should not allow updating a token', ->
 
         ( ->
-          db.login.update(setup.userId, token: 'abc')
-        ).should.throw(/cannot update login row/i)
+          db.ticket.update(setup.userId, token: 'abc')
+        ).should.throw(/cannot update ticket/i)
 
     describe ':destroy', ->
 
       it 'should destroy an existing entry', (done) ->
 
-        db.login.destroy(setup.userId, setup.loginToken)
+        db.ticket.destroy(setup.userId, setup.ticketToken)
         .then ->
-          db.login.read(setup.userId, setup.loginToken)
+          db.ticket.read(setup.userId, setup.ticketToken)
         .catch (err) ->
           err.message.should.equal('err_no_row')
         .then -> done()
         .done()
 
-      it 'should check if a login does not exist', (done) ->
+      it 'should check if a ticket does not exist', (done) ->
 
-        db.login.destroyAll(setup.userId)
+        db.ticket.destroyAll(setup.userId)
         .then ->
-          db.login.exists(setup.userId, setup.loginToken)
+          db.ticket.exists(setup.userId, setup.ticketToken)
         .then (exists) ->
           exists.should.equal(false)
         .then -> done()
@@ -113,13 +113,13 @@ describe 'Database', ->
 
     describe ':destroyAll', (done) ->
 
-      it 'should delete all login token', (done) ->
+      it 'should delete all ticket token', (done) ->
 
-        db.login.destroyAll(setup.userId)
+        db.ticket.destroyAll(setup.userId)
         .catch (err) ->
           throw new Error 'could not destroy tokens'
         .then ->
-          db.login.readAll(setup.userId)
+          db.ticket.readAll(setup.userId)
         .catch (err) ->
           err.message.should.equal('err_no_row')
         .then -> done()
