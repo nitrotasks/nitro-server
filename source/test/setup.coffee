@@ -89,7 +89,7 @@ setup.createPref = ->
 
 setup.createList = ->
 
-  setup.user.lists.create(setup._list)
+  setup.user.list.create(setup._list)
   .then (id) ->
     setup._list.id = id
     setup.listId = id
@@ -98,11 +98,11 @@ setup.createTask = ->
 
   setup._task.listId = setup.listId
 
-  setup.user.tasks.create(setup._task)
+  setup.user.task.create(setup._task)
   .then (id) ->
     setup._task.id = id
     setup.taskId = id
-    database.list_tasks.create(setup.listId, id)
+    database.list_tasks.create(id, setup.listId)
 
 setup.createTicket = ->
 

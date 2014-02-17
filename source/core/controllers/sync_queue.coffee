@@ -1,5 +1,5 @@
 Promise = require('bluebird')
-offset = require('../models/time').offset
+offset  = require('../models/time').offset
 
 CREATE = 0
 UPDATE = 1
@@ -87,6 +87,4 @@ exportUser =  (user) ->
   ]
   .spread(lists, tasks, pref) -> { lists, tasks, pref }
 
-
-
-
+module.exports = merge

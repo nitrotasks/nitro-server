@@ -5,9 +5,11 @@ xType      = require('xtype')
 log        = require('log_')('Socket', 'yellow')
 core       = require('../../core/api')
 
+# Load xType validation
+require('./controllers/validation')
 
 # Setup Jandal
-Jandal.handle 'node'
+Jandal.handle('node')
 
 
 # -----------------------------------------------------------------------------
@@ -151,7 +153,7 @@ class GuestSocket extends Socket
     log 'A new guest has connected'
     @authenticated = false
     @authTimeout = setTimeout @timeout, TIMEOUT_AUTH
-    analytics 'socket.connect'
+    core.analytics('socket.connect')
 
 
   ###
@@ -167,10 +169,10 @@ class GuestSocket extends Socket
   ###
 
   user_auth: (@userId, token, fn) =>
-    clearTimeout @authTimeout
+    clearTimeout(@authTimeout)
     core.checkTicket(ticket)
-      .then => @login(fn)
-      .catch => @kick()
+    .then => @login(fn)
+    .catch => @kick()
 
   ###
    * (Private) User Login
@@ -201,7 +203,7 @@ class GuestSocket extends Socket
   ###
 
   kick: (message='err_bad_token') =>
-    @close 3002, message
+    @close(3002, message)
 
 
   ###
@@ -212,7 +214,7 @@ class GuestSocket extends Socket
   ###
 
   timeout: =>
-    @close 1002, 'err_auth_timeout'
+    @close(1002, 'err_auth_timeout')
 
 
 # -----------------------------------------------------------------------------
@@ -235,11 +237,11 @@ class UserSocket extends Socket
     @authenticated = true
     @socket.join(@user.id)
     @sync = new core.Sync(@user)
-    analytics 'socket.login', @user.id
+    core.analytics('socket.login', @user.id)
 
 
   broadcast: (event, arg1, arg2, arg3) =>
-    analytics event, @user.id
+    core.analytics(event, @user.id)
     @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
 
 
@@ -354,10 +356,8 @@ class UserSocket extends Socket
 
   merge_queue: (queue, clientTime, fn) =>
     @sync.queue(queue, clientTime)
-    .then (results) ->
-      fn(null, results)
-    .catch (err) ->
-      if fn then fn(true)
+    .then (results) -> fn(null, results)
+    .catch (err) -> if fn then fn(true)
 
 module.exports =
   init: init

@@ -16,6 +16,9 @@ class Pref
       confirmDelete: pref.confirmDelete
       moveCompleted: pref.moveCompleted
 
+  get: ->
+    Promise.resolve(this)
+
   exists: ->
     db.pref.search('*', { @userId }).return(true)
 

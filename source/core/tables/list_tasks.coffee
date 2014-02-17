@@ -8,7 +8,7 @@ class ListTasks extends Table
 
   setup: ->
 
-    @_createTable (table) =>
+    @_createTable (table) ->
 
       table.primary(['listId', 'taskId'])
 
@@ -22,9 +22,9 @@ class ListTasks extends Table
         .references('id').inTable('task')
         .onDelete('cascade')
 
-  create: (listId, taskId) ->
+  create: (taskId, listId) ->
 
-    super {listId, taskId}
+    super { listId, taskId }
 
   read: (listId) ->
 
@@ -36,12 +36,12 @@ class ListTasks extends Table
 
     @_update { listId }, { taskId }
 
-  destroy: (listId, taskId) ->
+  destroy: (taskId, listId) ->
 
-    super {listId, taskId}, true
+    super { taskId, listId }, true
 
   destroyAll: (listId) ->
 
-    Table::destroy.call this, {listId}
+    Table::destroy.call this, { listId }
 
 module.exports = ListTasks

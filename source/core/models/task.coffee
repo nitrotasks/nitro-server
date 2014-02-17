@@ -25,10 +25,13 @@ class Task
     db.task.destroy(@id, true)
 
   addToList: (listId) ->
-    db.list_tasks.create(listId, @id)
+    db.list_tasks.create(@id, listId)
 
   removeFromList: (listId) ->
-    db.list_tasks.destroy(listId, @id)
+    db.list_tasks.destroy(@id, listId)
+
+  moveToList: (listId) ->
+    db.list_tasks.update(@id, listId)
 
 
 class UserTasks

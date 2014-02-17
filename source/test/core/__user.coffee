@@ -99,7 +99,7 @@ describe 'User', ->
 
       it 'list', (done) ->
 
-        user.lists.create
+        user.list.create
           name: 'Things to do'
         .then (id) ->
           id.should.be.a.Number
@@ -109,7 +109,7 @@ describe 'User', ->
 
       it 'task', (done) ->
 
-        user.tasks.create
+        user.task.create
           name: 'Save the world'
           listId: listId
         .then (id) ->
@@ -137,10 +137,10 @@ describe 'User', ->
         setup.createList()
         .then(setup.createTask)
         .then ->
-          user.lists.get(setup.listId)
+          user.list.get(setup.listId)
         .then (_list) ->
           list = _list
-          user.tasks.get(setup.taskId)
+          user.task.get(setup.taskId)
         .then (_task) ->
           task = _task
           task.removeFromList(list.id)
@@ -182,13 +182,13 @@ describe 'User', ->
 
       it 'task - does own', (done) ->
 
-        user.tasks.owns(setup.taskId)
+        user.task.owns(setup.taskId)
         .then -> done()
         .done()
 
       it 'task - does not own', (done) ->
 
-        user.tasks.owns(-1)
+        user.task.owns(-1)
         .catch (err) ->
           err.message.should.equal('err_no_row')
           done()
@@ -196,13 +196,13 @@ describe 'User', ->
 
       it 'list - does own', (done) ->
 
-        user.lists.owns(setup.listId)
+        user.list.owns(setup.listId)
         .then -> done()
         .done()
 
       it 'list - does not own', (done) ->
 
-        user.lists.owns(-1)
+        user.list.owns(-1)
         .catch (err) ->
           err.message.should.equal 'err_no_row'
           done()
@@ -222,10 +222,10 @@ describe 'User', ->
         .then(setup.createTask)
         .then ->
           user = new Users.User(setup.userId)
-          user.lists.get(setup.listId)
+          user.list.get(setup.listId)
         .then (_list) ->
           list = _list
-          user.tasks.get(setup.taskId)
+          user.task.get(setup.taskId)
         .then (_task) ->
           task = _task
           task.removeFromList(list.id)
@@ -306,10 +306,10 @@ describe 'User', ->
         .then(setup.createTask)
         .then ->
           user = new Users.User(setup.userId)
-          user.lists.get(setup.listId)
+          user.list.get(setup.listId)
         .then (_list) ->
           list = _list
-          user.tasks.get(setup.taskId)
+          user.task.get(setup.taskId)
         .then (_task) ->
           task = _task
         .then -> done()
@@ -328,7 +328,7 @@ describe 'User', ->
 
       it 'task - does not exist', (done) ->
 
-        (new user.tasks.constructor.Task(-1)).update
+        (new user.task.constructor.Task(-1)).update
           name: 'Updated Task'
         .catch (err) ->
           err.message.should.eql('err_no_row')
@@ -348,7 +348,7 @@ describe 'User', ->
 
       it 'list - does not exist', (done) ->
 
-        (new user.lists.constructor.List(-1)).update
+        (new user.list.constructor.List(-1)).update
           name: 'Updated List'
         .catch (err) ->
           err.message.should.equal('err_no_row')
@@ -372,10 +372,10 @@ describe 'User', ->
       list = null
 
       before (done) ->
-        user.lists.get(setup.listId)
+        user.list.get(setup.listId)
         .then (_list) ->
           list = _list
-          user.tasks.get(setup.taskId)
+          user.task.get(setup.taskId)
         .then (_task) ->
           task = _task
         .then -> done()
@@ -385,7 +385,7 @@ describe 'User', ->
 
         task.destroy()
         .then ->
-          user.tasks.get(task.id)
+          user.task.get(task.id)
         .catch (err) ->
           err.message.should.equal('err_no_row')
           done()
@@ -393,7 +393,7 @@ describe 'User', ->
 
       it 'task - does not exist', (done) ->
 
-        (new user.tasks.constructor.Task(-1)).destroy()
+        (new user.task.constructor.Task(-1)).destroy()
         .catch (err) ->
           err.message.should.eql('err_no_row')
           done()
@@ -403,7 +403,7 @@ describe 'User', ->
 
         list.destroy()
         .then ->
-          user.lists.get(list.id)
+          user.list.get(list.id)
         .catch (err) ->
           err.message.should.equal('err_no_row')
           done()
@@ -411,7 +411,7 @@ describe 'User', ->
 
       it 'list - does not exist', (done) ->
 
-        (new user.lists.constructor.List(-1)).destroy()
+        (new user.list.constructor.List(-1)).destroy()
         .catch (err) ->
           err.message.should.eql('err_no_row')
           done()
@@ -442,7 +442,7 @@ describe 'User', ->
 
       it 'task', (done) ->
 
-        user.tasks.all()
+        user.task.all()
         .then (tasks) ->
           tasks.should.eql [ setup._task ]
         .then -> done()
@@ -450,7 +450,7 @@ describe 'User', ->
 
       it 'list', (done) ->
 
-        user.lists.all()
+        user.list.all()
         .then (lists) ->
           lists.should.eql [
             id: setup.listId

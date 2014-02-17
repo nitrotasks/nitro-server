@@ -39,7 +39,7 @@ describe 'Database', ->
         task.id = id
 
         # Add the task to the list
-        db.list_tasks.create(setup.listId, task.id)
+        db.list_tasks.create(task.id, setup.listId)
 
       .then ->
 

@@ -26,126 +26,134 @@ describe 'Sync', ->
     .then -> done()
     .done()
 
-  describe ':task_create', ->
+  describe ':task', ->
 
-    it 'should create a task', (done) ->
+    describe ':create', ->
 
-      data =
-        listId: setup.listId
-        name: 'sync_task_name'
+      it 'should create a task', (done) ->
 
-      sync.task_create(data)
-      .then (id) ->
-        user.tasks.get(id).call('read')
-      .then (task) ->
-        task.id.should.be.a.Number.and.greaterThan(setup.taskId)
-        task.userId.should.equal(setup.userId)
-        task.listId.should.equal(setup.listId)
-        task.name.should.equal('sync_task_name')
-      .then -> done()
-      .done()
+        data =
+          listId: setup.listId
+          name: 'sync_task_name'
 
-  describe ':list_create', ->
+        sync.task.create(data)
+        .then (id) ->
+          user.task.get(id).call('read')
+        .then (task) ->
+          task.id.should.be.a.Number.and.greaterThan(setup.taskId)
+          task.userId.should.equal(setup.userId)
+          task.listId.should.equal(setup.listId)
+          task.name.should.equal('sync_task_name')
+        .then -> done()
+        .done()
 
-    it 'should create a list', (done) ->
+    describe ':update', ->
 
-      data =
-        name: 'sync_list_name'
+      taskId = null
 
-      sync.list_create(data)
-      .then (id) ->
-        user.lists.get(id).call('read')
-      .then (list) ->
-        list.id.should.be.a.Number.and.greaterThan(setup.listId)
-        list.userId.should.equal(setup.userId)
-        list.name.should.equal('sync_list_name')
-      .then -> done()
-      .done()
+      beforeEach (done) ->
+        sync.task.create(listId: setup.listId)
+        .then (id) ->
+          taskId = id
+        .then -> done()
+        .done()
 
-  describe ':task_update', ->
+      it 'should update a task', (done) ->
 
-    taskId = null
+        data =
+          name: 'sync_task_name_updated'
 
-    beforeEach (done) ->
-      sync.task_create(listId: setup.listId)
-      .then (id) ->
-        taskId = id
-      .then -> done()
-      .done()
+        sync.task.update(taskId, data)
+        .then (task) ->
+          task.should.eql(data)
+          user.task.get(taskId).call('read')
+        .then (task) ->
+          task.name.should.equal('sync_task_name_updated')
+        .then -> done()
+        .done()
 
-    it 'should update a task', (done) ->
+    describe ':destroy', ->
 
-      data =
-        name: 'sync_task_name_updated'
+      it 'should destroy a task', (done) ->
 
-      sync.task_update(taskId, data)
-      .then (task) ->
-        task.should.eql(data)
-        user.tasks.get(taskId).call('read')
-      .then (task) ->
-        task.name.should.equal('sync_task_name_updated')
-      .then -> done()
-      .done()
+        sync.task.destroy(setup.taskId)
+        .then (success) ->
+          success.should.equal(true)
+        .then -> done()
+        .done()
 
-  describe ':list_update', ->
 
-    listId = null
+  describe ':list', ->
 
-    beforeEach (done) ->
-      sync.list_create(name: 'sync_list_update')
-      .then (id) ->
-        listId = id
-      .then -> done()
-      .done()
+    describe ':create', ->
 
-    it 'should update a list', (done) ->
+      it 'should create a list', (done) ->
 
-      data =
-        name: 'sync_list_name_updated'
+        data =
+          name: 'sync_list_name'
 
-      sync.list_update(listId, data)
-      .then (list) ->
-        list.should.eql(data)
-        user.lists.get(listId).call('read')
-      .then (list) ->
-        list.name.should.equal('sync_list_name_updated')
-      .then -> done()
-      .done()
+        sync.list.create(data)
+        .then (id) ->
+          user.list.get(id).call('read')
+        .then (list) ->
+          list.id.should.be.a.Number.and.greaterThan(setup.listId)
+          list.userId.should.equal(setup.userId)
+          list.name.should.equal('sync_list_name')
+        .then -> done()
+        .done()
 
-  describe ':pref_update', ->
+    describe ':update', ->
 
-    it 'should update a pref', (done) ->
+      listId = null
 
-      data =
-        sort: 1
+      beforeEach (done) ->
+        sync.list.create(name: 'sync_list_update')
+        .then (id) ->
+          listId = id
+        .then -> done()
+        .done()
 
-      sync.pref_update(data)
-      .then (pref) ->
-        pref.should.eql(data)
-        user.pref.read()
-      .then (pref) ->
-        pref.sort.should.equal(1)
-      .then -> done()
-      .done()
+      it 'should update a list', (done) ->
 
-  describe ':task_destroy', ->
+        data =
+          name: 'sync_list_name_updated'
 
-    it 'should destroy a task', (done) ->
+        sync.list.update(listId, data)
+        .then (list) ->
+          list.should.eql(data)
+          user.list.get(listId).call('read')
+        .then (list) ->
+          list.name.should.equal('sync_list_name_updated')
+        .then -> done()
+        .done()
 
-      sync.task_destroy(setup.taskId)
-      .then (success) ->
-        success.should.equal(true)
-      .then -> done()
-      .done()
 
-  describe ':list_destroy', ->
+    describe ':destroy', ->
 
-    it 'should destroy a list', (done) ->
+      it 'should destroy a list', (done) ->
 
-      sync.list_destroy(setup.listId)
-      .then (success) ->
-        success.should.equal(true)
-      .then -> done()
-      .done()
+        sync.list.destroy(setup.listId)
+        .then (success) ->
+          success.should.equal(true)
+        .then -> done()
+        .done()
 
+
+  describe ':pref', ->
+
+    describe ':update', ->
+
+      it 'should update a pref', (done) ->
+
+        data =
+          sort: 1
+
+        sync.pref.update(data)
+        .then (pref) ->
+          pref.should.eql(data)
+          user.pref.read()
+        .then (pref) ->
+          pref.sort.should.equal(1)
+        .then -> done()
+        .done()
 

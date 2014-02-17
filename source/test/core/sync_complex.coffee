@@ -38,9 +38,9 @@ describe 'Sync API', ->
 
       # Create three lists
       Promise.all [
-        sync.list_create name: 'List 1'
-        sync.list_create name: 'List 2'
-        sync.list_create name: 'List 3'
+        sync.list.create name: 'List 1'
+        sync.list.create name: 'List 2'
+        sync.list.create name: 'List 3'
       ]
 
       .map (id) ->
@@ -58,9 +58,9 @@ describe 'Sync API', ->
 
         # Create three tasks
         Promise.all [
-          sync.task_create name: 'Task 1', listId: lists[0]
-          sync.task_create name: 'Task 2', listId: lists[0]
-          sync.task_create name: 'Task 3', listId: lists[0]
+          sync.task.create name: 'Task 1', listId: lists[0]
+          sync.task.create name: 'Task 2', listId: lists[0]
+          sync.task.create name: 'Task 3', listId: lists[0]
         ]
 
       .map (id) ->
@@ -85,7 +85,7 @@ describe 'Sync API', ->
         }]
 
         # Should add tasks to lists
-        user.lists.get(lists[0]).call('tasks')
+        user.list.get(lists[0]).call('tasks')
 
       .then (_tasks) ->
 
@@ -99,9 +99,9 @@ describe 'Sync API', ->
 
       # Update task names
       Promise.all [
-        sync.task_update tasks[0], name: 'Task 1 has been renamed'
-        sync.task_update tasks[1], name: 'Task 2 has been renamed'
-        sync.task_update tasks[2], name: 'Task 3 has been renamed'
+        sync.task.update tasks[0], name: 'Task 1 has been renamed'
+        sync.task.update tasks[1], name: 'Task 2 has been renamed'
+        sync.task.update tasks[2], name: 'Task 3 has been renamed'
       ]
 
       .return(tasks)
@@ -118,9 +118,9 @@ describe 'Sync API', ->
 
         # Update list names
         Promise.all [
-          sync.list_update lists[0], name: 'List 1 has been renamed'
-          sync.list_update lists[1], name: 'List 2 has been renamed'
-          sync.list_update lists[2], name: 'List 3 has been renamed'
+          sync.list.update lists[0], name: 'List 1 has been renamed'
+          sync.list.update lists[1], name: 'List 2 has been renamed'
+          sync.list.update lists[2], name: 'List 3 has been renamed'
         ]
 
       .return(lists)
@@ -137,7 +137,7 @@ describe 'Sync API', ->
         _lists[2].name.should.equal 'List 3 has been renamed'
 
         # Update pref
-        sync.pref_update
+        sync.pref.update
           sort: 1
           language: 'en-US'
 
@@ -171,7 +171,7 @@ describe 'Sync API', ->
         list_1_tasks.should.eql([])
 
         # Move task
-        sync.task_update tasks[0],
+        sync.task.update tasks[0],
           listId: lists[1]
 
       .then ->
@@ -203,7 +203,7 @@ describe 'Sync API', ->
 
     it 'should respect timestamps - task', (done) ->
 
-      sync.task_update tasks[0],
+      sync.task.update tasks[0],
         { name: 'Task 1 in the past' }
         { name: past }
       .catch (err) ->
@@ -213,7 +213,7 @@ describe 'Sync API', ->
 
     it 'should respect timestamps - list', (done) ->
 
-      sync.list_update lists[1],
+      sync.list.update lists[1],
         { name: 'List 2 in the past' }
         { name: past }
       .catch (err) ->
@@ -223,7 +223,7 @@ describe 'Sync API', ->
 
     it 'should respect timestamps - pref', (done) ->
 
-      sync.pref_update { sort: false }, { sort: past }
+      sync.pref.update { sort: false }, { sort: past }
       .catch (err) ->
         err.message.should.equal('err_old_time')
         done()
@@ -234,7 +234,7 @@ describe 'Sync API', ->
 
     it 'should throw err when updating a non-existant task', (done) ->
 
-      sync.task_update -1, name: 'Task 4'
+      sync.task.update -1, name: 'Task 4'
       .catch (err) ->
         err.message.should.equal 'err_no_row'
         done()
@@ -242,7 +242,7 @@ describe 'Sync API', ->
 
     it 'should throw err when updating a non-existant list', (done) ->
 
-      sync.list_update -1, name: 'List 4'
+      sync.list.update -1, name: 'List 4'
       .catch (err) ->
         err.message.should.equal 'err_no_row'
         done()
@@ -266,7 +266,7 @@ describe 'Sync API', ->
         # Check that task is in the list
         tasks.should.eql [ tasks[0] ]
 
-        sync.task_destroy tasks[0]
+        sync.task.destroy tasks[0]
 
       .then ->
 
@@ -284,8 +284,8 @@ describe 'Sync API', ->
 
         # Destroy two lists
         Promise.all [
-          sync.list_destroy lists[1]
-          sync.list_destroy lists[2]
+          sync.list.destroy lists[1]
+          sync.list.destroy lists[2]
         ]
 
       .then ->
@@ -301,7 +301,7 @@ describe 'Sync API', ->
         err.message.should.equal 'err_no_row'
 
         # Destroy the last list that still has tasks in it
-        sync.list_destroy(lists[0])
+        sync.list.destroy(lists[0])
 
       .then ->
 
@@ -326,7 +326,7 @@ describe 'Sync API', ->
 
     it 'should throw err when destroying a non-existant task', (done) ->
 
-      sync.task_destroy(-1)
+      sync.task.destroy(-1)
       .catch (err) ->
         err.message.should.equal 'err_no_row'
         done()
@@ -334,7 +334,7 @@ describe 'Sync API', ->
 
     it 'should throw err when destroying a non-existant list', (done) ->
 
-      sync.list_destroy(-1)
+      sync.list.destroy(-1)
       .catch (err) ->
         err.message.should.equal 'err_no_row'
         done()

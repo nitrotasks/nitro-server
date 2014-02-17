@@ -33,9 +33,9 @@ class User
   ###
 
   constructor: (@id) ->
-    @pref  = new Pref(@id)
-    @tasks = new Tasks(@id)
-    @lists = new Lists(@id)
+    @pref = new Pref(@id)
+    @task = new Tasks(@id)
+    @list = new Lists(@id)
 
   setup: ->
     @pref.create({})

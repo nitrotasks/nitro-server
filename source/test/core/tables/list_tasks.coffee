@@ -30,15 +30,15 @@ describe 'Database', ->
 
       it 'should add a task to a list', (done) ->
 
-        db.list_tasks.create(setup.listId, setup.taskId)
+        db.list_tasks.create(setup.taskId, setup.listId)
         .then -> done()
         .done()
 
       it 'should throw err when adding a task twice', (done) ->
 
-        db.list_tasks.create(setup.listId, setup.taskId)
+        db.list_tasks.create(setup.taskId, setup.listId)
         .then ->
-          db.list_tasks.create(setup.listId, setup.taskId)
+          db.list_tasks.create(setup.taskId, setup.listId)
         .catch (err) ->
           err.message.should.equal('err_could_not_create_row')
           done()
@@ -48,7 +48,7 @@ describe 'Database', ->
 
         db.list.destroy(setup.listId)
         .then ->
-          db.list_tasks.create(setup.listId, setup.taskId)
+          db.list_tasks.create(setup.taskId, setup.listId)
         .catch (err) ->
           err.message.should.equal('err_could_not_create_row')
           done()
@@ -58,7 +58,7 @@ describe 'Database', ->
 
         db.task.destroy(setup.taskId)
         .then ->
-          db.list_tasks.create(setup.listId, setup.taskId)
+          db.list_tasks.create(setup.taskId, setup.listId)
         .catch (err) ->
           err.message.should.equal('err_could_not_create_row')
           done()
@@ -92,7 +92,7 @@ describe 'Database', ->
 
         setup.createList()
         .then ->
-          db.list_tasks.update setup.taskId, setup.listId
+          db.list_tasks.update(setup.taskId, setup.listId)
         .then ->
           db.list_tasks.read(oldList)
         .then (tasks) ->
@@ -105,7 +105,7 @@ describe 'Database', ->
 
       it 'should not fail if list does not change', (done) ->
 
-        db.list_tasks.update setup.taskId, setup.listId
+        db.list_tasks.update(setup.taskId, setup.listId)
         .then ->
           db.list_tasks.read(setup.listId)
         .then (tasks) ->
@@ -117,7 +117,7 @@ describe 'Database', ->
 
       it 'should remove a task from a list', (done) ->
 
-        db.list_tasks.destroy(setup.listId, setup.taskId)
+        db.list_tasks.destroy(setup.taskId, setup.listId)
         .then ->
           db.list_tasks.read(setup.listId)
         .then (tasks) ->
