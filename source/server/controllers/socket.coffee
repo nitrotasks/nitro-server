@@ -2,17 +2,8 @@ sockjs     = require('sockjs')
 Promise    = require('bluebird')
 Jandal     = require('jandal')
 xType      = require('xtype')
-log        = require('log_')('Socket', 'yellow');
-
-# Stuff that shouldn't be used
-Sync       = require('../controllers/sync')
-Users      = require('../controllers/users')
-db         = require('../controllers/query')
-Time       = require('../utils/time')
-
-# Stuff that should be used
-analytics  = require('../controllers/analytics')
-Validation = require('../controllers/validation')
+log        = require('log_')('Socket', 'yellow')
+core       = require('../../core/api')
 
 
 # Setup Jandal
@@ -177,12 +168,9 @@ class GuestSocket extends Socket
 
   user_auth: (@userId, token, fn) =>
     clearTimeout @authTimeout
-    db.login.exists(@userId, token)
-      .then (exists) =>
-        if exists
-          @login(fn)
-        else
-          @kick()
+    core.checkTicket(ticket)
+      .then => @login(fn)
+      .catch => @kick()
 
   ###
    * (Private) User Login
@@ -197,14 +185,12 @@ class GuestSocket extends Socket
   login: (fn) =>
     socket = @_socket
     @release()
-    Users.read(@userId)
-      .then (user) =>
-        new UserSocket(socket, user)
-        fn(null, true)
-      .catch (err) =>
-        log err
-        @kick(err)
-
+    core.getUser(@userId)
+    .then (user) ->
+      new UserSocket(socket, user)
+    .catch (err) =>
+      log.warn err
+      @kick(err)
 
   ###
    * (Private) Kick
@@ -248,7 +234,7 @@ class UserSocket extends Socket
     log 'A user has been authenticated'
     @authenticated = true
     @socket.join(@user.id)
-    @sync = new Sync(@user)
+    @sync = new core.Sync(@user)
     analytics 'socket.login', @user.id
 
 
@@ -360,112 +346,18 @@ class UserSocket extends Socket
 
 
   ###
-   * Model Sync
+   * Queue Sync
    *
-   * - queue (object)
-   * - clientTime (number) : time in seconds since 01/01/1970 12:00:00
-   * - fn (function)
+   * Runs a batch of events
+   * Returns an export of all the users tasks, lists and preferences
   ###
 
-  queue_sync: (queue, clientTime, fn) =>
-
-    # Calculate timezone difference between server and client
-    offset = Time.now() - clientTime
-
-    # Make a new promise so we can do all this sequentially
-    pList = []
-    pAll = []
-
-    # PREFS
-
-    if queue.pref
-      for [event, pref, time] in queue.task
-
-        Time.offset offset, time
-
-        continue unless event is UPDATE
-        pAll.push @pref_update(pref, null, time)
-
-
-    # Map client IDs to server IDs -- for lists only
-    lists = {}
-
-    # LISTS
-
-    if queue.list
-      for [event, list, time] in queue.list
-
-        Time.offset offset, time
-
-        switch event
-
-          when CREATE
-
-            tasks = list.tasks
-
-            for taskId, i in tasks by -1 when taskId < 0
-              tasks.splice(i, 1)
-
-            # Enclose list
-            do =>
-              id = list.id
-              pList.push @list_create(list, null, time).then (_id) ->
-                lists[id] = _id
-
-          when UPDATE
-            pAll.push @list_update list, null, time
-
-          when DESTROY
-            pAll.push @list_destroy list, null, time
-
-    Promise.all(pList)
-    .then =>
-
-      # TASKS
-
-      if queue.task
-
-        for [event, task, time] in queue.task
-
-          Time.offset offset, time
-
-          if lists[task.listId]
-            task.listId = lists[task.listId]
-
-          switch event
-
-            when CREATE
-              pAll.push @task_create(task, null, time)
-
-            when UPDATE
-              pAll.push @task_update(task, null, time)
-
-            when DESTROY
-              pAll.push @task_destroy(task, null, time)
-
-
-      Promise.all(pAll)
-
-    .then =>
-
-      unless fn then throw null
-
-      Promise.all [
-        @user.exportLists()
-        @user.exportTasks()
-        @user.exportPref()
-      ]
-
-    .spread (lists, tasks, pref) =>
-
-      fn null,
-        list: lists
-        task: tasks
-        pref: pref
-
-    .catch ->
-      return
-
+  merge_queue: (queue, clientTime, fn) =>
+    @sync.queue(queue, clientTime)
+    .then (results) ->
+      fn(null, results)
+    .catch (err) ->
+      if fn then fn(true)
 
 module.exports =
   init: init

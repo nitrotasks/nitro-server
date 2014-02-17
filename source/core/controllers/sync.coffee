@@ -4,6 +4,7 @@ time    = require('../models/time')
 {Task}  = require('../models/task')
 {List}  = require('../models/list')
 {Pref}  = require('../models/pref')
+mergeQueue = require('../controllers/queue')
 
 # CONSTANTS
 
@@ -88,7 +89,7 @@ class Sync
 
     # Make sure that the task exists and that the user owns it
     @user.tasks.get(id)
-    .then (_task) =>
+    .then (_task) ->
       task = _task
 
       time.task.checkMultiple(id, data, times)
@@ -111,7 +112,7 @@ class Sync
         delete data.listId
         delete times?.listId
 
-    .then => # Set times
+    .then -> # Set times
       time.task.update(id, times)
     .then -> # Save data
       task.update(data)
@@ -136,7 +137,7 @@ class Sync
       return Promise.reject ERR_INVALID_MODEL
 
     @user.lists.get(id)
-    .then (_list) =>
+    .then (_list) ->
 
       list = _list
 
@@ -202,10 +203,10 @@ class Sync
 
     task = null
     @user.tasks.get(id)
-    .then (_task) =>
+    .then (_task) ->
       task = _task
       time.task.checkSingle(id, timestamp)
-    .then =>
+    .then ->
       log '[task] [destroy]', id
       task.destroy()
 
@@ -220,12 +221,15 @@ class Sync
 
     list = null
     @user.lists.get(id)
-    .then (_list) =>
+    .then (_list) ->
       list = _list
       time.list.checkSingle(id, timestamp)
-    .then =>
+    .then ->
       log '[list] [destroy]', id
       list.destroy()
 
+  queue: (queue, clientTime) ->
+
+    mergeQueue(this, queue, clientTime)
 
 module.exports = Sync

@@ -114,15 +114,13 @@ auth =
    * - id (int) : The user id
    * > token
   ####
-
-  createLoginToken: (id) ->
+  
+  createTicket: (id) ->
     crypto.randomToken(TOKEN_LENGTH).then (token) ->
       db.login.create(id, token).return(token)
 
-  returnLoginToken: (id) ->
-    auth.createLoginToken(id).then (token) ->
-      return [id, token]
-
-
+  useTicket: (token) ->
+    db.login.exists(ticket).then (exists) ->
+      console.log 'something...'
 
 module.exports = auth
