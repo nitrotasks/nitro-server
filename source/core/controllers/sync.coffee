@@ -1,7 +1,7 @@
-SyncTask  = require('../controllers/sync_task')
-SyncList  = require('../controllers/sync_list')
-SyncPref  = require('../controllers/sync_pref')
-SyncQueue = require('../controllers/sync_queue')
+SyncTask  = require('../sync/task')
+SyncList  = require('../sync/list')
+SyncPref  = require('../sync/pref')
+SyncQueue = require('../sync/queue')
 
 class SyncUser
 

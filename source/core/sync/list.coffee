@@ -1,5 +1,5 @@
 Promise = require('bluebird')
-Sync    = require('../controllers/sync_base')
+Sync    = require('../sync/base')
 
 class SyncList extends Sync
 

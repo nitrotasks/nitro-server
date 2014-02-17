@@ -1,4 +1,4 @@
-Sync = require('../controllers/sync_base')
+Sync = require('../sync/base')
 
 class SyncPref extends Sync
 
