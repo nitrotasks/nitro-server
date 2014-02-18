@@ -12,10 +12,10 @@ class SyncPref extends Sync
   update: (data, timestamps) ->
 
     super(@user.id, data, timestamps)
-  
+
   destroy: ->
 
     # disabled
     throw new Error('Cannot destroy preference')
-    
+
 module.exports = SyncPref

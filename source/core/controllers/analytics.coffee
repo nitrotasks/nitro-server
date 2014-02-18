@@ -1,13 +1,15 @@
-connect = require '../controllers/connect'
+redis = require('../controllers/redis')
+
 CHANNEL = 'analytics'
 
-redis = null
+client = null
 
-connect.ready.then ->
-  redis = connect.redis
+redis.ready.then (_client) ->
+  client = _client
 
 analytics = (event, id) ->
+  return unless client
   message = if id then "#{ id }|#{ event }" else event
-  redis.publish CHANNEL, message
+  client.publish(CHANNEL, message)
 
 module.exports = analytics
