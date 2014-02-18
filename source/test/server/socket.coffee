@@ -1,18 +1,13 @@
 # Switch xType into debug mode
 global.DEBUG = true
 
-Socket  = require '../app/controllers/socket'
-Users   = require '../app/controllers/users'
-Auth    = require '../app/controllers/auth'
-should  = require 'should'
-Jandal  = require 'jandal'
-setup   = require './setup'
-mockjs  = require './mockjs'
-client  = require './mock_client'
-Log = require '../app/utils/log'
-time = require '../app/utils/time'
-
-log = Log 'socket - test'
+should = require('should')
+Jandal = require('jandal')
+setup  = require('../setup')
+mockjs = require('./mockjs')
+client = require('./mock_client')
+Socket = require('../../server/controllers/socket')
+time   = require('../../core/models/time')
 
 describe 'Socket', ->
 
@@ -56,7 +51,11 @@ describe 'Socket', ->
     pass: 'xkcd'
     pro: 0
 
-  before setup
+  before (done) ->
+    setup()
+    .then(setup.createUser)
+    .then -> done()
+    .done()
 
   beforeEach ->
     Socket.init(null, mockjs)
@@ -71,18 +70,6 @@ describe 'Socket', ->
     socket.once 'message', (response) ->
       res = Jandal::parse(response)
       fn res.arg1, res.arg2, res.arg3
-
-
-  describe '#setup', ->
-
-    it 'should create a new user', (done) ->
-
-      Auth.register(user.name, user.email, user.pass)
-      .then ([id, token]) ->
-        user.id = id
-        user.token = token
-        done()
-      .done()
 
   describe '#auth', ->
 
