@@ -1,4 +1,4 @@
-folder = './pages/'
+folder = './source/server/pages/'
 extension = '.html'
 
 page = (name) ->

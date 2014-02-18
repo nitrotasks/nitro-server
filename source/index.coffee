@@ -1,7 +1,7 @@
 config = require('./config')
 server = require('./server/index')
 core   = require('./core/index')
-log    = require('./shared/log')('Foreman', 'green')
+log    = require('log_')('Foreman', 'green')
 
 
 # -----------------------------------------------------------------------------

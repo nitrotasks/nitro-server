@@ -1,4 +1,4 @@
-page = require '../utils/page'
+page = require('../controllers/page')
 
 module.exports = [
 

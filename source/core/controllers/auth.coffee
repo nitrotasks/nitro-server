@@ -7,9 +7,6 @@ ERR_BAD_PASS  = 'err_bad_pass'
 ERR_BAD_EMAIL = 'err_bad_email'
 ERR_BAD_NAME  = 'err_bad_name'
 
-TOKEN_LENGTH = 64
-
-
 # -----------------------------------------------------------------------------
 # Auth Controller
 # -----------------------------------------------------------------------------
@@ -91,36 +88,5 @@ auth =
   changePassword: (user, pass) ->
     crypto.hash(pass).then (password) ->
       user.update { password }
-
-  ###
-   * Generate a password reset token for a user
-   *
-   * - email (string) : the email of the user
-   * > token
-  ###
-
-  # Generate a reset password token for the user
-  createResetToken: (email) ->
-    Promise.all([
-      crypto.randomToken(TOKEN_LENGTH)
-      Users.search(email)
-    ]).spread (token, user) ->
-      db.reset.create(user.id, token)
-
-
-  ###
-   * Create a login token for a user
-   *
-   * - id (int) : The user id
-   * > token
-  ####
-  
-  createTicket: (id) ->
-    crypto.randomToken(TOKEN_LENGTH).then (token) ->
-      db.login.create(id, token).return(token)
-
-  useTicket: (token) ->
-    db.login.exists(ticket).then (exists) ->
-      console.log 'something...'
 
 module.exports = auth

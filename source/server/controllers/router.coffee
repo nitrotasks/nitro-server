@@ -1,7 +1,9 @@
 express = require('express')
 cors    = require('cors')
 log     = require('log_')('Router', 'magenta')
+jwt     = require('express-jwt')
 
+app = express()
 
 app.configure ->
 
@@ -12,11 +14,16 @@ app.configure ->
   # Allow Cross-Origin Resource Sharing
   app.use cors()
 
+  # Protect api
+  app.use '/api', jwt(secret: 'secret')
+
+
 # -----------------------------------------------------------------------------
 # Routes
 # -----------------------------------------------------------------------------
 
 routes = [
+  'api'
   'login'
   'register'
   'reset'
@@ -35,5 +42,6 @@ for route in routes
     else
       log 'POST', path.url
     app[path.type] path.url, path.handler
+
 
 module.exports = app

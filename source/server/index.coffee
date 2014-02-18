@@ -1,4 +1,4 @@
-log    = require('log_')('Server', blue)
+log    = require('log_')('Server', 'blue')
 router = require('./controllers/router')
 socket = require('./controllers/socket')
 

@@ -1,12 +1,6 @@
-Auth   = require '../controllers/auth'
-Users  = require '../controllers/users'
-Mail   = require '../controllers/mail'
-db     = require '../controllers/query'
-page   = require '../utils/page'
-Log    = require '../utils/log'
-config = require '../config'
-
-log = Log 'Route -> Reset', 'yellow'
+core = require('../../core/api')
+config = require('../../config')
+log = require('log_')('Route -> Reset', 'yellow')
 
 # -----------------------------------------------------------------------------
 # Reset Password

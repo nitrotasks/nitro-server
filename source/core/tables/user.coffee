@@ -4,6 +4,10 @@ class User extends Table
 
   table: 'user'
   column: 'id'
+  columns: [
+    'id', 'name', 'email', 'password', 'pro',
+    'created_at', 'reset_password_token', 'reset_password_sent_at'
+  ]
 
   ###
    * Setup
