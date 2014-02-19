@@ -19,6 +19,8 @@ config =
   url: 'http://localhost:8080'
   port: 8080
 
+  client: 'http://beta.nitrotasks.com'
+
   database_engine: null
   database_config: {}
 
@@ -59,6 +61,8 @@ config =
 
   development:
 
+    client: '*'
+
     database_engine: 'mysql'
     database_config:
       host: '127.0.0.1'
@@ -69,6 +73,8 @@ config =
 
 
   testing:
+
+    client: '*'
 
     database_engine: 'mysql'
     database_config:

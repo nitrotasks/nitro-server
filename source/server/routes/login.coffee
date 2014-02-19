@@ -8,11 +8,11 @@ token = require('../controllers/token')
 
 login = (req, res) ->
 
-  console.log req.user
-
   user =
-    email: req.body.email.toLowerCase()
-    password: req.body.password
+    email: req.body.email?.toLowerCase() or ''
+    password: req.body.password or ''
+
+  console.log user
 
   core.auth.login(user.email, user.password)
   .then (id) ->
@@ -21,12 +21,12 @@ login = (req, res) ->
   .catch (err) ->
     log.warn err
     res.status(401)
-    res.send(err)
+    res.send(err.message)
 
 module.exports = [
 
   type: 'post'
-  url: '/auth/login'
+  url: '/login'
   handler: login
 
 ]

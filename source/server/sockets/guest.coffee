@@ -1,6 +1,7 @@
 Socket     = require('../sockets/base')
 UserSocket = require('../sockets/user')
 core       = require('../../core/api')
+token      = require('../controllers/token')
 log        = require('log_')('Socket -> guest', 'green')
 
 
@@ -47,7 +48,7 @@ class GuestSocket extends Socket
 
   user_auth: (ticket, fn) ->
     clearTimeout(@authTimeout)
-    core.checkTicket(ticket)
+    token.checkSocketToken(ticket)
     .then => @login(fn)
     .catch => @kick()
 

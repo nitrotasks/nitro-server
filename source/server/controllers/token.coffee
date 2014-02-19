@@ -1,4 +1,5 @@
-jwt = require('jsonwebtoken')
+Promise = require('bluebird')
+jwt = Promise.promisifyAll require('jsonwebtoken')
 exJwt = require('express-jwt')
 
 AUDIENCE_SOCKET = 'ws'
@@ -6,7 +7,6 @@ AUDIENCE_SESSION = 'ht'
 
 TIMEOUT_SOCKET = 5
 TIMEOUT_SESSION = 60 * 5
-
 
 secret = 'secret'
 
@@ -22,9 +22,9 @@ token =
       expiresInMinutes: TIMEOUT_SESSION
       audience: AUDIENCE_SESSION
 
-  verifySessionToken: (token, fn) ->
+  verifySessionToken: (token) ->
 
-    jwt.verify token, secret, { audience: AUDIENCE_SESSION }, fn
+    jwt.verifyAsync token, secret, { audience: AUDIENCE_SESSION }, fn
 
   createSocketToken: (id) ->
 
@@ -32,9 +32,9 @@ token =
       expiresInMinutes: TIMEOUT_SOCKET
       audience: AUDIENCE_SOCKET
 
-  verifySocketToken: (token, fn) ->
+  verifySocketToken: (token) ->
 
-    jwt.verify token, secret, { audience: AUDIENCE_SOCKET }, fn
+    jwt.verifyAsync token, secret, { audience: AUDIENCE_SOCKET }, fn
 
 
 module.exports = token

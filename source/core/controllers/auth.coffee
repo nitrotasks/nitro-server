@@ -25,6 +25,13 @@ auth =
 
   # Gives the user a token to use to connect to SocketIO
   login: (email, pass) ->
+
+    if email.length is 0
+      return Promise.reject(new Error(ERR_BAD_EMAIL))
+    
+    if pass.length is 0
+      return Promise.reject(new Error(ERR_BAD_PASS))
+
     id = null
     Users.search(email).then (user) ->
       id = user.id

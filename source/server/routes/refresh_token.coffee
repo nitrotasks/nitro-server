@@ -20,7 +20,7 @@ login = (req, res) ->
 
 module.exports = [
 
-  type: 'post'
+  type: 'get'
   url: '/api/refresh_token'
   handler: login
 

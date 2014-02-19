@@ -7,7 +7,8 @@ startServer = (config) ->
   log "Starting server on port #{ config.port }"
 
   # Start router
-  server = router.listen(config.port)
+  app = router.init(config)
+  server = app.listen(config.port)
 
   # Start sync
   socket.init(server)
