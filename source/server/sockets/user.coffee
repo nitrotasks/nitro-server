@@ -59,6 +59,7 @@ class UserSocket extends Socket
   fetch: (classname, fn) ->
     @user[classname].all()
     .then (info) -> fn(null, info)
+    .catch (err) -> fn(err)
 
   task_fetch: (fn) ->
     @fetch(TASK, fn)
@@ -82,10 +83,10 @@ class UserSocket extends Socket
     @sync[classname].create(model, time)
     .then (id) =>
       @broadcast classname + '.create', model
-      if fn then fn(null, id)
+      fn(null, id)
       return id
     .catch ->
-      if fn then fn(true)
+      fn(true)
 
   task_create: (model, fn, time) ->
     @create(TASK, model, fn, time)
@@ -132,7 +133,7 @@ class UserSocket extends Socket
     @sync[classname].destroy(id, time)
     .then =>
       @broadcast classname + '.destroy', id: id
-      if fn then fn(null)
+      if fn then fn(null, true)
     .catch (err) ->
       if fn then fn(true)
 

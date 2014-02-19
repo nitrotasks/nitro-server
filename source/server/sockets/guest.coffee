@@ -49,8 +49,12 @@ class GuestSocket extends Socket
   user_auth: (ticket, fn) ->
     clearTimeout(@authTimeout)
     token.checkSocketToken(ticket)
-    .then => @login(fn)
-    .catch => @kick()
+    .then =>
+      @login(fn)
+    .catch (err) =>
+      console.log(err)
+      fn(err)
+      @kick(err)
 
   ###
    * (Private) User Login
@@ -70,6 +74,7 @@ class GuestSocket extends Socket
       new UserSocket(socket, user)
     .catch (err) =>
       log.warn err
+      fn(err)
       @kick(err)
 
   ###
