@@ -45,9 +45,6 @@ setup._task =
   priority: 0
   completed: 0
 
-setup.ticketToken = 'ticket_token'
-setup.resetToken = 'reset_token'
-
 setup._timeList =
   name: 1
   tasks: 1
@@ -103,14 +100,6 @@ setup.createTask = ->
     setup._task.id = id
     setup.taskId = id
     database.list_tasks.create(id, setup.listId)
-
-setup.createTicket = ->
-
-  database.ticket.create(setup.userId, setup.ticketToken)
-
-setup.createReset = ->
-
-  database.reset.create(setup.userId, setup.resetToken)
 
 setup.createTimeList = ->
 
