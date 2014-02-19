@@ -11,6 +11,9 @@ ready = Promise.defer()
 
 init = (config) ->
 
+  if ready.promise.isFulfilled()
+    return ready.promise
+
   if typeof config.redis_config is 'string'
     {port, hostname, auth} = url.parse(config.redis_config)
   else
