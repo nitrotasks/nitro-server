@@ -8,7 +8,7 @@ api =
   auth: auth
 
   getUser: (userId) ->
-    Users.read(userId)
+    Users.get(userId)
 
   analytics: analytics
 

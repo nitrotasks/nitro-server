@@ -1,11 +1,14 @@
 express = require('express')
 cors    = require('cors')
 log     = require('log_')('Router', 'magenta')
-jwt     = require('express-jwt')
+token   = require('./token')
 
 app = express()
 
 app.configure ->
+
+  # Log
+  app.use express.logger()
 
   # Parse POST requests
   app.use express.json()
@@ -15,7 +18,7 @@ app.configure ->
   app.use cors()
 
   # Protect api
-  app.use '/api', jwt(secret: 'secret')
+  app.use '/api/', token.middleware
 
 
 # -----------------------------------------------------------------------------
@@ -24,6 +27,7 @@ app.configure ->
 
 routes = [
   'api'
+  'refresh_token'
   'login'
   'register'
   'reset'

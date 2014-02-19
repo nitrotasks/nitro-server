@@ -8,17 +8,16 @@ api = (req, res) ->
 
   console.log req.user
 
-  # -> 
   # user: <id>
   # exp: <expiry timestamp>
   # iat: <issued at timestamp>
 
-  res.end()
+  res.send(req.user)
 
 module.exports = [
 
   type: 'post'
-  url: '/api/protected'
+  url: '/api/test'
   handler: api
 
 ]

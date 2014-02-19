@@ -1,5 +1,5 @@
 core = require('../../core/api')
-log = require('log_')('Route -> Login', 'green')
+log = require('log_')('Route -> Refresh', 'green')
 token = require('../controllers/token')
 
 # -----------------------------------------------------------------------------
@@ -8,15 +8,10 @@ token = require('../controllers/token')
 
 login = (req, res) ->
 
-  console.log req.user
+  core.getUser(req.user.id)
+  .then (user) ->
 
-  user =
-    email: req.body.email.toLowerCase()
-    password: req.body.password
-
-  core.auth.login(user.email, user.password)
-  .then (id) ->
-    res.send token.createSessionToken(id)
+    res.send token.createSessionToken(user.id)
 
   .catch (err) ->
     log.warn err
@@ -26,7 +21,7 @@ login = (req, res) ->
 module.exports = [
 
   type: 'post'
-  url: '/auth/login'
+  url: '/api/refresh_token'
   handler: login
 
 ]

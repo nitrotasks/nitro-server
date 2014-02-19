@@ -34,7 +34,7 @@ register = (req, res) ->
 module.exports = [
 
   type: 'post'
-  url: '/register'
+  url: '/auth/register'
   handler: register
 
 ]
