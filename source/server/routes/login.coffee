@@ -1,32 +1,28 @@
-core = require('../../core/api')
-log = require('log_')('Route -> Login', 'green')
+core  = require('../../core/api')
 token = require('../controllers/token')
-
-# -----------------------------------------------------------------------------
-# Login
-# -----------------------------------------------------------------------------
+log   = require('log_')('Route -> Login', 'green')
 
 login = (req, res) ->
 
   user =
-    email: req.body.email?.toLowerCase() or ''
+    email: req.body.email or ''
     password: req.body.password or ''
 
-  console.log user
+  core.auth.login(user.email, user.password).then (id) ->
 
-  core.auth.login(user.email, user.password)
-  .then (id) ->
-    res.send token.createSessionToken(id)
+    res.send
+      id: id
+      sessionToken: token.createSessionToken(id)
 
   .catch (err) ->
-    log.warn err
+    log.warn(err)
     res.status(401)
     res.send(err.message)
 
 module.exports = [
 
   type: 'post'
-  url: '/login'
+  url: '/auth/login'
   handler: login
 
 ]

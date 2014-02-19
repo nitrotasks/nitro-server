@@ -89,6 +89,7 @@ describe 'Auth', ->
         done()
       .done()
 
+  ###
   describe ':createResetToken', ->
 
     it 'should add a reset token for a user', (done) ->
@@ -106,6 +107,7 @@ describe 'Auth', ->
         err.message.should.equal('err_no_row')
         done()
       .done()
+  ###
 
   describe ':changePassword', ->
 

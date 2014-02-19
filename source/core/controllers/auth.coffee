@@ -26,6 +26,8 @@ auth =
   # Gives the user a token to use to connect to SocketIO
   login: (email, pass) ->
 
+    email = email.toLowerCase()
+
     if email.length is 0
       return Promise.reject(new Error(ERR_BAD_EMAIL))
     
@@ -58,7 +60,7 @@ auth =
 
   register: (name, email , pass) ->
 
-    console.log { name, email, pass }
+    email = email.toLowerCase()
 
     # Validation
 

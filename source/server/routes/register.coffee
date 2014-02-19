@@ -1,34 +1,24 @@
-Log  = require('log_')('Route -> Registration', 'green')
-core = require('../../core/api')
-
-# -----------------------------------------------------------------------------
-# Registration
-# -----------------------------------------------------------------------------
+core  = require('../../core/api')
+token = require('../controllers/token')
+log   = require('log_')('Route -> Registration', 'green')
 
 register = (req, res) ->
 
   user =
     name: req.body.name or ''
-    email: req.body.email?.toLowerCase() or ''
+    email: req.body.email or ''
     password: req.body.password or ''
 
-  log 'registering user', user.name
+  core.auth.register(user).then (id) ->
 
-  core.auth.register(user)
-  .then (id) ->
-    req.session.passport = user: id
-    res.send(id)
+    res.send
+      id: id
+      sessionToken: token.createSessionToken(id)
 
   .catch (err) ->
     log.warn(err)
     res.status(400)
-
-    message = err.message
-
-    if not message.match(/^err_/)
-      message = 'err_server'
-
-    res.send(message)
+    res.send(err)
 
 
 module.exports = [

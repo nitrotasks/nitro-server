@@ -1,13 +1,16 @@
-core = require('../../core/api')
-log = require('log_')('Route -> Socket', 'green')
+core  = require('../../core/api')
 token = require('../controllers/token')
+log   = require('log_')('Route -> Socket', 'green')
 
 socket = (req, res) ->
 
-  core.getUser(req.user.id)
-  .then (user) ->
+  userId = req.user.id
 
-    res.send token.createSocketToken(user.id)
+  # Check that user exists
+  core.getUser(userId).then ->
+
+    res.send
+      socketToken: token.createSocketToken(userId)
 
   .catch (err) ->
     log.warn err

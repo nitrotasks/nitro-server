@@ -1,17 +1,13 @@
-core = require('../../core/api')
-log = require('log_')('Route -> Refresh', 'green')
+core  = require('../../core/api')
 token = require('../controllers/token')
+log   = require('log_')('Route -> Refresh', 'green')
 
-# -----------------------------------------------------------------------------
-# Login
-# -----------------------------------------------------------------------------
+refresh = (req, res) ->
 
-login = (req, res) ->
+  core.getUser(req.user.id).then (user) ->
 
-  core.getUser(req.user.id)
-  .then (user) ->
-
-    res.send token.createSessionToken(user.id)
+    res.send
+      sessionToken: token.createSessionToken(user.id)
 
   .catch (err) ->
     log.warn err
@@ -22,6 +18,6 @@ module.exports = [
 
   type: 'get'
   url: '/api/refresh_token'
-  handler: login
+  handler: refresh
 
 ]
