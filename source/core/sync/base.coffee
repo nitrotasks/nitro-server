@@ -18,8 +18,11 @@ class Sync
 
     @model.create(data)
     .then (id) =>
-      @log '[create]', id, data
+      data.id = id
+      @log '[create]', data
       @time.create(id, timestamp)
+    .return(data)
+
 
   _update_validation: ->
     Promise.resolve()
@@ -44,7 +47,8 @@ class Sync
         model.update(data)
         @time.update(id, timestamps)
       ]
-    .return(data)
+    .then ->
+      model.read()
 
   destroy: (id, timestamp) ->
 

@@ -79,20 +79,21 @@ class UserSocket extends Socket
    * - [time] (number)
   ###
 
-  create: (classname, model, fn, time) ->
-    @sync[classname].create(model, time)
-    .then (id) =>
+  create: (classname, data, fn, time) ->
+    @sync[classname].create(data, time)
+    .then (model) =>
       @broadcast classname + '.create', model
-      fn(null, id)
-      return id
-    .catch ->
+      fn(null, model)
+      return model
+    .catch (err) ->
+      log.warn(err)
       fn(true)
 
-  task_create: (model, fn, time) ->
-    @create(TASK, model, fn, time)
+  task_create: (data, fn, time) ->
+    @create(TASK, data, fn, time)
 
-  list_create: (model, fn, time) ->
-    @create(LIST, model, fn, time)
+  list_create: (data, fn, time) ->
+    @create(LIST, data, fn, time)
 
 
   ###
@@ -102,23 +103,24 @@ class UserSocket extends Socket
    * - [fn] (function)
   ###
 
-  update: (classname, model, fn, time) ->
-    @sync[classname].update(model, time)
+  update: (classname, id, model, fn, time) ->
+    @sync[classname].update(id, model, time)
     .then (model) =>
       @broadcast classname + '.update', model
-      if fn then fn(null)
+      if fn then fn(null, model)
     .catch (err) ->
+      log.warn(err)
       if fn then fn(true)
 
 
-  task_update: (model, fn, time) ->
-    @update(TASK, model, fn, time)
+  task_update: (id, model, fn, time) ->
+    @update(TASK, id, model, fn, time)
 
-  list_update: (model, fn, time) ->
-    @update(LIST, model, fn, time)
+  list_update: (id, model, fn, time) ->
+    @update(LIST, id, model, fn, time)
 
-  pref_update: (model, fn, time) ->
-    @update(PREF, model, fn, time)
+  pref_update: (id, model, fn, time) ->
+    @update(PREF, id, model, fn, time)
 
 
   ###

@@ -40,28 +40,37 @@ define 'Pref', 'object',
 # -----------------------------------------------------------------------------
 
 define 'CreateList', 'object',
-  required: ['id', 'name', 'tasks']
-  inherit: 'List'
+  keys:
+    name: 'string'
 
 define 'UpdateList', 'object',
-  required: ['id']
-  inherit: 'List'
+  keys:
+    name: 'string'
 
 define 'DestroyList', 'object',
-  required: ['id']
-  inherit: 'List'
+  keys:
+    id: 'number'
 
 define 'CreateTask', 'object',
-  required: ['id', 'listId', 'date', 'name', 'notes', 'priority', 'completed']
-  inherit: 'Task'
+  keys:
+    listId: 'number'
+    date: 'number'
+    name: 'string'
+    notes: 'string'
+    priority: 'number'
+    completed: 'number'
 
 define 'UpdateTask', 'object',
-  required: ['id']
-  inherit: 'Task'
+  keys:
+    date: 'number'
+    name: 'string'
+    notes: 'string'
+    priority: 'number'
+    completed: 'number'
 
 define 'DestroyTask', 'object',
-  required: ['id']
-  inherit: 'Task'
+  keys:
+    id: 'number'
 
 
 # ----------------------------------------------------------------------------
@@ -175,8 +184,8 @@ defineFn 'pref_fetch', 'function'
 defineFn 'task_create', 'CreateTask', 'function'
 defineFn 'list_create', 'CreateList', 'function'
 
-defineFn 'task_update', 'UpdateTask', '~function'
-defineFn 'list_update', 'UpdateList', '~function'
+defineFn 'task_update', 'number', 'UpdateTask', '~function'
+defineFn 'list_update', 'number', 'UpdateList', '~function'
 defineFn 'pref_update', 'Pref', '~function'
 
 defineFn 'task_destroy', 'DestroyTask', '~function'

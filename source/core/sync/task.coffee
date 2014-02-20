@@ -19,8 +19,8 @@ class SyncTask extends Sync
     @user.list.owns(data.listId)
     .then =>
       super(data, timestamp)
-    .then (id) ->
-      Task::addToList.call({ id }, data.listId).return(id)
+    .then (task) ->
+      Task::addToList.call(task, data.listId).return(task)
 
   _update_validation: (model, data, timestamps) ->
 
