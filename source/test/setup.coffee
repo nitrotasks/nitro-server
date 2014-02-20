@@ -111,7 +111,7 @@ setup.createTimeTask = ->
   setup._timeTask.id = setup.taskId
   database.time_task.create(setup._timeTask)
 
-setup.createTimePRef = ->
+setup.createTimePref = ->
 
   setup._timePref.id = setup.userId
   database.time_pref.create(setup._timePref)

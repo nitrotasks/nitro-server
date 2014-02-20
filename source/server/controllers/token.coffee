@@ -24,7 +24,7 @@ token =
 
   verifySessionToken: (token) ->
 
-    jwt.verifyAsync token, secret, { audience: AUDIENCE_SESSION }, fn
+    jwt.verifyAsync token, secret, { audience: AUDIENCE_SESSION }
 
   createSocketToken: (id) ->
 
@@ -34,7 +34,7 @@ token =
 
   verifySocketToken: (token) ->
 
-    jwt.verifyAsync token, secret, { audience: AUDIENCE_SOCKET }, fn
+    jwt.verifyAsync token, secret, { audience: AUDIENCE_SOCKET }
 
 
 module.exports = token

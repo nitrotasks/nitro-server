@@ -14,8 +14,8 @@ SOCKET_URL = '/socket'
  * - [sjs] (SockJS) - used for testing so we can inject our own mock server
 ###
 
-init = (server, sjs=sockjs) ->
-  websockets = sjs.createServer()
+init = (server) ->
+  websockets = sockjs.createServer()
   websockets.installHandlers(server, prefix: SOCKET_URL)
   websockets.on 'connection', (socket) ->
     new GuestSocket(socket)

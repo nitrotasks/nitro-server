@@ -32,7 +32,7 @@ class Socket
   bindEvents: (action='on') ->
     return unless @events
     for name, methods of @events
-      ns = @socket.namespace name
+      ns = @socket.namespace(name)
       for event in methods
         id = name + '_' + event
         fn = xType.guard(id, @[id], this)
@@ -40,13 +40,13 @@ class Socket
 
 
   ###
-   * Release
+   * UnbindEvents
    *
    * Release control over the web socket.
    * This just unbinds all the events.
   ###
 
-  release: ->
+  unbindEvents: ->
     @bindEvents('removeListener')
 
 

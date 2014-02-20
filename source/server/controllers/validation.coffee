@@ -165,7 +165,7 @@ define 'Queue', 'object',
 # Sockets
 # ----------------------------------------------------------------------------
 
-defineFn 'user_auth', 'number', 'string', 'function'
+defineFn 'user_auth', 'string', 'function'
 defineFn 'user_info', 'function'
 
 defineFn 'task_fetch', 'function'

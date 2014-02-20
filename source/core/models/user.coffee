@@ -42,6 +42,9 @@ class User
     .then => Time.pref.create(@id, null)
     .return(this)
 
+  info: ->
+    @read(['id', 'name', 'email', 'pro', 'created_at'])
+
   read: (columns) ->
     db.user.read(@id, columns)
 

@@ -55,7 +55,7 @@
   },
   "config": {
     "blanket": {
-      "pattern": "source/core",
+      "pattern": "source",
       "loader": "./node-loaders/coffee-script"
     }
   },

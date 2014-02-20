@@ -26,7 +26,7 @@ class GuestSocket extends Socket
    * - socket (Jandal)
   ###
 
-  constructor: (socket) ->
+  constructor: (_socket) ->
     super
     log 'A new guest has connected'
     @authenticated = false
@@ -46,15 +46,14 @@ class GuestSocket extends Socket
    * - fn (function) : callback
   ###
 
-  user_auth: (ticket, fn) ->
+  user_auth: (socketToken, fn) ->
     clearTimeout(@authTimeout)
-    token.checkSocketToken(ticket)
-    .then =>
-      @login(fn)
+    token.verifySocketToken(socketToken)
+    .then (user) =>
+      @login(user.id, fn)
     .catch (err) =>
-      console.log(err)
-      fn(err)
-      @kick(err)
+      fn('err_bad_token')
+      @kick()
 
   ###
    * (Private) User Login
@@ -66,16 +65,18 @@ class GuestSocket extends Socket
    * - fn (callback)
   ###
 
-  login: (fn) ->
-    socket = @_socket
-    @release()
-    core.getUser(@userId)
-    .then (user) ->
-      new UserSocket(socket, user)
+  login: (userId, fn) ->
+    @unbindEvents()
+    core.getUser(userId)
+    .then (user) =>
+      new UserSocket(@_socket, user)
+      user.info()
+    .then (info) ->
+      fn(null, info)
     .catch (err) =>
-      log.warn err
-      fn(err)
-      @kick(err)
+      log.warn(err)
+      fn('err_bad_token')
+      @kick()
 
   ###
    * (Private) Kick
@@ -96,7 +97,7 @@ class GuestSocket extends Socket
    * within the time limit.
   ###
 
-  timeout: ->
+  timeout: =>
     @close(1002, 'err_auth_timeout')
 
 
