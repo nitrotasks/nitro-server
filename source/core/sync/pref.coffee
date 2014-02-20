@@ -9,7 +9,7 @@ class SyncPref extends Sync
     # disabled
     throw new Error('Cannot create preference')
 
-  update: (data, timestamps) ->
+  update: (_null, data, timestamps) ->
 
     super(@user.id, data, timestamps)
 

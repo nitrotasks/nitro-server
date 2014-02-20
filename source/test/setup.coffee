@@ -80,7 +80,9 @@ setup.createPref = ->
 
   setup._pref.userId = setup.userId
 
-  setup.user.pref.create(setup._pref)
+  setup.user.pref.destroy()
+  .then ->
+    setup.user.pref.create(setup._pref)
   .then (id) ->
     setup.prefId = id
 

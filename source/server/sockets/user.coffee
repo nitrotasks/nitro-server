@@ -110,7 +110,7 @@ class UserSocket extends Socket
       if fn then fn(null, model)
     .catch (err) ->
       log.warn(err)
-      if fn then fn(true)
+      if fn then fn(err)
 
 
   task_update: (id, model, fn, time) ->
@@ -119,8 +119,8 @@ class UserSocket extends Socket
   list_update: (id, model, fn, time) ->
     @update(LIST, id, model, fn, time)
 
-  pref_update: (id, model, fn, time) ->
-    @update(PREF, id, model, fn, time)
+  pref_update: (model, fn, time) ->
+    @update(PREF, null, model, fn, time)
 
 
   ###

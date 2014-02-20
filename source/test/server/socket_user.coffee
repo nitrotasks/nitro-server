@@ -59,10 +59,10 @@ describe 'UserSocket', ->
 
       it 'should create a new list', (done) ->
 
-        list =
+        data =
           name: 'list_name'
 
-        client.emit 'list.create', list, (err, list) ->
+        client.emit 'list.create', data, (err, list) ->
           list.should.have.keys('id', 'userId', 'name')
           done()
 
@@ -70,10 +70,12 @@ describe 'UserSocket', ->
 
       it 'should update a list', (done) ->
 
-        changes =
+        id = setup.listId
+
+        data =
           name: 'list_name_changed'
 
-        client.emit 'list.update', setup.listId, changes, (err, list) ->
+        client.emit 'list.update', id, data, (err, list) ->
           list.should.have.keys('id', 'userId', 'name')
           done()
 
@@ -103,7 +105,7 @@ describe 'UserSocket', ->
 
         data =
           listId: setup.listId
-          name: 'list_name'
+          name: 'task_name'
           notes: ''
           date: 0
           priority: 0
@@ -120,9 +122,54 @@ describe 'UserSocket', ->
 
     describe ':update', ->
 
+      it 'should update a task', (done) ->
+
+        id = setup.taskId
+
+        data =
+          name: 'task_name_updated'
+
+        client.emit 'task.update', id, data, (err, task) ->
+          should.equal(null, err)
+
+          setup._task.name = 'task_name_updated'
+          task.should.eql(setup._task)
+
+          done()
+
     describe ':destroy', ->
+
+      it 'should destroy a task', (done) ->
+
+        data =
+          id: setup.taskId
+
+        client.emit 'task.destroy', data, (err, success) ->
+          should.equal(null, err)
+          success.should.equal(true)
+
+          done()
 
   describe ':pref', ->
 
     describe ':update', ->
+
+      beforeEach (done) ->
+        setup.createPref()
+        .then(setup.createTimePref)
+        .then -> done()
+        .done()
+
+      it 'should update a pref', (done) ->
+
+        data =
+          sort: 1
+
+        client.emit 'pref.update', data, (err, prefs) ->
+          should.equal(null, err)
+
+          setup._pref.sort = 1
+          prefs.should.eql(setup._pref)
+
+          done()
 
