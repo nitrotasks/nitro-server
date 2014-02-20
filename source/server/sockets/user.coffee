@@ -46,7 +46,7 @@ class UserSocket extends Socket
   ###
 
   user_info: (fn) ->
-    @user.read().then (info) -> fn(null, info)
+    @user.info().then (info) -> fn(null, info)
 
 
   ###

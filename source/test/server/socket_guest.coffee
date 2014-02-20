@@ -33,7 +33,7 @@ describe 'GuestSocket', ->
           status.should.equal(3002)
           message.should.equal('err_bad_token')
           done()
-      
+
     it 'should throw err if user does not exist', (done) ->
 
       socketToken = token.createSocketToken(-1)
