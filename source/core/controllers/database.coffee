@@ -2,16 +2,17 @@ Promise  = require('bluebird')
 Knex     = require('knex')
 sequence = require('../utils/sequence')
 
-# -----------------------------------------------------------------------------
-# VARIABLES
-# -----------------------------------------------------------------------------
+###
+ * Tables
+ *
+ * These are all the database tables that will be loaded.
+ * You will find them in the source/core/tables/ folder.
+###
 
-# Tables
 tables = [
   'user', 'list', 'task', 'pref', 'list_tasks',
   'time_task', 'time_list', 'time_pref'
-].map (table) ->
-  require '../tables/' + table
+].map (table) -> require('../tables/' + table)
 
 # Defer connectiond
 connected = Promise.defer()
@@ -20,9 +21,14 @@ connected = Promise.defer()
 knex = null
 
 
-# -----------------------------------------------------------------------------
-# INIT
-# -----------------------------------------------------------------------------
+###
+ * Init
+ *
+ * This will connect to the database using Knex.
+ * Once connected, it will then check that all the tables exist.
+ *
+ * - config (object) : database configuration
+###
 
 init = (config) ->
 
@@ -36,47 +42,49 @@ init = (config) ->
   createTables().then -> connected.resolve()
 
 
-# -----------------------------------------------------------------------------
-# CREATE TABLES
-# -----------------------------------------------------------------------------
+###
+ * Create Tables
+ *
+ * This will loop through each table, and check that it exists.
+ * If it doesn't exist, it will create the table.
+ * It loops sequentially and in order, so that tables that depend on other
+ * tables do not cause problems.
+###
 
-# Sequentially create each table
 createTables = ->
 
   if knex is null
     throw new Error 'createTables requires a database connection'
 
   sequence tables, (Table) ->
-
     name = Table::table
     table = module.exports[name] = new Table(knex)
     table.setup()
 
 
-# -----------------------------------------------------------------------------
-# DESTROY AND CREATE TABLES
-# -----------------------------------------------------------------------------
+###
+ * Reset Tables
+ *
+ * This is used for testing.
+ * It will loop through each table and destroy it.
+ * Afterwards, it will then wun createTables.
+ * It loops sequentially and in reverse order, so that tables with
+ * dependencies do not cause problems.
+###
 
-# Sequentially drop each table in reverse order
 resetTables = ->
 
   if knex is null
     throw new Error 'reseTables requires a database connection'
 
   sequence tables.slice().reverse(), (Table) ->
-
     name = Table::table
     table = module.exports[name]
     table._dropTable()
-
   .then(createTables)
 
 
-# -----------------------------------------------------------------------------
-# EXPORTS
-# -----------------------------------------------------------------------------
-
 module.exports =
-  connected: connected.promise
   init: init
+  connected: connected.promise
   resetTables: resetTables

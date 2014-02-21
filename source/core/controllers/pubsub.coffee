@@ -7,25 +7,42 @@ initiated = false
 cSub = null
 cPub = null
 
+
+###
+ * Parse Config
+ *
+ * Parses the redis config.
+ * Handles both URL strings and objects
+ *
+ * - config (object) : redis configuration
+###
+
+parseConfig = (config) ->
+
+  if typeof config.redis_config is 'string'
+    {port, hostname, auth} = url.parse(config.redis_config)
+    auth = auth.split(':')[1]
+  else
+    port = config.redis_config.port
+    hostname = config.redis_config.host
+
+  return {port, hostname, auth}
+
+
 ###
  * Create Client
  *
  * Creates a new redis client
  *
- * - config (object) : redis config
+ * - config (object) : output from parseConfig
 ###
 
 createClient = (config) ->
 
   deferred = Promise.defer()
 
-  if typeof config.redis_config is 'string'
-    {port, hostname, auth} = url.parse(config.redis_config)
-  else
-    port = config.redis_config.port
-    hostname = config.redis_config.host
-
-  client = redis.createClient(port, hostname, max_attempts: 3)
+  client = redis.createClient(config.port, config.hostname, max_attempts: 3)
+  if config.auth then client.auth(auth.split(':')[1])
 
   client.on 'error', (err) ->
     log.warn(err)
@@ -33,8 +50,6 @@ createClient = (config) ->
 
   client.on 'ready', ->
     deferred.resolve(client)
-
-  if auth then client.auth(auth.split(':')[1])
 
   return deferred.promise
 
@@ -44,6 +59,8 @@ createClient = (config) ->
  *
  * Creates two clients.
  * One for publishing messages, one for subscribing to them.
+ * This is because when you subscribe to a channel using redis, you can
+ * no longer use that client to do anything else.
  *
  * - config (object) : redis config
 ###
@@ -52,6 +69,8 @@ init = (config) ->
 
   return if initiated
   initiated = true
+
+  config = parseConfig(config)
 
   Promise.all [
     createClient(config)

@@ -17,7 +17,6 @@ describe 'Auth', ->
     .then ->
       auth.register(setup._user.name, setup._user.email, setup._user.password)
     .then (id) ->
-      console.log 'spreading'
       setup.user = new Users.User(id)
     .then -> done()
     .done()
