@@ -22,7 +22,7 @@ describe 'Sync API', ->
     Users.get(setup.userId)
     .then (_user) ->
       user = _user
-      sync = new Sync(user)
+      sync = new Sync(user, 'test-sync-complex')
     .then -> done()
     .done()
 
@@ -43,9 +43,9 @@ describe 'Sync API', ->
         sync.list.create name: 'List 3'
       ]
 
-      .map (id) ->
-        lists.push(id)
-        new Lists.List(id)
+      .map (list) ->
+        lists.push(list.id)
+        new Lists.List(list.id)
       .map (list) ->
         list.read()
       .then (_lists) ->
@@ -63,9 +63,9 @@ describe 'Sync API', ->
           sync.task.create name: 'Task 3', listId: lists[0]
         ]
 
-      .map (id) ->
-        tasks.push(id)
-        new Tasks.Task(id)
+      .map (task) ->
+        tasks.push(task.id)
+        new Tasks.Task(task.id)
       .map (task) ->
         task.read()
       .then (_tasks) ->
@@ -104,9 +104,8 @@ describe 'Sync API', ->
         sync.task.update tasks[2], name: 'Task 3 has been renamed'
       ]
 
-      .return(tasks)
-      .map (id) ->
-        new Tasks.Task(id)
+      .map (task) ->
+        new Tasks.Task(task.id)
       .map (task) ->
         task.read()
       .then (_tasks) ->
@@ -123,9 +122,8 @@ describe 'Sync API', ->
           sync.list.update lists[2], name: 'List 3 has been renamed'
         ]
 
-      .return(lists)
-      .map (id) ->
-        new Lists.List(id)
+      .map (list) ->
+        new Lists.List(list.id)
       .map (list) ->
         list.read()
 
@@ -137,7 +135,7 @@ describe 'Sync API', ->
         _lists[2].name.should.equal 'List 3 has been renamed'
 
         # Update pref
-        sync.pref.update
+        sync.pref.update null,
           sort: 1
           language: 'en-US'
 
@@ -223,7 +221,7 @@ describe 'Sync API', ->
 
     it 'should respect timestamps - pref', (done) ->
 
-      sync.pref.update { sort: false }, { sort: past }
+      sync.pref.update null, { sort: false }, { sort: past }
       .catch (err) ->
         err.message.should.equal('err_old_time')
         done()

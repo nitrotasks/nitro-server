@@ -29,6 +29,6 @@ class Pref
     db.pref.update(@userId, changes)
 
   destroy: ->
-    db.pref.destroy(@userId, true)
+    db.pref.destroy(@userId)
 
 module.exports = Pref

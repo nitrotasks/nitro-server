@@ -3,7 +3,7 @@ redis   = require('redis')
 url     = require('url')
 log     = require('log_')('redis', 'green')
 
-ready = Promise.defer()
+initiated = false
 cSub = null
 cPub = null
 
@@ -28,7 +28,7 @@ createClient = (config) ->
   client = redis.createClient(port, hostname, max_attempts: 3)
 
   client.on 'error', (err) ->
-    log.warn('Could not connect to Redis')
+    log.warn(err)
     deferred.reject(null)
 
   client.on 'ready', ->
@@ -50,8 +50,8 @@ createClient = (config) ->
 
 init = (config) ->
 
-  if ready.promise.isFulfilled()
-    return ready.promise
+  return if initiated
+  initiated = true
 
   Promise.all [
     createClient(config)
@@ -60,7 +60,6 @@ init = (config) ->
   .spread (_pub, _sub) ->
     cPub = _pub
     cSub = _sub
-    ready.resolve()
 
 publish = (channel, message) ->
   cPub.publish(channel, message)

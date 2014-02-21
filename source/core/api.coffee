@@ -1,7 +1,7 @@
-Users = require('./models/user')
-auth = require('./controllers/auth')
-analytics = require('./controllers/analytics')
-Sync = require('./controllers/sync')
+Users     = require('./models/user')
+auth      = require('./controllers/auth')
+Sync      = require('./controllers/sync')
+event     = require('./controllers/event')
 
 api =
 
@@ -10,8 +10,8 @@ api =
   getUser: (userId) ->
     Users.get(userId)
 
-  analytics: analytics
-
   Sync: Sync
+
+  event: event
 
 module.exports = api

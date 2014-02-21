@@ -181,11 +181,9 @@ describe 'Pref', ->
         done()
       .done()
 
-    it 'should throw err when the pref does not exist', (done) ->
+    it 'should not throw err when the pref does not exist', (done) ->
 
       pref = new Pref(-1)
       pref.destroy()
-      .catch (err) ->
-        err.message.should.equal 'err_no_row'
-        done()
+      .then -> done()
       .done()

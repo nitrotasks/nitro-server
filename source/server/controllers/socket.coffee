@@ -1,5 +1,7 @@
 sockjs      = require('sockjs')
 GuestSocket = require('../sockets/guest')
+Jandal      = require('jandal')
+event       = require('../../core/api').event
 
 
 SOCKET_URL = '/socket'
@@ -15,11 +17,14 @@ SOCKET_URL = '/socket'
 ###
 
 init = (server) ->
+
   websockets = sockjs.createServer()
   websockets.installHandlers(server, prefix: SOCKET_URL)
   websockets.on 'connection', (socket) ->
     new GuestSocket(socket)
 
+  event.listen (message) ->
+    console.log message
 
 module.exports =
   init: init

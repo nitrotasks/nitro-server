@@ -14,6 +14,9 @@ describe 'event', ->
     .then -> done()
     .done()
 
+  after ->
+    onMessage = ( -> )
+
   describe ':emit', (done) ->
 
     it 'should emit a message', (done) ->

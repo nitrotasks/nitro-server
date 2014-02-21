@@ -116,6 +116,8 @@ setup.createTimeTask = ->
 setup.createTimePref = ->
 
   setup._timePref.id = setup.userId
-  database.time_pref.create(setup._timePref)
+  database.time_pref.destroy(setup.userId)
+  .then ->
+    database.time_pref.create(setup._timePref)
 
 module.exports = setup

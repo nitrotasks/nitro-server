@@ -13,7 +13,7 @@ describe 'Database', ->
 
   beforeEach (done) ->
     db.time_pref.destroy(setup.userId)
-    .then(setup.createTimePRef)
+    .then(setup.createTimePref)
     .then -> done()
     .done()
 
