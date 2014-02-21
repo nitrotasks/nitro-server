@@ -34,57 +34,17 @@ describe 'Crypto', ->
       .then -> done()
       .done()
 
-  describe ':fastHash', ->
+  describe ':sha256', ->
 
-    it 'should quickly hash data', (done) ->
+    it 'should quickly hash data', ->
 
-      crypto.randomToken(64)
-      .then (string) ->
-        crypto.fastHash(string)
-      .then -> done()
-      .done()
+      string = 'some_random_string_that_is_rather_long'
+      expectedHash = 'HYiBIqGYFV9YyIwWYTH1qea2hX9EaZML3K6akqIo6iE'
+      crypto.sha256(string).should.equal(expectedHash)
 
     it 'should hash strings as utf-8', ->
 
-      string = 'aabbccddeeff'
-      hash = crypto.fastHash(string)
-      hash.should.equal('wXmVZPLu/K9j3S5cwIVz5jhWIiojLastkaF7Iygw1DA=')
+      string = '0xdeadbeef'
+      hash = crypto.sha256(string)
+      hash.should.equal('QUJxC5tMqusAC45d4nG766x_UJqrL15h0e0ZWL_m1YM')
 
-  describe ':fastCompare', ->
-
-    it 'should quickly compare data', (done) ->
-
-      crypto.randomToken(64)
-      .then (string) ->
-        hash = crypto.fastHash(string)
-        crypto.fastCompare(string, hash).should.equal(true)
-      .then -> done()
-      .done()
-
-  describe ':randomBytes', ->
-
-    it 'should generate random bytes', (done) ->
-
-      size = 30
-
-      crypto.randomBytes(size)
-      .then (bytes) ->
-        bytes.should.have.length(size)
-      .then -> done()
-      .done()
-
-  describe ':randomToken', ->
-
-    it 'should be the correct length', (done) ->
-
-      sizes = (i for i in [0 .. 80])
-
-      Promise.map sizes, (size) ->
-        crypto.randomToken(size)
-
-      .map (token, size) ->
-        token.should.have.length(size)
-        token.should.match(/^[\w-]*$/)
-
-      .then -> done()
-      .done()
