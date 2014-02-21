@@ -31,7 +31,7 @@ class GuestSocket extends Socket
     log 'A new guest has connected'
     @authenticated = false
     @authTimeout = setTimeout @timeout, TIMEOUT_AUTH
-    core.analytics('socket.connect')
+    # core.analytics('socket.connect')
 
 
   ###

@@ -31,11 +31,11 @@ class UserSocket extends Socket
     @authenticated = true
     @socket.join(@user.id)
     @sync = new core.Sync(@user)
-    core.analytics('socket.login', @user.id)
+    # core.analytics('socket.login', @user.id)
 
 
   broadcast: (event, arg1, arg2, arg3) ->
-    core.analytics(event, @user.id)
+    # core.analytics(event, @user.id)
     @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
 
 
@@ -154,7 +154,7 @@ class UserSocket extends Socket
    * Returns an export of all the users tasks, lists and preferences
   ###
 
-  merge_queue: (queue, clientTime, fn) ->
+  queue_sync: (queue, clientTime, fn) ->
     @sync.queue(queue, clientTime)
     .then (results) -> fn(null, results)
     .catch (err) -> if fn then fn(true)

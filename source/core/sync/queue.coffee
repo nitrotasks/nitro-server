@@ -1,5 +1,5 @@
 Promise = require('bluebird')
-offset  = require('../models/time').offset
+Time    = require('../models/time')
 
 CREATE = 0
 UPDATE = 1
@@ -7,10 +7,7 @@ DESTROY = 2
 
 merge = (sync, queue, clientTime) ->
 
-  pAll = [] # stores all the promises
-  pList = [] # stores just the list promises
-
-  offset = time.now() - clientTime
+  offset = Time.now() - clientTime
 
   mergePref(sync, queue, offset)
   .then ->
@@ -20,24 +17,23 @@ merge = (sync, queue, clientTime) ->
   .then ->
     exportUser(sync.user)
   .catch (err) ->
+    console.log err
     return null
 
 mergePref = (sync, queue, offset) ->
 
-  promises = []
-
-  for [event, pref, time] in queue
-    offset(offset, time)
+  promises = for [event, pref, time] in queue
+    time = Time.offset(offset, time)
     continue unless event is UPDATE
-    promises.push sync.pref_update(pref, null, time)
+    sync.pref_update(pref, null, time)
 
-  return promises
+  return Promise.all(promises)
 
 mergeList = (sync, queue, offset) ->
 
-  for [event, list, time] in queue
+  promises = for [event, list, time] in queue
 
-    offset(offset, time)
+    time = Time.offset(offset, time)
 
     switch event
 
@@ -48,19 +44,21 @@ mergeList = (sync, queue, offset) ->
 
         do ->
           id = list.id
-          promises.push sync.list_create(list, null, time).then (_id) ->
+          sync.list_create(list, null, time).then (_id) ->
             lists[id] = _id
 
       when UPDATE
-        pAll.push sync.list_update(list, null, time)
+        sync.list_update(list, null, time)
 
       when DESTROY
-        pAll.push sync.list_destroy(list, null, time)
+        sync.list_destroy(list, null, time)
+
+  return Promise.all(promises)
 
 mergeTask = (sync, lists, queue, offset) ->
 
-  for [event, task, time] in queue
-    offset(offset, time)
+  promises = for [event, task, time] in queue
+    time = Time.offset(offset, time)
 
     if lists[task.listId]
       task.listId = lists[task.listId]
@@ -68,23 +66,24 @@ mergeTask = (sync, lists, queue, offset) ->
     switch event
 
       when CREATE
-        pAll.push sync.task_create(task, null, time)
+        sync.task_create(task, null, time)
 
       when UPDATE
-        pAll.push sync.task_update(task, null, time)
+        push sync.task_update(task, null, time)
 
       when DESTROY
-        pAll.push sync.task_destroy(task, null, time)
+        push sync.task_destroy(task, null, time)
 
-  return pAll
+  return Promise.all(promises)
 
 exportUser =  (user) ->
 
   Promise.all [
-    user.lists.all()
-    user.tasks.all()
+    user.list.all()
+    user.task.all()
     user.pref.read()
   ]
-  .spread(lists, tasks, pref) -> { lists, tasks, pref }
+  .spread (list, task, pref) ->
+    { list, task, pref }
 
 module.exports = merge
