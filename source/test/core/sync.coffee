@@ -22,7 +22,7 @@ describe 'Sync', ->
     Users.get(setup.userId)
     .then (_user) ->
       user = _user
-      sync = new Sync(user)
+      sync = new Sync(user, 'sync-test')
     .then -> done()
     .done()
 
@@ -37,8 +37,6 @@ describe 'Sync', ->
           name: 'sync_task_name'
 
         sync.task.create(data)
-        .then (id) ->
-          user.task.get(id).call('read')
         .then (task) ->
           task.id.should.be.a.Number.and.greaterThan(setup.taskId)
           task.userId.should.equal(setup.userId)
@@ -53,8 +51,8 @@ describe 'Sync', ->
 
       beforeEach (done) ->
         sync.task.create(listId: setup.listId)
-        .then (id) ->
-          taskId = id
+        .then (task) ->
+          taskId = task.id
         .then -> done()
         .done()
 
@@ -65,7 +63,13 @@ describe 'Sync', ->
 
         sync.task.update(taskId, data)
         .then (task) ->
-          task.should.eql(data)
+          task.should.have.keys([
+            'name', 'notes', 'completed', 'priority', 'date',
+            'listId', 'userId', 'id'
+          ])
+          task.name.should.equal('sync_task_name_updated')
+          task.listId.should.equal(setup.listId)
+          task.userId.should.equal(setup.userId)
           user.task.get(taskId).call('read')
         .then (task) ->
           task.name.should.equal('sync_task_name_updated')
@@ -93,9 +97,8 @@ describe 'Sync', ->
           name: 'sync_list_name'
 
         sync.list.create(data)
-        .then (id) ->
-          user.list.get(id).call('read')
         .then (list) ->
+          list.should.have.keys('id', 'userId', 'name')
           list.id.should.be.a.Number.and.greaterThan(setup.listId)
           list.userId.should.equal(setup.userId)
           list.name.should.equal('sync_list_name')
@@ -108,8 +111,8 @@ describe 'Sync', ->
 
       beforeEach (done) ->
         sync.list.create(name: 'sync_list_update')
-        .then (id) ->
-          listId = id
+        .then (list) ->
+          listId = list.id
         .then -> done()
         .done()
 
@@ -120,7 +123,8 @@ describe 'Sync', ->
 
         sync.list.update(listId, data)
         .then (list) ->
-          list.should.eql(data)
+          list.should.have.keys('id', 'userId', 'name')
+          list.name.should.equal('sync_list_name_updated')
           user.list.get(listId).call('read')
         .then (list) ->
           list.name.should.equal('sync_list_name_updated')
@@ -148,9 +152,13 @@ describe 'Sync', ->
         data =
           sort: 1
 
-        sync.pref.update(data)
+        sync.pref.update(null, data)
         .then (pref) ->
-          pref.should.eql(data)
+          pref.should.have.keys([
+            'userId', 'sort', 'night', 'language', 'weekStart',
+            'dateFormat', 'moveCompleted', 'confirmDelete'
+          ])
+          pref.sort.should.equal(1)
           user.pref.read()
         .then (pref) ->
           pref.sort.should.equal(1)

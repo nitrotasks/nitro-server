@@ -82,7 +82,7 @@ class UserSocket extends Socket
   create: (classname, data, fn, time) ->
     @sync[classname].create(data, time)
     .then (model) =>
-      @broadcast classname + '.create', model
+      @broadcast(classname + '.create', model)
       fn(null, model)
       return model
     .catch (err) ->
@@ -103,10 +103,10 @@ class UserSocket extends Socket
    * - [fn] (function)
   ###
 
-  update: (classname, id, model, fn, time) ->
-    @sync[classname].update(id, model, time)
+  update: (classname, id, data, fn, time) ->
+    @sync[classname].update(id, data, time)
     .then (model) =>
-      @broadcast classname + '.update', model
+      @broadcast(classname + '.update', id, data)
       if fn then fn(null, model)
     .catch (err) ->
       log.warn(err)
@@ -134,7 +134,7 @@ class UserSocket extends Socket
     id = model.id
     @sync[classname].destroy(id, time)
     .then =>
-      @broadcast classname + '.destroy', id: id
+      @broadcast(classname + '.destroy', { id })
       if fn then fn(null, true)
     .catch (err) ->
       if fn then fn(true)

@@ -5,10 +5,10 @@ SyncQueue = require('../sync/queue')
 
 class SyncUser
 
-  constructor: (@user) ->
-    @task  = new SyncTask(@user)
-    @list  = new SyncList(@user)
-    @pref  = new SyncPref(@user)
+  constructor: (@user, @sender) ->
+    @task  = new SyncTask(@user, @sender)
+    @list  = new SyncList(@user, @sender)
+    @pref  = new SyncPref(@user, @sender)
 
     # TODO: refactor this
     @queue = (queue, clientTime) ->

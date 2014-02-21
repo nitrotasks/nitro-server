@@ -1,12 +1,12 @@
 Promise  = require('bluebird')
-redis    = require('./controllers/redis')
+pubsub    = require('./controllers/pubsub')
 database = require('./controllers/database')
 
 startCore = (config) ->
 
   Promise.all [
     database.init(config)
-    redis.init(config)
+    pubsub.init(config)
   ]
 
 module.exports = startCore

@@ -1,5 +1,6 @@
 Promise = require('bluebird')
 time    = require('../models/time')
+event   = require('../controllers/event')
 Log     = require('log_')
 
 ERR_INVALID_MODEL = 'err_invalid_model'
@@ -8,7 +9,7 @@ class Sync
 
   classname: null
 
-  constructor: (@user) ->
+  constructor: (@user, @sender) ->
 
     @model = @user[@classname]
     @time = time[@classname]
@@ -21,6 +22,12 @@ class Sync
       data.id = id
       @log '[create]', data
       @time.create(id, timestamp)
+    .then =>
+      event.emit
+        sender: @sender
+        user: @user.id
+        event: @classname + '.create'
+        args: [data]
     .return(data)
 
 
@@ -47,6 +54,12 @@ class Sync
         model.update(data)
         @time.update(id, timestamps)
       ]
+    .then =>
+      event.emit
+        sender: @sender
+        user: @user.id
+        event: @classname + '.update'
+        args: [id, data]
     .then ->
       model.read()
 
@@ -58,5 +71,11 @@ class Sync
     .then (model) =>
       @log '[destroy]', id
       model.destroy()
+    .then =>
+      event.emit
+        sender: @sender
+        user: @user.id
+        event: @classname + '.destroy'
+        args: [id]
 
 module.exports = Sync
