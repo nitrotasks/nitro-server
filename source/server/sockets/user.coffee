@@ -155,7 +155,7 @@ class UserSocket extends Socket
   ###
 
   queue_sync: (queue, clientTime, fn) ->
-    @sync.queue(queue, clientTime)
+    @sync.queue.merge(queue, clientTime)
     .then (results) -> fn(null, results)
     .catch (err) -> if fn then fn(true)
 
