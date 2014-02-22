@@ -1,89 +1,118 @@
 Promise = require('bluebird')
 Time    = require('../models/time')
 
+###
+ * Constants
+###
+
 CREATE = 0
 UPDATE = 1
 DESTROY = 2
 
-merge = (sync, queue, clientTime) ->
+class Queue
 
-  offset = Time.now() - clientTime
+  constructor: (@queue, clientTime) ->
 
-  mergePref(sync, queue, offset)
-  .then ->
-    mergeList(sync, queue, offset)
-  .then (lists) ->
-    mergeTask(sync, lists, queue, offset)
-  .then ->
-    exportUser(sync.user)
-  .catch (err) ->
-    console.log err
-    return null
+    @offset = Time.now() - clientTime
 
-mergePref = (sync, queue, offset) ->
+  run: ->
 
-  promises = for [event, pref, time] in queue
-    time = Time.offset(offset, time)
-    continue unless event is UPDATE
-    sync.pref_update(pref, null, time)
+    @mergePrefs()
+    .bind(this)
+    .then(@mergeLists)
+    .then(@mergeTasks)
 
-  return Promise.all(promises)
 
-mergeList = (sync, queue, offset) ->
+  mergePrefs: ->
 
-  promises = for [event, list, time] in queue
+    promises = for [event, pref, time] in @queue.pref
 
-    time = Time.offset(offset, time)
+      time = Time.offset(@offset, time)
+      unless event is UPDATE then continue
+      @sync.pref_update(pref, null, time)
 
-    switch event
+    return Promise.all(promises)
 
-      when CREATE
-        tasks = list.tasks
-        for taskId, i in tasks by -1 when taskId < 0
-          tasks.splice(i, 1)
 
-        do ->
-          id = list.id
-          sync.list_create(list, null, time).then (_id) ->
-            lists[id] = _id
 
-      when UPDATE
-        sync.list_update(list, null, time)
+  mergeLists: ->
 
-      when DESTROY
-        sync.list_destroy(list, null, time)
+    # Store server list ids
+    lists = {}
 
-  return Promise.all(promises)
+    promises = for [event, list, time] in queue.list
 
-mergeTask = (sync, lists, queue, offset) ->
+      time = Time.offset(@offset, time)
 
-  promises = for [event, task, time] in queue
-    time = Time.offset(offset, time)
+      switch event
 
-    if lists[task.listId]
-      task.listId = lists[task.listId]
+        when CREATE
+          tasks = list.tasks
 
-    switch event
+          # TODO: Update client taskIds instead of removing them
+          for taskId, i in tasks by -1 when taskId < 0
+            tasks.splice(i, 1)
 
-      when CREATE
-        sync.task_create(task, null, time)
+          do =>
+            id = list.id
+            @sync.list_create(list, null, time)
+              .then (list) -> lists[id] = list.id
 
-      when UPDATE
-        push sync.task_update(task, null, time)
+        when UPDATE
+          @sync.list_update(list, null, time)
 
-      when DESTROY
-        push sync.task_destroy(task, null, time)
+        when DESTROY
+          @sync.list_destroy(list, null, time)
 
-  return Promise.all(promises)
+    return Promise.all(promises).return(lists)
 
-exportUser =  (user) ->
 
-  Promise.all [
-    user.list.all()
-    user.task.all()
-    user.pref.read()
-  ]
-  .spread (list, task, pref) ->
-    { list, task, pref }
 
-module.exports = merge
+  mergeTasks: (lists) ->
+
+    promises = for [event, task, time] in queue.task
+
+      time = Time.offset(@offset, time)
+
+      # Replace client listId with server listId
+      if lists[task.listId]
+        task.listId = lists[task.listId]
+
+      switch event
+
+        when CREATE
+          @sync.task_create(task, null, time)
+
+        when UPDATE
+          @sync.task_update(task, null, time)
+
+        when DESTROY
+          @sync.task_destroy(task, null, time)
+
+    return Promise.all(promises)
+
+
+
+class SyncQueue
+
+  constructor: (@sync) ->
+
+  merge: (queue, clientTime) ->
+
+    queue = new Queue(queue, clientTime)
+    queue.run()
+    .then -> @export()
+
+  export:  ->
+
+    Promise.all [
+      @sync.user.list.all()
+      @sync.user.task.all()
+      @sync.user.pref.read()
+    ]
+    .spread (list, task, pref) ->
+      { list, task, pref }
+
+
+
+module.exports = SyncQueue
