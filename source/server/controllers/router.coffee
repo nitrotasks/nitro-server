@@ -28,16 +28,12 @@ init = (config) ->
 # -----------------------------------------------------------------------------
 
   routes = [
-    'api'
     'socket'
     'refresh_token'
     'login'
     'register'
     'reset'
     'root'
-    '404'
-    # 'oauth'
-    # 'payment'
   ]
 
   # Bind an array of routes to the server
