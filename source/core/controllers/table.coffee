@@ -6,13 +6,18 @@ ERR_COULD_NOT_CREATE_ROW = 'err_could_not_create_row'
 class Table
 
   ###
-   * Table (string)
+   * Class Variables
    *
-   * This should store the table name
+   * These are useful properties to have.
+   *
+   * - table (string) : the name of the database table
+   * - column (string) : the id column of the table
+   * - columns (array) : the columns that the table contains
   ###
 
   table: null
   column: 'id'
+  columns: []
 
 
   ###
@@ -31,7 +36,7 @@ class Table
    * It should return a promise so that we can tell when all the tables
    * are ready.
    *
-   * > Promise
+   * > promise
   ###
 
   setup: ->
@@ -55,6 +60,8 @@ class Table
 
   ###
    * (private) Drop Table
+   *
+   * Drops the table
   ###
 
   _dropTable: ->
@@ -64,6 +71,13 @@ class Table
 
   ###
    * (private) Create
+   *
+   * Creates a new row in the database.
+   *
+   * - returning (string) : the column to return
+   * - data (object) : data to insert into the db
+   * > promise > id (dynamic) : value of returning column
+   * ! err_could_not_create_row : if the row could not be created
   ###
 
   _create: (returning, data) ->
@@ -78,6 +92,13 @@ class Table
 
   ###
    * (private) Update
+   *
+   * Update an existing row in the database
+   *
+   * - data (object) : data to change
+   * - where (object) : data to search for { column: value }
+   * > promise > affected rows (number)
+   * ! err_could_not_update_row : if the row could not be updated
   ###
 
   _update: (data, where) ->
@@ -95,10 +116,10 @@ class Table
   ###
    * Search
    *
-   * - columns (string|array<string>)
-   * - data (object)
-   * > array
-   * ! err_no_row
+   * - columns (string|array<string>) : columns to return
+   * - data (object) : data to search for { column: value }
+   * > array<object> : rows that match
+   * ! err_no_row : if no rows could be found
   ###
 
   search: (columns, data) ->

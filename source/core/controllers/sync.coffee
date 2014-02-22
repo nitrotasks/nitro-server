@@ -9,9 +9,6 @@ class SyncUser
     @task  = new SyncTask(@user, @sender)
     @list  = new SyncList(@user, @sender)
     @pref  = new SyncPref(@user, @sender)
-
-    # TODO: refactor this
-    @queue = (queue, clientTime) ->
-      SyncQueue(this, queue, clientTime)
+    @queue = new SyncQueue(this)
 
 module.exports = SyncUser

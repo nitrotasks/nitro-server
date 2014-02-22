@@ -42,7 +42,7 @@ createClient = (config) ->
   deferred = Promise.defer()
 
   client = redis.createClient(config.port, config.hostname, max_attempts: 3)
-  if config.auth then client.auth(auth.split(':')[1])
+  if config.auth then client.auth(config.auth)
 
   client.on 'error', (err) ->
     log.warn(err)
@@ -80,12 +80,33 @@ init = (config) ->
     cPub = _pub
     cSub = _sub
 
+
+###
+ * Publish
+ *
+ * Publish a message to a channel using the publish client
+ *
+ * - channel (string) : channel to publish to
+ * - message (string) : message to publish
+###
+
 publish = (channel, message) ->
   cPub.publish(channel, message)
+
+
+###
+ * Subscribe
+ *
+ * Subscribe to a channel
+ *
+ * - channel (string) : channel to subscribe to
+ * > subscription client
+###
 
 subscribe = (channel) ->
   cSub.subscribe(channel)
   return cSub
+
 
 module.exports =
   init: init
