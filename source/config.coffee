@@ -38,6 +38,9 @@ config =
     url: 'http://nitro-server.herokuapp.com'
     port: process.env.PORT
 
+    # TEMPORARY
+    client: '*'
+
     database_engine: 'pg'
     database_config: process.env.DATABASE_URL
 

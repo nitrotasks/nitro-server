@@ -8,7 +8,6 @@ env:
 - NODE_ENV=travis
 services:
 - redis-server
-- psql
 before_script:
 - psql -c 'create database nitro_travis;' -U postgres
 after_success:
