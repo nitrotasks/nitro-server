@@ -15,6 +15,10 @@ class Queue
 
     @offset = Time.now() - clientTime
 
+    @queue.list ?= []
+    @queue.task ?= []
+    @queue.pref ?= []
+
   run: ->
 
     @mergePrefs()
