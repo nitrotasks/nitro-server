@@ -53,12 +53,12 @@ define 'DestroyList', 'object',
 
 define 'CreateTask', 'object',
   keys:
-    listId: 'number'
-    date: 'number'
-    name: 'string'
-    notes: 'string'
-    priority: 'number'
-    completed: 'number'
+    listId: '*number'
+    date: '*number'
+    name: '*string'
+    notes: '*string'
+    priority: '*number'
+    completed: '*number'
 
 define 'UpdateTask', 'object',
   keys:

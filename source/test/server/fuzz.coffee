@@ -4,17 +4,13 @@
 
 global.DEBUG = true
 
-Promise = require 'bluebird'
-Jandal  = require 'jandal'
-Socket  = require '../app/controllers/socket'
-Auth    = require '../app/controllers/auth'
-should  = require 'should'
-setup   = require './setup'
-mockjs  = require './mockjs'
-client  = require './mock_client'
-Log     = require '../app/utils/log'
-
-log = Log 'fuzz'
+should      = require('should')
+Promise     = require('bluebird')
+log         = require('log_')('Fuzz', 'magenta')
+Sandal      = require('./sandal')
+setup       = require('../setup')
+GuestSocket = require('../../server/sockets/guest')
+token       = require('../../server/controllers/token')
 
 # -----------------------------------------------------------------------------
 # Fuzzer
@@ -108,11 +104,6 @@ random =
     classnames[index]
 
 
-  _callback: 0
-
-  callback: ->
-    ".fn(#{ @_callback++ })"
-
   model: (model) ->
     obj = {}
     for key, value of model when random.boolean()
@@ -125,29 +116,53 @@ random =
       obj[key] = random[value]()
     return obj
 
+  
+
   task: (event) ->
     model = models.task
-    obj = if event is 'create' then random.fullModel(model) else random.model(model)
-    obj.id ?= random.id()
-    return obj
+
+    switch event
+      when 'create'
+        obj = random.fullModel(model)
+        delete obj.id
+      when 'update'
+        obj = random.model(model)
+        delete obj.id
+        delete obj.listId
+      when 'destroy'
+        obj = id: random.id()
+
+    if event is 'update'
+      [random.id(), obj]
+    else
+      [obj]
+
 
   list: (event) ->
     model = models.list
-    obj = if event is 'create' then random.fullModel(model) else random.model(model)
-    obj.id ?= random.id()
-    return obj
+
+    switch event
+      when 'create'
+        obj = name: random.string()
+      when 'update'
+        obj = name: random.string()
+      when 'destroy'
+        obj = id: random.id()
+
+    if event is 'update'
+      [random.id(), obj]
+    else
+      [obj]
 
   pref: ->
-    random.model(models.pref)
+    [random.model(models.pref)]
 
   command: ->
     classname = random.classname()
     event = random.event(classname)
-    callback = random.callback()
-    data = random[classname](event)
-    json = JSON.stringify data
-
-    "#{ classname }.#{ event }(#{ json })#{ callback }"
+    args = random[classname](event)
+    args.unshift(classname + '.' + event)
+    return args
 
 
 # -----------------------------------------------------------------------------
@@ -155,6 +170,8 @@ random =
 # -----------------------------------------------------------------------------
 
 describe 'Fuzz - SLOW', ->
+
+  client = null
   socket = null
 
   user =
@@ -165,41 +182,30 @@ describe 'Fuzz - SLOW', ->
     pass: 'xkcd'
 
   before (done) ->
-    Socket.init(null, mockjs)
-    socket = mockjs.createSocket()
-    client.socket = null
-    setup(done)
-
-  exec = (command) ->
-    deferred = Promise.defer()
-    log '\n' + command
-
-    socket.once 'message', (response) ->
-      res = Jandal::parse(response)
-
-      id = res.arg2
-
-      if typeof id is 'number'
-        ids.push(id)
-
-      deferred.resolve response
-
-    socket.reply(command)
-    return deferred.promise
-
-  it 'should create a new user', (done) ->
-    Auth.register(user.name, user.email, user.pass)
-    .then ([id, token]) ->
-      user.id = id
-      user.token = token
-      done()
+    setup()
+    .then(setup.createUser)
+    .then(Sandal.setup)
+    .then -> done()
     .done()
 
-  it 'should login the user', (done) ->
-    auth = client.user.auth(user.id, user.token)
-    exec(auth).then (message) ->
-      message.should.equal 'Jandal.fn_0(null,true)'
+  beforeEach (done) ->
+
+    socketToken = token.createSocketToken(setup.userId)
+
+    client = new Sandal()
+    socket = new GuestSocket(client.serverSocket)
+
+    client.emit 'user.auth', socketToken, (err, user) ->
+      should.equal(null, err)
       done()
+
+  exec = (args) ->
+    if args[0].match(/create/)
+      args.push (err, id) ->
+        console.log arguments
+        console.log("I HAVE AN ID", id)
+        ids.push(id)
+    client.emit.apply(client, args)
 
   it 'should fuzz', (done) ->
 
@@ -209,7 +215,9 @@ describe 'Fuzz - SLOW', ->
 
     for i in [0..1000]
       promise = promise.then ->
-        exec random.command()
+        args = random.command()
+        # console.log(args)
+        exec(args)
 
     promise
       .then -> done()

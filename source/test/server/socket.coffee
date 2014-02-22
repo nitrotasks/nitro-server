@@ -4,9 +4,8 @@ global.DEBUG = true
 should = require('should')
 Jandal = require('jandal')
 setup  = require('../setup')
-mockjs = require('./mockjs')
-client = require('./mock_client')
-Socket = require('../../server/controllers/socket')
+Sandal = require('./sandal')
+GuestSocket = require('../../server/sockets/guest')
 time   = require('../../core/models/time')
 
 describe 'Socket', ->

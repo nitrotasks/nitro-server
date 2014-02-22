@@ -3,7 +3,7 @@
 MOCHA=./node_modules/.bin/mocha --compilers coffee:coffee-script/register
 COVERALLS=./node_modules/.bin/coveralls
 
-TESTS=test/*
+TESTS=source/test/core/*
 
 
 test:
@@ -15,7 +15,7 @@ watch:
 
 blanket:
 		@DISABLE_LOG=1 \
-		$(MOCHA) -r blanket -R html-cov $(TESTS) > coverage.html
+		$(MOCHA) -r blanket -R html-cov $(TESTS) | tee coverage.html
 
 coveralls:
 		@DISABLE_LOG=1 \
