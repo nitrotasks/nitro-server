@@ -4,12 +4,11 @@ log   = require('log_')('Route -> Registration', 'green')
 
 register = (req, res) ->
 
-  user =
-    name: req.body.name or ''
-    email: req.body.email or ''
-    password: req.body.password or ''
+  name = req.body.name or ''
+  email = req.body.email or ''
+  password = req.body.password or ''
 
-  core.auth.register(user).then (id) ->
+  core.auth.register(name, email, password).then (id) ->
 
     res.send
       id: id

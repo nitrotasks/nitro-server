@@ -4,11 +4,10 @@ log   = require('log_')('Route -> Login', 'green')
 
 login = (req, res) ->
 
-  user =
-    email: req.body.email or ''
-    password: req.body.password or ''
+  email = req.body.email or ''
+  password = req.body.password or ''
 
-  core.auth.login(user.email, user.password).then (id) ->
+  core.auth.login(email, password).then (id) ->
 
     res.send
       id: id
