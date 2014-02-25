@@ -10,7 +10,6 @@ class Sync
   classname: null
 
   constructor: (@user, @sender) ->
-
     @model = @user[@classname]
     @time = time[@classname]
     @log = Log("Sync -> #{ @classname }", 'yellow')
@@ -23,6 +22,7 @@ class Sync
       @log '[create]', data
       @time.create(id, timestamp)
     .then =>
+      @log 'emitting', @sender
       event.emit
         sender: @sender
         user: @user.id

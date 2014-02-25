@@ -2,7 +2,7 @@ should      = require('should')
 setup       = require('../setup')
 token       = require('../../server/controllers/token')
 GuestSocket = require('../../server/sockets/guest')
-Sandal      = require('./sandal')
+Sandal      = require('jandal/test/sandal')
 
 describe 'UserSocket', ->
 

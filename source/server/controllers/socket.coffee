@@ -24,7 +24,12 @@ init = (server) ->
     new GuestSocket(socket)
 
   event.listen (message) ->
-    console.log message
+    console.log '=== EVENT.LISTEN ===', message
+    room = Jandal.in(message.user)
+    room.broadcast message.sender, message.event,
+      message.args[0],
+      message.args[1],
+      message.args[2]
 
 module.exports =
   init: init

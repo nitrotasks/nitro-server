@@ -1,15 +1,16 @@
 Jandal = require('jandal')
+JandalC = require('jandal/client')
 {EventEmitter} = require 'events'
 
 setup = ->
 
-  Jandal.handle
+  handler =
 
     write: (socket, message) ->
       socket.emit('write', message)
 
     read: (socket, fn) ->
-      socket.on 'read', fn
+      socket.on('read', fn)
 
     close: (socket, fn) ->
       socket.on('close', fn)
@@ -18,8 +19,10 @@ setup = ->
       socket.on('error', fn)
 
     open: (socket, fn) ->
-      fn()
+      process.nextTick(fn)
 
+  Jandal.handle(handler)
+  JandalC.handle(handler)
 
 class Socket extends EventEmitter
 
@@ -42,6 +45,7 @@ class Socket extends EventEmitter
       socket.close(status, message)
 
     @on 'write', (message) ->
+      # console.log socket.name, message
       socket.emit('read', message)
 
     return socket
@@ -57,35 +61,30 @@ class Socket extends EventEmitter
 
 
 
-class Sandal
+class Sandal extends Jandal
 
   @setup: setup
 
   constructor: ->
+    super
 
-    @id = Math.floor(Math.random() * 1000)
+    id = Math.floor(Math.random() * 1000)
 
     @serverSocket = new Socket()
-    @serverSocket.name = 'server_' + @id
-
+    @serverSocket.name = 'server_' + id
     @clientSocket = new Socket()
-    @clientSocket.name = 'client_' + @id
+    @clientSocket.name = 'client_' + id
 
-    @serverSocket.pipe(@clientSocket).pipe(@serverSocket)
-    @jandal = new Jandal(@clientSocket)
+    @serverSocket.pipe(@clientSocket)
+    @clientSocket.pipe(@serverSocket)
+
+    @connect(@clientSocket)
 
     @on('socket.close', @end)
-
-  on: (event, fn) ->
-    @jandal.on(event, fn)
-
-  emit: (event, arg1, arg2, arg3) ->
-    @jandal.emit(event, arg1, arg2, arg3)
 
   end: =>
     @clientSocket.end()
     @serverSocket.end()
-
     @clientSocket.removeAllListeners()
     @serverSocket.removeAllListeners()
 

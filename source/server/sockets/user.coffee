@@ -30,14 +30,7 @@ class UserSocket extends Socket
     log 'A user has been authenticated'
     @authenticated = true
     @socket.join(@user.id)
-    @sync = new core.Sync(@user)
-    # core.analytics('socket.login', @user.id)
-
-
-  broadcast: (event, arg1, arg2, arg3) ->
-    # core.analytics(event, @user.id)
-    @socket.broadcast.to(@user.id).emit(event, arg1, arg2, arg3)
-
+    @sync = new core.Sync(@user, socket.id)
 
   ###
    * User Info
@@ -81,8 +74,7 @@ class UserSocket extends Socket
 
   create: (classname, data, fn, time) ->
     @sync[classname].create(data, time)
-    .then (model) =>
-      @broadcast(classname + '.create', model)
+    .then (model) ->
       fn(null, model)
       return model
     .catch (err) ->
@@ -105,8 +97,7 @@ class UserSocket extends Socket
 
   update: (classname, id, data, fn, time) ->
     @sync[classname].update(id, data, time)
-    .then (model) =>
-      @broadcast(classname + '.update', id, data)
+    .then (model) ->
       if fn then fn(null, model)
     .catch (err) ->
       log.warn(err)
@@ -133,8 +124,7 @@ class UserSocket extends Socket
   destroy: (classname, model, fn, time) ->
     id = model.id
     @sync[classname].destroy(id, time)
-    .then =>
-      @broadcast(classname + '.destroy', { id })
+    .then ->
       if fn then fn(null, true)
     .catch (err) ->
       if fn then fn(true)

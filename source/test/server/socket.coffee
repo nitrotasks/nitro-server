@@ -3,10 +3,12 @@ global.DEBUG = true
 
 should = require('should')
 Jandal = require('jandal')
+Sandal = require('jandal/test/sandal')
 setup  = require('../setup')
-Sandal = require('./sandal')
 GuestSocket = require('../../server/sockets/guest')
+Socket = require('../../server/controllers/socket')
 time   = require('../../core/models/time')
+http   = require('http')
 
 describe 'Socket', ->
 
@@ -53,11 +55,11 @@ describe 'Socket', ->
   before (done) ->
     setup()
     .then(setup.createUser)
+    .then -> Socket.init(http.createServer())
     .then -> done()
     .done()
 
   beforeEach ->
-    Socket.init(null, mockjs)
     socket = mockjs.createSocket()
     client.socket = socket
 
