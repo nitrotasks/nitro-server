@@ -1,4 +1,4 @@
-Sandal = require('./sandal')
+Sandal = require('jandal-log')
 
 class Client
 

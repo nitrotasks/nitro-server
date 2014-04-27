@@ -75,7 +75,7 @@ createTables = ->
 resetTables = ->
 
   if knex is null
-    throw new Error 'reseTables requires a database connection'
+    throw new Error 'ResetTables requires a database connection'
 
   sequence tables.slice().reverse(), (Table) ->
     name = Table::table

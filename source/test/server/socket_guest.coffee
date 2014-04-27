@@ -1,8 +1,8 @@
 should      = require('should')
+Sandal      = require('jandal-log')
 setup       = require('../setup')
 token       = require('../../server/controllers/token')
 GuestSocket = require('../../server/sockets/guest')
-Sandal      = require('jandal/test/sandal')
 
 describe 'GuestSocket', ->
 
@@ -12,7 +12,6 @@ describe 'GuestSocket', ->
   before (done) ->
     setup()
     .then(setup.createUser)
-    .then(Sandal.setup)
     .then -> done()
     .done()
 

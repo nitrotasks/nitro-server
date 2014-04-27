@@ -1,7 +1,7 @@
 request  = require 'supertest'
 should   = require 'should'
-setup    = require '../setup'
-app      = require '../../app/controllers/router'
+setup    = require '../../setup'
+app      = require '../../../server/controllers/router'
 
 describe 'Route -> Reset', ->
 

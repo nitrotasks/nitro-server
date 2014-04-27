@@ -1,8 +1,8 @@
 should      = require('should')
+Sandal      = require('jandal-log')
 setup       = require('../setup')
 token       = require('../../server/controllers/token')
 GuestSocket = require('../../server/sockets/guest')
-Sandal      = require('jandal/test/sandal')
 
 describe 'UserSocket', ->
 
@@ -12,7 +12,6 @@ describe 'UserSocket', ->
   before (done) ->
     setup()
     .then(setup.createUser)
-    .then(Sandal.setup)
     .then -> done()
     .done()
 
@@ -37,6 +36,7 @@ describe 'UserSocket', ->
       it 'should get user info', (done) ->
 
         client.emit 'user.info', (err, user) ->
+
           user.should.have.keys('id', 'name', 'email', 'pro', 'created_at')
 
           user.id.should.equal(setup.userId)

@@ -3,12 +3,11 @@ global.DEBUG = true
 
 should = require('should')
 Jandal = require('jandal')
-Sandal = require('jandal/test/sandal')
+Sandal = require('jandal-log')
 setup  = require('../setup')
 GuestSocket = require('../../server/sockets/guest')
 Socket = require('../../server/controllers/socket')
 time   = require('../../core/models/time')
-http   = require('http')
 
 describe 'Socket', ->
 
@@ -43,6 +42,7 @@ describe 'Socket', ->
       make._model(make._list, info)
 
   socket = null
+  client = null
 
   user =
     id: null
@@ -55,17 +55,15 @@ describe 'Socket', ->
   before (done) ->
     setup()
     .then(setup.createUser)
-    .then -> Socket.init(http.createServer())
     .then -> done()
     .done()
 
   beforeEach ->
-    socket = mockjs.createSocket()
-    client.socket = socket
+    client = new Sandal()
+    socket = new GuestSocket(client.serverSocket)
 
   afterEach ->
-    socket.end()
-    client.setId 1
+    client.end()
 
   expect = (fn) ->
     socket.once 'message', (response) ->
@@ -76,11 +74,15 @@ describe 'Socket', ->
 
     it 'should fail login with wrong token', (done) ->
 
-      socket.on 'close', ->
-        socket.open.should.equal false
-        done()
+      client.emit 'user.auth', 'token', (err) ->
 
-      client.user.auth(20, 'token')
+        console.log err
+
+        err.should.equal('err_bad_token')
+
+        client.on 'socket.close', ->
+          client.open.should.equal false
+          done()
 
     it 'should fail login with wrong id', (done) ->
 

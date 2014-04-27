@@ -2,9 +2,7 @@ Jandal = require('jandal')
 xType  = require('xtype')
 require('../controllers/validation')
 
-# Setup Jandal
-Jandal.handle('node')
-
+HANDLER = 'stream'
 
 class Socket
 
@@ -15,7 +13,7 @@ class Socket
   ###
 
   constructor: (@_socket) ->
-    @socket = new Jandal(@_socket)
+    @socket = new Jandal(@_socket, HANDLER)
     @bindEvents()
 
 

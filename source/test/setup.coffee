@@ -4,6 +4,15 @@ database = require('../core/controllers/database')
 Users    = require('../core/models/user')
 
 # -----------------------------------------------------------------------------
+# Use sandal for testing sockets
+# -----------------------------------------------------------------------------
+
+unwire = require('unwire')
+Sandal = require('jandal-log')
+BaseSocket = unwire('../server/sockets/base.coffee')
+BaseSocket.__set__('HANDLER', Sandal.handler)
+
+# -----------------------------------------------------------------------------
 # Setup
 # -----------------------------------------------------------------------------
 
@@ -14,7 +23,6 @@ enviroment = process.env.NODE_ENV ?= 'testing'
 config.use(enviroment)
 
 setup = ->
-
   core(config)
   .then(database.resetTables)
   .return(setup)

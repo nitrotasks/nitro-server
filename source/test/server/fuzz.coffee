@@ -7,7 +7,7 @@ global.DEBUG = true
 should      = require('should')
 Promise     = require('bluebird')
 log         = require('log_')('Fuzz', 'magenta')
-Sandal      = require('./sandal')
+Sandal      = require('jandal-log')
 setup       = require('../setup')
 GuestSocket = require('../../server/sockets/guest')
 token       = require('../../server/controllers/token')
@@ -174,17 +174,9 @@ describe 'Fuzz - SLOW', ->
   client = null
   socket = null
 
-  user =
-    id: null
-    token: null
-    name: 'Fred'
-    email: 'fred@gmail.com'
-    pass: 'xkcd'
-
   before (done) ->
     setup()
     .then(setup.createUser)
-    .then(Sandal.setup)
     .then -> done()
     .done()
 
@@ -197,6 +189,7 @@ describe 'Fuzz - SLOW', ->
 
     client.emit 'user.auth', socketToken, (err, user) ->
       should.equal(null, err)
+      user.email.should.equal(setup._user.email)
       done()
 
   exec = (args) ->
@@ -209,19 +202,15 @@ describe 'Fuzz - SLOW', ->
 
   it 'should fuzz', (done) ->
 
-    @timeout 4000
+    count = 1000
 
-    promise = Promise.resolve()
+    @timeout(count * 4)
 
-    for i in [0..1000]
-      promise = promise.then ->
-        args = random.command()
-        # console.log(args)
-        exec(args)
-
-    promise
-      .then -> done()
-      .done()
+    Promise.reduce new Array(count), ->
+      args = random.command()
+      return exec(args)
+    .then -> done()
+    .done()
 
 
 
