@@ -1,6 +1,7 @@
 Promise = require('bluebird')
 Time    = require('../models/time')
 
+
 ###
  * Constants
 ###
@@ -9,18 +10,20 @@ CREATE = 0
 UPDATE = 1
 DESTROY = 2
 
+
+###
+ * Queue
+###
+
 class Queue
 
   constructor: (@queue, clientTime) ->
-
     @offset = Time.now() - clientTime
-
     @queue.list ?= []
     @queue.task ?= []
     @queue.pref ?= []
 
   run: ->
-
     @mergePrefs()
     .bind(this)
     .then(@mergeLists)
@@ -28,15 +31,12 @@ class Queue
 
 
   mergePrefs: ->
-
+    # TODO: replace with map
     promises = for [event, pref, time] in @queue.pref
-
       time = Time.offset(@offset, time)
       unless event is UPDATE then continue
       @sync.pref_update(pref, null, time)
-
     return Promise.all(promises)
-
 
 
   mergeLists: ->

@@ -46,13 +46,14 @@
     "xtype": "0.0.7"
   },
   "devDependencies": {
-    "supertest": "0.9.x",
-    "mocha": "1.17.x",
-    "should": "3.1.x",
     "blanket": "1.1.x",
-    "forever": "0.10.x",
-    "mocha-lcov-reporter": "0.0.x",
+    "chai": "^1.9.1",
     "coveralls": "2.7.x",
+    "forever": "0.10.x",
+    "mocha": "1.17.x",
+    "mocha-lcov-reporter": "0.0.x",
+    "should": "3.1.x",
+    "supertest": "0.9.x",
     "unwire": "0.0.2"
   },
   "config": {

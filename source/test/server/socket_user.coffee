@@ -1,4 +1,7 @@
+global.DEBUG = true
+
 should      = require('should')
+assert      = require('chai').assert
 Sandal      = require('jandal-log')
 setup       = require('../setup')
 token       = require('../../server/controllers/token')
@@ -16,12 +19,9 @@ describe 'UserSocket', ->
     .done()
 
   beforeEach (done) ->
-
     sessionToken = token.createSocketToken(setup.userId)
-
     client = new Sandal()
     socket = new GuestSocket(client.serverSocket)
-
     client.emit 'user.auth', sessionToken, (err, user) ->
       should.equal(err, null)
       done()
@@ -172,4 +172,44 @@ describe 'UserSocket', ->
           prefs.should.eql(setup._pref)
 
           done()
+
+  describe ':queue', ->
+
+    describe ':sync', ->
+
+      create = 0
+      update = 1
+      destroy = 2
+
+      it 'should create lists and tasks simultaneously', (done) ->
+
+        now = Date.now()
+
+        input =
+
+          list: [
+            [create, { id: -20, name: 'list 1' }, now]
+            [create, { id: -30, name: 'list 2' }, now]
+          ]
+
+          task: [
+            [create, {
+              name: 'task 1', listId: -20, date: 0,
+              notes: '', priority: 0, completed: 0 }, now]
+            [create, {
+              name: 'task 2', listId: -20, date: 0,
+              notes: '', priority: 0, completed: 0 }, now]
+            [create, {
+              name: 'task 3', listId: -30, date: 0,
+              notes: '', priority: 0, completed: 0 }, now]
+            [create, {
+              name: 'task 4', listId: -30, date: 0,
+              notes: '', priority: 0, completed: 0 }, now]
+          ]
+
+        client.emit 'queue.sync', input, Date.now(), (err, results) ->
+          assert.equal(err, null)
+          console.log(results)
+          done()
+
 

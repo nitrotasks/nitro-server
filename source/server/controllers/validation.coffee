@@ -41,6 +41,7 @@ define 'Pref', 'object',
 
 define 'CreateList', 'object',
   keys:
+    id: 'number'
     name: 'string'
 
 define 'UpdateList', 'object',

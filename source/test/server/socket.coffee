@@ -1,9 +1,7 @@
-# Switch xType into debug mode
-global.DEBUG = true
-
 should = require('should')
 Jandal = require('jandal')
 Sandal = require('jandal-log')
+
 setup  = require('../setup')
 GuestSocket = require('../../server/sockets/guest')
 Socket = require('../../server/controllers/socket')
@@ -69,49 +67,6 @@ describe 'Socket', ->
     socket.once 'message', (response) ->
       res = Jandal::parse(response)
       fn res.arg1, res.arg2, res.arg3
-
-  describe '#auth', ->
-
-    it 'should fail login with wrong token', (done) ->
-
-      client.emit 'user.auth', 'token', (err) ->
-
-        console.log err
-
-        err.should.equal('err_bad_token')
-
-        client.on 'socket.close', ->
-          client.open.should.equal false
-          done()
-
-    it 'should fail login with wrong id', (done) ->
-
-      socket.on 'close', ->
-        socket.open.should.equal false
-        done()
-
-      client.user.auth(43, 'token')
-
-    it 'should be kicked after 3 seconds - SLOW', (done) ->
-
-      @timeout 3200
-      start = Date.now()
-
-      socket.on 'close', ->
-        diff = Date.now() - start
-        diff.should.be.approximately(3000, 10)
-        socket.open.should.equal false
-        done()
-
-    it 'should login via sockets', (done) ->
-
-      expect (err, val) ->
-        should.equal null, err
-        val.should.be.true
-        done()
-
-      client.user.auth(user.id, user.token)
-
 
   describe '#methods', ->
 
