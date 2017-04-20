@@ -1,0 +1,25 @@
+{
+  "name": "nitro-server",
+  "version": "3.0.0",
+  "description": "The Nitro Sync Server",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nitrotasks/nitro-server.git"
+  },
+  "author": "Jono Cooper <jono@jono.nz>",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/nitrotasks/nitro-server/issues"
+  },
+  "homepage": "http://nitrotasks.com",
+  "dependencies": {
+    "express": "^4.15.2",
+    "pg": "^6.1.5",
+    "pg-hstore": "^2.3.2",
+    "sequelize": "^3.30.4"
+  }
+}
