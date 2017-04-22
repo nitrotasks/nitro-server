@@ -17,9 +17,14 @@
   },
   "homepage": "http://nitrotasks.com",
   "dependencies": {
+    "bcrypt": "^1.0.2",
+    "body-parser": "^1.17.1",
     "express": "^4.15.2",
+    "passport": "^0.3.2",
+    "passport-http-bearer": "^1.0.1",
     "pg": "^6.1.5",
     "pg-hstore": "^2.3.2",
-    "sequelize": "^3.30.4"
+    "sequelize": "^3.30.4",
+    "uuid": "^3.0.1"
   }
 }
