@@ -1,5 +1,4 @@
 const express = require('express')
-const bodyParser = require('body-parser')
 const config = require('./config')
 const migrator = require('./lib/migrator')
 
@@ -9,7 +8,6 @@ const app = express()
 
 // set headers for every request
 app.disable('x-powered-by')
-app.use(bodyParser.json()) // can parse post requests
 app.use(function(req, res, next) {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN')
   res.setHeader('X-Content-Type-Options', 'nosniff')
