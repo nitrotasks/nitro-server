@@ -3,7 +3,7 @@ const config = {
 
   db: {
     connection: process.env.DATABASE_URL || 'postgres://nitro:secret@localhost:5432/nitro',
-    testconnection: process.env.DATABASE_URL_TES || 'postgres://nitro:secret@localhost:5432/nitrotest'
+    testconnection: process.env.DATABASE_URL_TEST || 'postgres://nitro:secret@localhost:5432/nitrotest'
   },
 
   jwtsecret: 'secret'

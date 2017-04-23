@@ -2,8 +2,6 @@ const express = require('express')
 const config = require('./config')
 const migrator = require('./lib/migrator')
 
-migrator.migrate()
-
 const app = express()
 
 // set headers for every request
@@ -15,7 +13,10 @@ app.use(function(req, res, next) {
   next()
 })
 
-app.use('/a', require('./lib/router.js'))
+// only start the api once the db is ready
+migrator.migrate().then(function() {
+  app.use('/a', require('./lib/router.js'))
+})
  
 // the router routes stuff through this port
 var port = config.port
