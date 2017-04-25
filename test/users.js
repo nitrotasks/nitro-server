@@ -2,8 +2,8 @@ const assert = require('assert')
 const request = require('supertest')
 const endpoint = '/a/users'
 
-describe('users', function() {
-  describe('/create', function() {
+describe('/users', function() {
+  describe('POST /create', function() {
     it('should create a user', function(done) {
       request(app)
         .post(endpoint + '/create')

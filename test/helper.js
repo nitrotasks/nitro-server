@@ -3,6 +3,7 @@ const migrator = require('../lib/migrator')
 const request = require('supertest')
 app = express()
 token = null
+token2 = null
 
 before(function(done) {
   // clean db
@@ -11,23 +12,46 @@ before(function(done) {
 
     app.use('/a', require('../lib/router.js'))
 
-    // setup a basic user
-    request(app)
-      .post('/a/users/create')
-      .send({ username: 'test@nitrotasks.com', password: 'secret' })
-      .end(function(err, data) {
-        token = data.body
+    let promises = []
 
-        // need to get an access token too
-        request(app)
-          .post('/a/auth/token')
-          .send({refresh_token: token.refresh_token})
-          .end(function(err, data) {
-            console.log('DB Created.\n')
+    // setup two basic users and get two access tokens
+    promises.push(new Promise(function(resolve, reject) {
+      request(app)
+        .post('/a/users/create')
+        .send({ username: 'test@nitrotasks.com', password: 'secret' })
+        .end(function(err, data) {
+          token = data.body
 
-            token.access_token = data.body.access_token
-            done()
-          })
-      })
+          // need to get an access token too
+          request(app)
+            .post('/a/auth/token')
+            .send({refresh_token: token.refresh_token})
+            .end(function(err, data) {
+              resolve()
+              token.access_token = data.body.access_token
+            })
+        })
+    }))
+    promises.push(new Promise(function(resolve, reject) {
+      request(app)
+        .post('/a/users/create')
+        .send({ username: 'test2@nitrotasks.com', password: 'secret' })
+        .end(function(err, data) {
+          token2 = data.body
+
+          // need to get an access token too
+          request(app)
+            .post('/a/auth/token')
+            .send({refresh_token: token2.refresh_token})
+            .end(function(err, data) {
+              resolve()
+              token2.access_token = data.body.access_token
+            })
+        })
+    }))
+    Promise.all(promises).then(function() {
+      console.log('DB Created.\n')
+      done()
+    })
   })
 })

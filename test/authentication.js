@@ -2,8 +2,8 @@ const assert = require('assert')
 const request = require('supertest')
 const endpoint = '/a/auth'
 
-describe('authentication', function() {
-  describe('/authorize', function() {
+describe('/auth', function() {
+  describe('POST /authorize', function() {
     it('should return a refresh_token', function(done) {
       request(app)
         .post(endpoint + '/authorize')
@@ -58,7 +58,7 @@ describe('authentication', function() {
         })
     })
   })
-  describe('/token', function() {
+  describe('POST /token', function() {
     it('should return a access_token', function(done) {
       request(app)
         .post(endpoint + '/token')
@@ -103,21 +103,21 @@ describe('authentication', function() {
         })
     })
   })
-  describe('/testbearer', function() {
-    it('should succeed if token is correct', function(done) {
+  describe('GET /testbearer', function() {
+    it('needs authentication', function(done) {
       request(app)
         .get(endpoint + '/testbearer')
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .expect(200)
+        .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
           done()
         })
     })
-    it('needs authentication', function(done) {
+    it('should succeed if token is correct', function(done) {
       request(app)
         .get(endpoint + '/testbearer')
-        .expect(400)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
           done()
