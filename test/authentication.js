@@ -58,11 +58,10 @@ describe('/auth', function() {
         })
     })
   })
-  describe('POST /token', function() {
+  describe('GET /token', function() {
     it('should return a access_token', function(done) {
       request(app)
-        .post(endpoint + '/token')
-        .send({ refresh_token: token.refresh_token })
+        .get(endpoint + '/token/' + token.refresh_token)
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -75,27 +74,17 @@ describe('/auth', function() {
     })
     it('needs parameters', function(done) {
       request(app)
-        .post(endpoint + '/token')
-        .expect(400)
+        .get(endpoint + '/token/')
+        .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
           done()
         })
     })
-    it('should fail if token is empty', function(done) {
-      request(app)
-        .post(endpoint + '/token')
-        .send({ refresh_token: ''})
-        .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
-          done()
-        })
-    })
+
     it('should fail if refresh_token is wrong', function(done) {
       request(app)
-        .post(endpoint + '/token')
-        .send({ refresh_token: 'not a token' })
+        .get(endpoint + '/token/wrongtoken')
         .expect(401)
         .end(function(err, res) {
           if (err) return done(err)

@@ -24,8 +24,7 @@ before(function(done) {
 
           // need to get an access token too
           request(app)
-            .post('/a/auth/token')
-            .send({refresh_token: token.refresh_token})
+            .get('/a/auth/token/' + token.refresh_token)
             .end(function(err, data) {
               resolve()
               token.access_token = data.body.access_token
@@ -41,8 +40,7 @@ before(function(done) {
 
           // need to get an access token too
           request(app)
-            .post('/a/auth/token')
-            .send({refresh_token: token2.refresh_token})
+            .get('/a/auth/token/' + token2.refresh_token)
             .end(function(err, data) {
               resolve()
               token2.access_token = data.body.access_token

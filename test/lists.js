@@ -37,15 +37,16 @@ describe('/lists', function() {
           done()
         })
     })
-    it('should create a list and return id, name, and user attributes', function(done) {
+    it('should create a list and return id, originalId, name, and user attributes', function(done) {
       request(app)
         .post(endpoint)
-        .send({ name: 'A Cool List' })
+        .send({ name: 'A Cool List', id: '12345' })
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
           if ( typeof(res.body.id) !== 'undefined'
+            && res.body.originalId === '12345'
             && typeof(res.body.name) !== 'undefined'
             && typeof(res.body.users) !== 'undefined') {
               done()
