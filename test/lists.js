@@ -94,56 +94,6 @@ describe('/lists', function() {
         })
     })
   })
-
-  describe('GET /id', function() {
-    it('needs authentication', function(done) {
-      request(app)
-        .get(endpoint + '/' + listId)
-        .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
-          done()
-        })
-    })
-    it('requires correct uuid syntax', function(done) {
-      request(app)
-        .get(endpoint + '/notacorrectuuid')
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
-          if (true) {
-            done()
-          } else {
-            done(new Error('Did not return expected attributes.'))
-          }
-        })
-    })
-    it('should return list with users and tasks', function(done) {
-      request(app)
-        .get(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
-          if (true) {
-            done()
-          } else {
-            done(new Error('Did not return expected attributes.'))
-          }
-        })
-    })
-    it('should not return list belonging to another user', function(done) {
-      request(app)
-        .get(endpoint + '/' + listId2)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .expect(404)
-        .end(function(err, res) {
-          if (err) return done(err)
-          done()
-        })
-    })
-  })
   describe('DELETE /', function() {
     it('needs authentication', function(done) {
       request(app)
