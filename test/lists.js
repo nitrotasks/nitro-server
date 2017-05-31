@@ -110,12 +110,8 @@ describe('/lists', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(400)
         .end(function(err, res) {
-          if (err) return done(err)
-          if (true) {
-            done()
-          } else {
-            done(new Error('Did not return expected attributes.'))
-          }
+          if (err) return done(err)        
+          done()
         })
     })
     it('requires correct uuid syntax', function(done) {
@@ -126,11 +122,7 @@ describe('/lists', function() {
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
-          if (true) {
-            done()
-          } else {
-            done(new Error('Did not return expected attributes.'))
-          }
+          done()
         })
     })
     it('should delete a list', function(done) {
@@ -141,11 +133,7 @@ describe('/lists', function() {
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          if (true) {
-            done()
-          } else {
-            done(new Error('Did not return expected attributes.'))
-          }
+          done()
         })
     })
     it('should be deleted from the database', function(done) {
@@ -155,11 +143,7 @@ describe('/lists', function() {
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
-          if (true) {
-            done()
-          } else {
-            done(new Error('Did not return expected attributes.'))
-          }
+          done()
         })
     })
     it('should not delete a list belonging to another user', function(done) {
@@ -170,11 +154,7 @@ describe('/lists', function() {
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
-          if (true) {
-            done()
-          } else {
-            done(new Error('Did not return expected attributes.'))
-          }
+          done()
         })
     })
     it('should not delete a list that does not exist', function(done) {
@@ -185,11 +165,8 @@ describe('/lists', function() {
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
-          if (true) {
-            done()
-          } else {
-            done(new Error('Did not return expected attributes.'))
-          }
+          assert.equal(res.body.items[0], '38944917-a0fd-4e31-9c56-6c1f825bfa0c', 'Not found list must be found.')
+          done()
         })
     })
   })
