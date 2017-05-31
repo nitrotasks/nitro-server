@@ -37,7 +37,7 @@ describe('/lists', function() {
           done()
         })
     })
-    it('should create a list and return id, originalId, name, and user attributes', function(done) {
+    it('should create a list and return id, originalId, name, notes, and user attributes', function(done) {
       request(app)
         .post(endpoint)
         .send({ name: 'A Cool List', id: '12345' })
@@ -45,14 +45,12 @@ describe('/lists', function() {
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          if ( typeof(res.body.id) !== 'undefined'
-            && res.body.originalId === '12345'
-            && typeof(res.body.name) !== 'undefined'
-            && typeof(res.body.users) !== 'undefined') {
-              done()
-          } else {
-            done(new Error('Did not have all attributes'))
-          }
+          assert(typeof(res.body.id) !== 'undefined', 'has id')
+          assert(res.body.originalId === '12345', 'has correct og id')
+          assert(typeof(res.body.name) !== 'undefined', 'has name')
+          assert(typeof(res.body.notes) !== 'undefined', 'has notes')
+          assert(typeof(res.body.users) !== 'undefined', 'has users')
+          done()
         })
     })
   })

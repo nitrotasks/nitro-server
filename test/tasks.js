@@ -5,7 +5,7 @@ const endpoint = '/a/lists'
 let listId = null
 let taskId = null
 
-describe('/lists/:listid/tasks', function() {
+describe('/lists/:listid', function() {
   before(function(done) {
     // creates a test list
     request(app)
@@ -34,11 +34,7 @@ describe('/lists/:listid/tasks', function() {
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
-          if (true) {
-            done()
-          } else {
-            done(new Error('Did not return expected attributes.'))
-          }
+          done()
         })
     })
     it('should return list with users and tasks', function(done) {
@@ -48,17 +44,69 @@ describe('/lists/:listid/tasks', function() {
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          if (true) {
-            done()
-          } else {
-            done(new Error('Did not return expected attributes.'))
-          }
+          assert(typeof(res.body.name) !== 'undefined')
+          assert(typeof(res.body.notes) !== 'undefined')
+          assert(typeof(res.body.users) !== 'undefined')
+          assert(typeof(res.body.tasks) !== 'undefined')
+          done()
         })
     })
     it('should not return list belonging to another user', function(done) {
       request(app)
         .get(endpoint + '/' + listId)
         .set({'Authorization': 'Bearer ' + token2.access_token})
+        .expect(404)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+  })
+  describe('PATCH /' , function() {
+    it('needs authentication', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId)
+        .expect(400)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('requires a list', function(done) {
+      request(app)
+        .patch(endpoint + '/')
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(404)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('should update a list', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({name: 'A different name.', notes: 'A different notes.'})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+
+          request(app)
+            .get(endpoint + '/' + listId)
+            .set({'Authorization': 'Bearer ' + token.access_token})
+            .end(function(err, res) {
+              if (err) return done(err)
+              assert.equal(res.body.name, 'A different name.')
+              assert.equal(res.body.notes, 'A different notes.')
+              done()
+            })
+        })
+    })
+    it('should not update a list that belongs to someone else', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token2.access_token})
+        .send({name: 'A different name.', notes: 'A different notes.'})
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
