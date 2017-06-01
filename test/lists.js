@@ -37,7 +37,7 @@ describe('/lists', function() {
           done()
         })
     })
-    it('should create a list and return id, originalId, name, notes, and user attributes', function(done) {
+    it('should create a list and return all required attributes', function(done) {
       request(app)
         .post(endpoint)
         .send({ name: 'A Cool List', id: '12345' })
@@ -50,6 +50,8 @@ describe('/lists', function() {
           assert(typeof(res.body.name) !== 'undefined', 'has name')
           assert(typeof(res.body.notes) !== 'undefined', 'has notes')
           assert(typeof(res.body.users) !== 'undefined', 'has users')
+          assert(typeof(res.body.updatedAt) !== 'undefined', 'has updatedAt')
+          assert(typeof(res.body.createdAt) !== 'undefined', 'has createdAt')
           done()
         })
     })
@@ -155,11 +157,11 @@ describe('/lists', function() {
           done()
         })
     })
-    it('should not delete a list that does not exist', function(done) {
+    it('should return exact lists that do not exist', function(done) {
       request(app)
         .delete(endpoint + '/')
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({lists: ['38944917-a0fd-4e31-9c56-6c1f825bfa0c']})
+        .set({'Authorization': 'Bearer ' + token2.access_token})
+        .send({lists: [listId2, '38944917-a0fd-4e31-9c56-6c1f825bfa0c']})
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
