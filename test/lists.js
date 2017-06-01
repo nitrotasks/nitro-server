@@ -78,7 +78,7 @@ describe('/lists', function() {
           done()
         })
     })
-    it('should return all lists for the user', function(done) {
+    it('should return all lists for the user with correct attributes', function(done) {
       request(app)
         .get(endpoint)
         .set({'Authorization': 'Bearer ' + token.access_token})
@@ -86,7 +86,11 @@ describe('/lists', function() {
         .end(function(err, res) {
           if (err) return done(err)
           if (res.body.length === 1) {
+            assert(typeof(res.body[0].id) !== 'undefined')
             listId = res.body[0].id
+            assert(typeof(res.body[0].name) !== 'undefined')
+            assert(typeof(res.body[0].updatedAt) !== 'undefined')
+            assert(typeof(res.body[0].createdAt) !== 'undefined')
             done()
           } else {
             done(new Error('Did not return expected number of lists.'))
