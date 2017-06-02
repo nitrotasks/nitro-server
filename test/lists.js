@@ -52,6 +52,7 @@ describe('/lists', function() {
           assert(typeof(res.body.users) !== 'undefined', 'has users')
           assert(typeof(res.body.updatedAt) !== 'undefined', 'has updatedAt')
           assert(typeof(res.body.createdAt) !== 'undefined', 'has createdAt')
+          assert(typeof(res.body.order) !== 'undefined', 'has order')
           done()
         })
     })

@@ -108,6 +108,8 @@ describe('/lists/:listid', function() {
           assert('createdAt' in res.body.tasks[0])
           assert(typeof(res.body.updatedAt) !== 'undefined')
           assert(typeof(res.body.createdAt) !== 'undefined')
+          assert(typeof(res.body.order) !== 'undefined', 'has order')
+          assert.equal(res.body.order.length, res.body.tasks.length, 'tasks order matches tasks length')
           done()
         })
     })
@@ -273,6 +275,7 @@ describe('/lists/:listid', function() {
           if (err) return done(err)
           assert(typeof(res.body.name) !== 'undefined', 'has name')
           assert(typeof(res.body.notes) !== 'undefined', 'has notes')
+          assert(typeof(res.body.order) !== 'undefined', 'has order')
           assert(typeof(res.body.users) !== 'undefined', 'has users')
           assert(typeof(res.body.updatedAt) !== 'undefined', 'has updatedAt')
           assert(typeof(res.body.createdAt) !== 'undefined', 'has createdAt')
@@ -286,6 +289,61 @@ describe('/lists/:listid', function() {
               assert.equal(res.body.notes, 'A different notes.')
               done()
             })
+        })
+    })
+    let currentOrder = null
+    it('should ignore the update if paramater is not specified', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({name: 'A different yoho.', updatedAt: new Date()})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          currentOrder = res.body.order
+          assert.equal(res.body.name, 'A different yoho.')
+          assert.equal(res.body.notes, 'A different notes.')
+          done()
+        })
+    })
+    it('should update order', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({order: currentOrder.reverse(), updatedAt: new Date()})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(JSON.stringify(res.body.order), JSON.stringify(currentOrder))
+          done()
+        })
+    })
+    it('should not order if different length', function(done) {
+      const newOrder = JSON.parse(JSON.stringify(currentOrder))
+      newOrder.push(listId)
+      request(app)
+        .patch(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({order: newOrder, updatedAt: new Date()})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(JSON.stringify(res.body.order), JSON.stringify(currentOrder))
+          done()
+        })
+    })
+    it('should not order if different elements', function(done) {
+      let lastOrder = JSON.stringify(currentOrder)
+      currentOrder[0] = listId
+      request(app)
+        .patch(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({order: currentOrder, updatedAt: new Date()})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(JSON.stringify(res.body.order), lastOrder)
+          done()
         })
     })
     it('should not update a list if it has been updated more recently', function(done) {
@@ -302,7 +360,7 @@ describe('/lists/:listid', function() {
             .set({'Authorization': 'Bearer ' + token.access_token})
             .end(function(err, res) {
               if (err) return done(err)
-              assert.equal(res.body.name, 'A different name.')
+              assert.equal(res.body.name, 'A different yoho.')
               assert.equal(res.body.notes, 'A different notes.')
               done()
             })
