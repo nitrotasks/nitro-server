@@ -44,4 +44,36 @@ describe('/users', function() {
         })
     })
   })
+  describe('DELETE /', function() {
+    it('needs authentication', function(done) {
+      request(app)
+        .delete(endpoint)
+        .expect(400)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('should delete a user', function(done) {
+      request(app)
+        .delete(endpoint)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('should be deleted', function(done) {
+      request(app)
+        .delete(endpoint)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(404)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+
+  })
 })
