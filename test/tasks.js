@@ -236,6 +236,7 @@ describe('/lists/:listid', function() {
         })
     })
   })
+  let lastUpdated = null
   describe('PATCH /' , function() {
     it('needs authentication', function(done) {
       request(app)
@@ -316,6 +317,7 @@ describe('/lists/:listid', function() {
         .end(function(err, res) {
           if (err) return done(err)
           assert.equal(JSON.stringify(res.body.order), JSON.stringify(currentOrder))
+          lastUpdated = res.body.updatedAt
           done()
         })
     })
@@ -438,6 +440,18 @@ describe('/lists/:listid', function() {
           done()
         })
     })
+    it('should update the updatedAt time on the parent list', function(done) {
+      request(app)
+        .get(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.notEqual(res.body.updatedAt, lastUpdated, 'timestamp should be updated')
+          lastUpdated = res.body.updatedAt
+          done()
+        })
+    })
     it('should not update if it has been updated recently', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
@@ -540,6 +554,18 @@ describe('/lists/:listid', function() {
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
+          done()
+        })
+    })
+    it('should update the updatedAt time on the parent list', function(done) {
+      request(app)
+        .get(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.notEqual(res.body.updatedAt, lastUpdated, 'timestamp should be updated')
+          lastUpdated = res.body.updatedAt
           done()
         })
     })
