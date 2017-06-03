@@ -45,9 +45,9 @@ describe('/lists/:listid', function() {
         .send({tasks: [{
           name: 'A brand new task.'
         },
-        {
-          name: 'Another brand new task.'
-        }]})
+        {name: 'Another brand new task.'},
+        {name: 'Another brand new taskzhgzg.'}
+        ]})
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(200)
         .end(function(err, res) {
@@ -100,10 +100,11 @@ describe('/lists/:listid', function() {
           assert(typeof(res.body.notes) !== 'undefined')
           assert(typeof(res.body.users) !== 'undefined')
           assert(typeof(res.body.tasks) !== 'undefined')
-          assert(res.body.tasks.length === 2)
+          assert(res.body.tasks.length === 3)
           assert('id' in res.body.tasks[0])
           taskId = res.body.tasks[0].id
           taskId2 = res.body.tasks[1].id
+          taskId3 = res.body.tasks[2].id
           assert('updatedAt' in res.body.tasks[0])
           assert('createdAt' in res.body.tasks[0])
           assert(typeof(res.body.updatedAt) !== 'undefined')
@@ -145,7 +146,7 @@ describe('/lists/:listid', function() {
           assert(typeof(res.body.notes) !== 'undefined')
           assert(typeof(res.body.users) !== 'undefined')
           assert(typeof(res.body.tasks) !== 'undefined')
-          assert(res.body.tasks.length === 2)
+          assert(res.body.tasks.length === 3)
           assert('id' in res.body.tasks[0])
           assert('name' in res.body.tasks[0])
           assert('notes' in res.body.tasks[0])
@@ -374,6 +375,93 @@ describe('/lists/:listid', function() {
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
+          done()
+        })
+    })
+  })
+  describe('PATCH /tasks' , function() {
+    it('needs authentication', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId + '/tasks')
+        .expect(400)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+  })
+  describe('DELETE /' , function() {
+    it('needs authentication', function(done) {
+      request(app)
+        .delete(endpoint + '/' + listId)
+        .expect(400)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('requires a task', function(done) {
+      request(app)
+        .delete(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(400)
+        .end(function(err, res) {
+          if (err) return done(err)        
+          done()
+        })
+    })
+    it('requires correct uuid syntax', function(done) {
+      request(app)
+        .delete(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({tasks: ['rekt']})
+        .expect(400)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('should not delete a task belonging to another user', function(done) {
+      request(app)
+        .delete(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token2.access_token})
+        .send({tasks: [taskId, taskId2]})
+        .expect(404)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('should delete a task', function(done) {
+      request(app)
+        .delete(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({tasks: [taskId, taskId2]})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('should be deleted from the database', function(done) {
+      request(app)
+        .get(endpoint + '/' + listId + '?tasks=' + taskId + ',' + taskId2)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(404)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('should return exact tasks that do not exist', function(done) {
+      request(app)
+        .delete(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({tasks: [taskId3, '38944917-a0fd-4e31-9c56-6c1f825bfa0c']})
+        .expect(404)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(res.body.items[0], '38944917-a0fd-4e31-9c56-6c1f825bfa0c', 'Not found task must be found.')
           done()
         })
     })
