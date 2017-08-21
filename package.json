@@ -4,6 +4,7 @@
   "description": "The Nitro Sync Server",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "test": "mocha",
     "coverage": "nyc mocha && nyc report --reporter=html",
     "coveralls": "nyc mocha && nyc report --reporter=text-lcov | coveralls"

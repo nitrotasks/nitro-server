@@ -13,9 +13,18 @@ app.use(function(req, res, next) {
   next()
 })
 
+const cb = function(req, res) {
+  res.sendFile(config.dist + '/index.html')
+}
+
 // only start the api once the db is ready
 migrator.migrate().then(function() {
   app.use('/a', require('./lib/router.js'))
+
+  // static index routing
+	app.get('/', cb)
+	app.use('/', express.static(config.dist))
+	app.get('/*', cb)
 })
  
 // the router routes stuff through this port
