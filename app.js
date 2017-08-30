@@ -1,5 +1,5 @@
 const express = require('express')
-const config = require('./config')
+const config = require('./config/config.js')
 const migrator = require('./lib/migrator')
 const compression = require('compression')
 
