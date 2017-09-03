@@ -151,6 +151,7 @@ describe('/lists/:listid', function() {
           assert('name' in res.body.tasks[0])
           assert('type' in res.body.tasks[0])
           assert('notes' in res.body.tasks[0])
+          assert('completed' in res.body.tasks[0])
           assert('updatedAt' in res.body.tasks[0])
           assert('createdAt' in res.body.tasks[0])
           assert(typeof(res.body.updatedAt) !== 'undefined')
@@ -425,6 +426,7 @@ describe('/lists/:listid', function() {
           done()
         })
     })
+    // todo, should update each particular attribute
     it('should update tasks and return all required attributes', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
@@ -437,6 +439,8 @@ describe('/lists/:listid', function() {
           assert('id' in res.body.tasks[0])
           assert('name' in res.body.tasks[0])
           assert('notes' in res.body.tasks[0])
+          assert('type' in res.body.tasks[0])
+          assert('completed' in res.body.tasks[0])
           assert('updatedAt' in res.body.tasks[0])
           assert('createdAt' in res.body.tasks[0])
           done()

@@ -29,7 +29,7 @@
     "compression": "^1.7.0",
     "express": "^4.15.4",
     "jsonwebtoken": "^7.4.3",
-    "nitrotasks": "^3.0.0-alpha.1.4",
+    "nitrotasks": "^3.0.0-alpha",
     "passport": "^0.4.0",
     "passport-bearer-strategy": "^1.0.1",
     "passport-http-bearer": "^1.0.1",
