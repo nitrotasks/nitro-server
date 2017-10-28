@@ -10,6 +10,7 @@
 - Set a strong JWT secret in config.js
 
 # Running
-- Run with `npm start`
-- Test with `npm test`
+- Run `npm run sequelize db:migrate` to run migrations.
+- Run with `npm start`. There will be an error if it can't connect to the database.
+- Test with `npm test`. Recommended to run to make sure everything is working.
 - You'll need to pull the Nitro client in order for the server to host it. <http://github.com/nitrotasks/nitro>
