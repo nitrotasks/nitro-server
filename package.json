@@ -8,7 +8,9 @@
     "test": "mocha",
     "coverage": "nyc mocha && nyc report --reporter=html",
     "coveralls": "nyc mocha && nyc report --reporter=text-lcov | coveralls",
-    "sequelize": "sequelize"
+    "sequelize": "sequelize",
+    "migrate": "sequelize db:migrate",
+    "migrate:test": "cross-env NODE_ENV=test sequelize db:migrate:undo:all && cross-env NODE_ENV=test sequelize db:migrate && npm run test"
   },
   "repository": {
     "type": "git",
@@ -27,6 +29,7 @@
     "bcrypt": "^1.0.3",
     "body-parser": "^1.17.1",
     "compression": "^1.7.0",
+    "cross-env": "^5.1.1",
     "express": "^4.15.4",
     "jsonwebtoken": "^7.4.3",
     "nitrotasks": "^3.0.0-alpha.1.6",

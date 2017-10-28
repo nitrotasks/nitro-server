@@ -8,7 +8,7 @@ token2 = null
 before(function(done) {
   // clean db
   console.log('Creating DB...')
-  migrator.migrate(true).then(function() {
+  migrator.migrate().then(function() {
 
     app.use('/a', require('../lib/router.js'))
 
