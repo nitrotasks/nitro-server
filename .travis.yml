@@ -12,11 +12,16 @@ addons:
     - gcc-4.8
     - g++-4.8 
 env:
-- NODE_ENV=travis CXX=g++-4.8
+  global:
+    - NODE_ENV=travis CXX=g++-4.8
+    - CC_TEST_REPORTER_ID=fdd47ebee1738494b7955ca315f8597e70470747862a1e60aff068497c4cd289
 services:
 - postgresql
 before_script:
+- curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+- chmod +x ./cc-test-reporter
+- ./cc-test-reporter before-build
 - psql -c 'create database nitro_travis;' -U postgres
 - npm run migrate
-after_success:
-- npm run coveralls
+after_script:
+- ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT

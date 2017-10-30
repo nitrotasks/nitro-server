@@ -4,6 +4,7 @@ const endpoint = '/a/lists'
 
 let listId = null
 let listId2 = null
+let inboxId = null
 
 describe('/lists', function() {
   describe('POST /', function() {
@@ -56,6 +57,17 @@ describe('/lists', function() {
           done()
         })
     })
+    it('should not be able to create a default system list', function(done) {
+      request(app)
+        .post(endpoint)
+        .send({ name: 'nitrosys-whatever', id: '12345' })
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(403)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
   })
 
   describe('GET /', function() {
@@ -86,9 +98,16 @@ describe('/lists', function() {
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          if (res.body.length === 1) {
+          if (res.body.length === 2) {
             assert(typeof(res.body[0].id) !== 'undefined')
+
+            inboxId = res.body[0].id
             listId = res.body[0].id
+            if (res.body[0].name === 'nitrosys-inbox') {
+              listId = res.body[1].id
+            } else {
+              inboxId = res.body[1].id
+            }
             assert(typeof(res.body[0].name) !== 'undefined')
             assert(typeof(res.body[0].updatedAt) !== 'undefined')
             assert(typeof(res.body[0].createdAt) !== 'undefined')
@@ -171,6 +190,17 @@ describe('/lists', function() {
         .end(function(err, res) {
           if (err) return done(err)
           assert.equal(res.body.items[0], '38944917-a0fd-4e31-9c56-6c1f825bfa0c', 'Not found list must be found.')
+          done()
+        })
+    })
+    it('should not delete the default system lists', function(done) {
+      request(app)
+        .delete(endpoint + '/')
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({lists: [inboxId]})
+        .expect(403)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
