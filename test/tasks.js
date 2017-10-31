@@ -311,6 +311,18 @@ describe('/lists/:listid', function() {
           done()
         })
     })
+    it('should not be able to update to a system list', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({name: 'nitrosys-notallowed', updatedAt: new Date()})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(res.body.name, 'notallowed')
+          done()
+        })
+    })
     it('should update order', function(done) {
       request(app)
         .patch(endpoint + '/' + listId)
