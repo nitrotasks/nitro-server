@@ -37,7 +37,7 @@
     "cross-env": "^5.1.1",
     "express": "^4.15.4",
     "jsonwebtoken": "^7.4.3",
-    "nitrotasks": "^3.0.0-alpha.1.8",
+    "nitrotasks": "^3.0.0-alpha.1.9",
     "passport": "^0.4.0",
     "passport-bearer-strategy": "^1.0.1",
     "passport-http-bearer": "^1.0.1",

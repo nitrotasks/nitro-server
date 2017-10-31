@@ -1,7 +1,8 @@
 # Nitro Sync 3
 
 [![Build Status](https://travis-ci.org/nitrotasks/nitro-server.svg)](https://travis-ci.org/nitrotasks/nitro-server)
-[![Coverage Status](https://coveralls.io/repos/nitrotasks/nitro-server/badge.svg?branch=master)](https://coveralls.io/r/nitrotasks/nitro-server?branch=master)
+[![Maintainability](https://api.codeclimate.com/v1/badges/e736dafb1272ec207bed/maintainability)](https://codeclimate.com/github/nitrotasks/nitro-server/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/e736dafb1272ec207bed/test_coverage)](https://codeclimate.com/github/nitrotasks/nitro-server/test_coverage)
 [![Dependency Status](https://david-dm.org/nitrotasks/nitro-server.svg?theme=shields.io)](https://david-dm.org/nitrotasks/nitro-server)
 [![devDependency Status](https://david-dm.org/nitrotasks/nitro-server/dev-status.svg?theme=shields.io)](https://david-dm.org/nitrotasks/nitro-server#info=devDependencies)
 
