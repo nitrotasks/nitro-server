@@ -55,6 +55,17 @@ describe('/lists/:listid', function() {
           done()
         })
     })
+    it('the order should be in the correct order', function(done) {
+      request(app)
+        .get(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(res.body.order[0], res.body.tasks[2].id)
+          done()
+        })
+    })
     it('should not create a task in a list belonging to another user', function(done) {
       request(app)
         .post(endpoint + '/' + listId)
