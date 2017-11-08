@@ -1,5 +1,7 @@
 # Nitro Sync 3
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/nitrotasks/nitro-server.svg)](https://greenkeeper.io/)
+
 [![Build Status](https://travis-ci.org/nitrotasks/nitro-server.svg)](https://travis-ci.org/nitrotasks/nitro-server)
 [![Maintainability](https://api.codeclimate.com/v1/badges/e736dafb1272ec207bed/maintainability)](https://codeclimate.com/github/nitrotasks/nitro-server/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/e736dafb1272ec207bed/test_coverage)](https://codeclimate.com/github/nitrotasks/nitro-server/test_coverage)
