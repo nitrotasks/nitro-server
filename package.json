@@ -36,7 +36,7 @@
     "compression": "^1.7.0",
     "cross-env": "^5.1.1",
     "express": "^4.15.4",
-    "jsonwebtoken": "^7.4.3",
+    "jsonwebtoken": "^8.1.0",
     "nitrotasks": "^3.0.0-alpha.1.12",
     "passport": "^0.4.0",
     "passport-bearer-strategy": "^1.0.1",
@@ -44,7 +44,7 @@
     "pg": "^7.2.0",
     "pg-hstore": "^2.3.2",
     "sequelize": "^4.8.0",
-    "sequelize-cli": "^2.8.0"
+    "sequelize-cli": "^3.0.0"
   },
   "devDependencies": {
     "mocha": "^4.0.1",
