@@ -23,8 +23,8 @@ describe('/lists/:listid', function() {
       request(app)
         .post(endpoint + '/' + listId)
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -34,8 +34,8 @@ describe('/lists/:listid', function() {
         .send({taskszz: 'yo'})
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -50,8 +50,8 @@ describe('/lists/:listid', function() {
         ]})
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -60,8 +60,8 @@ describe('/lists/:listid', function() {
         .get(endpoint + '/' + listId)
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert.equal(res.body.order[0], res.body.tasks[2].id)
           done()
         })
@@ -74,8 +74,8 @@ describe('/lists/:listid', function() {
         }]})
         .set({'Authorization': 'Bearer ' + token2.access_token})
         .expect(404)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -85,8 +85,8 @@ describe('/lists/:listid', function() {
       request(app)
         .get(endpoint + '/' + listId)
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -95,8 +95,8 @@ describe('/lists/:listid', function() {
         .get(endpoint + '/notacorrectuuid')
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -105,8 +105,8 @@ describe('/lists/:listid', function() {
         .get(endpoint + '/' + listId)
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert(typeof(res.body.name) !== 'undefined')
           assert(typeof(res.body.notes) !== 'undefined')
           assert(typeof(res.body.users) !== 'undefined')
@@ -130,8 +130,8 @@ describe('/lists/:listid', function() {
         .get(endpoint + '/' + listId)
         .set({'Authorization': 'Bearer ' + token2.access_token})
         .expect(404)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -141,8 +141,8 @@ describe('/lists/:listid', function() {
       request(app)
         .get(endpoint + '/' + listId + '/tasks')
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -151,8 +151,8 @@ describe('/lists/:listid', function() {
         .get(endpoint + '/' + listId + '/tasks')
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert(typeof(res.body.name) !== 'undefined')
           assert(typeof(res.body.notes) !== 'undefined')
           assert(typeof(res.body.users) !== 'undefined')
@@ -178,8 +178,8 @@ describe('/lists/:listid', function() {
       request(app)
         .get(endpoint + '/' + listId + '/?tasks=' + taskId)
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -258,8 +258,8 @@ describe('/lists/:listid', function() {
       request(app)
         .patch(endpoint + '/' + listId)
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -268,8 +268,8 @@ describe('/lists/:listid', function() {
         .patch(endpoint + '/')
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(404)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -278,8 +278,8 @@ describe('/lists/:listid', function() {
         .patch(endpoint + '/notacorrectuuid')
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -289,8 +289,8 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .send({name: 'A different name.', notes: 'A different notes.', updatedAt: new Date()})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert(typeof(res.body.name) !== 'undefined', 'has name')
           assert(typeof(res.body.notes) !== 'undefined', 'has notes')
           assert(typeof(res.body.order) !== 'undefined', 'has order')
@@ -301,8 +301,8 @@ describe('/lists/:listid', function() {
           request(app)
             .get(endpoint + '/' + listId)
             .set({'Authorization': 'Bearer ' + token.access_token})
-            .end(function(err, res) {
-              if (err) return done(err)
+            .end(function(err, res) {
+              if (err) return done(err)
               assert.equal(res.body.name, 'A different name.')
               assert.equal(res.body.notes, 'A different notes.')
               done()
@@ -316,8 +316,8 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .send({name: 'A different yoho.', updatedAt: new Date()})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           currentOrder = res.body.order
           assert.equal(res.body.name, 'A different yoho.')
           assert.equal(res.body.notes, 'A different notes.')
@@ -330,11 +330,33 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .send({name: 'nitrosys-notallowed', updatedAt: new Date()})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert.equal(res.body.name, 'notallowed')
           done()
         })
+    })
+     it('should not be able to change from system list to normal list', function(done) {
+      request(app)
+        .get(endpoint)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(200)
+        .end(function(err, res) {
+          const list = res.body.find(item => {
+            return item.name === 'nitrosys-inbox'
+          }).id
+
+          request(app)
+            .patch(endpoint + '/' + list)
+            .set({'Authorization': 'Bearer ' + token.access_token})
+            .send({name: 'inbox', updatedAt: new Date()})
+            .expect(200)
+            .end(function(err, res) {
+              if (err) return done(err)
+              assert.equal(res.body.name, 'nitrosys-inbox')
+              done()
+            })
+        })        
     })
     it('should update order', function(done) {
       request(app)
@@ -342,8 +364,8 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .send({order: currentOrder.reverse(), updatedAt: new Date()})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert.equal(JSON.stringify(res.body.order), JSON.stringify(currentOrder))
           lastUpdated = res.body.updatedAt
           done()
@@ -357,8 +379,8 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .send({order: newOrder, updatedAt: new Date()})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert.equal(JSON.stringify(res.body.order), JSON.stringify(currentOrder))
           done()
         })
@@ -371,8 +393,8 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .send({order: currentOrder, updatedAt: new Date()})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert.equal(JSON.stringify(res.body.order), lastOrder)
           done()
         })
@@ -383,14 +405,14 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .send({name: 'NO UPDATE', notes: 'NO NOTES', updatedAt: new Date(0)})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
 
           request(app)
             .get(endpoint + '/' + listId)
             .set({'Authorization': 'Bearer ' + token.access_token})
-            .end(function(err, res) {
-              if (err) return done(err)
+            .end(function(err, res) {
+              if (err) return done(err)
               assert.notEqual(res.body.name, 'NO UPDATE')
               assert.notEqual(res.body.notes, 'NO NOTES')
               done()
@@ -403,8 +425,8 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token2.access_token})
         .send({name: 'A different name.', notes: 'A different notes.'})
         .expect(404)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -414,8 +436,8 @@ describe('/lists/:listid', function() {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -478,8 +500,8 @@ describe('/lists/:listid', function() {
         .get(endpoint + '/' + listId)
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert.notEqual(res.body.updatedAt, lastUpdated, 'timestamp should be updated')
           lastUpdated = res.body.updatedAt
           done()
@@ -532,8 +554,8 @@ describe('/lists/:listid', function() {
       request(app)
         .delete(endpoint + '/' + listId)
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -542,8 +564,8 @@ describe('/lists/:listid', function() {
         .delete(endpoint + '/' + listId)
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)        
+        .end(function(err, res) {
+          if (err) return done(err)        
           done()
         })
     })
@@ -553,8 +575,8 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .send({tasks: ['rekt']})
         .expect(400)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -564,8 +586,8 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token2.access_token})
         .send({tasks: [taskId, taskId2]})
         .expect(404)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -575,8 +597,8 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .send({tasks: [taskId, taskId2]})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -585,8 +607,8 @@ describe('/lists/:listid', function() {
         .get(endpoint + '/' + listId + '?tasks=' + taskId + ',' + taskId2)
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(404)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           done()
         })
     })
@@ -595,8 +617,8 @@ describe('/lists/:listid', function() {
         .get(endpoint + '/' + listId)
         .set({'Authorization': 'Bearer ' + token.access_token})
         .expect(200)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert.notEqual(res.body.updatedAt, lastUpdated, 'timestamp should be updated')
           lastUpdated = res.body.updatedAt
           done()
@@ -608,8 +630,8 @@ describe('/lists/:listid', function() {
         .set({'Authorization': 'Bearer ' + token.access_token})
         .send({tasks: [taskId3, '38944917-a0fd-4e31-9c56-6c1f825bfa0c']})
         .expect(404)
-        .end(function(err, res) {
-          if (err) return done(err)
+        .end(function(err, res) {
+          if (err) return done(err)
           assert.equal(res.body.items[0], '38944917-a0fd-4e31-9c56-6c1f825bfa0c', 'Not found task must be found.')
           done()
         })
