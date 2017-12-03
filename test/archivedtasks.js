@@ -1,20 +1,21 @@
 const assert = require('assert')
 const request = require('supertest')
 const endpoint = '/a/archive'
+const listEndpoint = '/a/lists'
 
 let listId = null
 let taskId = [null, null, null]
 describe('/archive', function() {
   before(function(done) {
     request(app)
-      .post('/a/lists')
+      .post(listEndpoint)
       .send({ name: 'A archive list' })
       .set({ Authorization: 'Bearer ' + token.access_token })
       .end(function(err, res) {
         listId = res.body.id
 
         request(app)
-          .post('/a/lists/' + listId)
+          .post(listEndpoint + '/' + listId)
           .send({
             tasks: [
               { name: 'archive0' },
@@ -47,9 +48,37 @@ describe('/archive', function() {
       request(app)
         .post(endpoint + '/' + listId)
         .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ tasks: [taskId[0]] })
+        .expect(200)
         .end((err, res) => {
           if (err) return done(err)
-          done()
+          request(app)
+            .get(listEndpoint + '/' + listId)
+            .set({ Authorization: 'Bearer ' + token.access_token })
+            .expect(200)
+            .end((err, res) => {
+              if (err) return done(err)
+              assert.equal(res.body.tasks.length, 2)
+              done()
+            })
+        })
+    })
+    it('should archive the whole list if no tasks are specified', done => {
+      request(app)
+        .post(endpoint + '/' + listId)
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .expect(200)
+        .end((err, res) => {
+          if (err) return done(err)
+          request(app)
+            .get(listEndpoint + '/' + listId)
+            .set({ Authorization: 'Bearer ' + token.access_token })
+            .expect(200)
+            .end((err, res) => {
+              if (err) return done(err)
+              assert.equal(res.body.tasks.length, 0)
+              done()
+            })
         })
     })
   })
@@ -60,6 +89,16 @@ describe('/archive', function() {
         .expect(400)
         .end((err, res) => {
           if (err) return done(err)
+          done()
+        })
+    })
+    it('should display archived tasks', function(done) {
+      request(app)
+        .get(endpoint)
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .end((err, res) => {
+          if (err) return done(err)
+          assert.equal(res.body.length, 3)
           done()
         })
     })
