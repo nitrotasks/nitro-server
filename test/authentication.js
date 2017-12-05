@@ -3,6 +3,7 @@ const request = require('supertest')
 const endpoint = '/a/auth'
 
 describe('/auth', function() {
+  let tmptoken = null
   describe('POST /authorize', function() {
     it('should return a refresh_token', function(done) {
       request(app)
@@ -13,6 +14,7 @@ describe('/auth', function() {
           if (err) return done(err)
           if ('refresh_token' in res.body) {
             done()
+            tmptoken = res.body.refresh_token
           } else {
             done(new Error('Missing refresh_token in body.'))
           }
@@ -89,6 +91,26 @@ describe('/auth', function() {
         .end(function(err, res) {
           if (err) return done(err)
           done()
+        })
+    })
+  })
+  describe('DELETE /token', function(done) {
+    it('should be able to delete a token (sign out)', function(done) {
+      request(app)
+        .delete(endpoint + '/token/' + tmptoken)
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('should not be able to delete a token that does not exist', function(done) {
+      request(app)
+        .delete(endpoint + '/token/' + tmptoken)
+        .expect(401)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
         })
     })
   })
