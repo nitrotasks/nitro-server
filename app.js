@@ -1,9 +1,13 @@
+const http = require('http')
 const express = require('express')
 const config = require('./config/config.js')
 const migrator = require('./lib/migrator')
 const compression = require('compression')
+const WebSocket = require('ws')
+const socketController = require('./lib/controllers/websockets.js')
 
 const app = express()
+const server = http.createServer(app)
 
 // set headers for every request
 app.disable('x-powered-by')
@@ -24,13 +28,17 @@ migrator.migrate().then(function() {
   app.use('/a', require('./lib/router.js'))
 
   // static index routing
-	app.use('/', express.static(config.dist))
+  app.use('/', express.static(config.dist))
   app.get('/', cb)
-	app.get('/*', cb)
+  app.get('/*', cb)
 })
+
+const wss = new WebSocket.Server({server})
+
+wss.on('connection', socketController.connection)
  
 // the router routes stuff through this port
 var port = config.port
-app.listen(port, function() {
+server.listen(port, function() {
   console.log('listening on localhost:' + port)
 })

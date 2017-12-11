@@ -33,6 +33,7 @@
   "dependencies": {
     "bcrypt": "^1.0.3",
     "body-parser": "^1.17.1",
+    "bufferutil": "^3.0.3",
     "compression": "^1.7.0",
     "cross-env": "^5.1.1",
     "express": "^4.15.4",
@@ -44,7 +45,9 @@
     "pg": "^7.2.0",
     "pg-hstore": "^2.3.2",
     "sequelize": "^4.8.0",
-    "sequelize-cli": "^2.8.0"
+    "sequelize-cli": "^2.8.0",
+    "utf-8-validate": "^4.0.0",
+    "ws": "^3.3.2"
   },
   "devDependencies": {
     "mocha": "^4.0.1",
