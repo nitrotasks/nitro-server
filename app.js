@@ -11,7 +11,9 @@ const server = http.createServer(app)
 
 // set headers for every request
 app.disable('x-powered-by')
-app.use(compression({threshold: 200}))
+if (config.dist !== false) {
+  app.use(compression({threshold: 200}))
+}
 app.use(function(req, res, next) {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN')
   res.setHeader('X-Content-Type-Options', 'nosniff')
@@ -25,12 +27,19 @@ const cb = function(req, res) {
 
 // only start the api once the db is ready
 migrator.migrate().then(function() {
-  app.use('/a', require('./lib/router.js'))
+  if (config.dist !== false) {
+    app.use('/a', require('./lib/router.js'))
 
-  // static index routing
-  app.use('/', express.static(config.dist))
-  app.get('/', cb)
-  app.get('/*', cb)
+    // static index routing
+    app.use('/', express.static(config.dist))
+    app.get('/', cb)
+    app.get('/*', cb)
+
+  // if we turn off the dist routing, we're only hosting API
+  } else {
+    app.use('/', require('./lib/router.js'))
+  }
+
 })
 
 const wss = new WebSocket.Server({server})

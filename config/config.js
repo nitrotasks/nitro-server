@@ -1,7 +1,8 @@
 const path = require('path')
 const config = {
   port: process.env.PORT || 8040,
-  dist: path.resolve(__dirname, '../node_modules/nitrotasks/dist'),
+  dist: false,
+  // dist: path.resolve(__dirname, '../node_modules/nitrotasks/dist'),
   // dist: path.resolve(__dirname, '../../nitro/dist'),
 
   development: {
