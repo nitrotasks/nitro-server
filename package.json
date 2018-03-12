@@ -5,6 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
+    "start-production": "if npm run check-postgres; then npm run start; fi",
+    "check-postgres": "./wait-for-it.sh -h $DATABASE_HOST -p $DATABASE_PORT",
     "test": "nyc mocha --exit",
     "sequelize": "sequelize",
     "migrate": "sequelize db:migrate",
