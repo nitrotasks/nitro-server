@@ -36,10 +36,13 @@ resource "docker_container" "postgres" {
 resource "docker_image" "postgres" {
   name = "postgres:10.3"  
 }
-resource "docker_image" "nitro-server" {
+data "docker_registry_image" "nitro-server" {
   name = "dymajo/nitro-server:latest"
 }
-
+resource "docker_image" "nitro-server" {
+  name          = "${data.docker_registry_image.nitro-server.name}"
+  pull_triggers = ["${data.docker_registry_image.nitro-server.sha256_digest}"]
+}
 resource "docker_network" "nitro_private_network" {
   name = "nitro_private_network"
 }
