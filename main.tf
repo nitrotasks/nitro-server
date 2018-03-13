@@ -3,7 +3,7 @@ provider "docker" {
 }
 
 resource "docker_container" "nitro-server" {
-  image = "nitro-server"
+  image = "${docker_image.nitro-server.latest}"
   name = "nitro-server"
   networks = ["nitro_private_network"]
   depends_on = ["docker_container.postgres"]
@@ -35,6 +35,9 @@ resource "docker_container" "postgres" {
 
 resource "docker_image" "postgres" {
   name = "postgres:10.3"  
+}
+resource "docker_image" "nitro-server" {
+  name = "dymajo/nitro-server:latest"
 }
 
 resource "docker_network" "nitro_private_network" {
