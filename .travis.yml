@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-- 'node'
+- node
 branches:
   only:
   - master
@@ -10,18 +10,29 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - gcc-4.8
-    - g++-4.8 
+    - g++-4.8
 env:
   global:
-    - NODE_ENV=travis CXX=g++-4.8
-    - CC_TEST_REPORTER_ID=fdd47ebee1738494b7955ca315f8597e70470747862a1e60aff068497c4cd289
+  - NODE_ENV=travis CXX=g++-4.8
+  - CC_TEST_REPORTER_ID=fdd47ebee1738494b7955ca315f8597e70470747862a1e60aff068497c4cd289
+  - secure: MrhkfUEJb2jrgI5rPn2+u3ax6soBCIqngvRAC6zPq5yRqU6HS50nkRJKKsQ18mpXgFyWHACrC2EKM0yyUPrVokjcI/p+KotNbx1PtVRI64DcHwP50j1dGhWon3NAJJUfqH3Yb/K2wOzgjXi1qof6RooF0wzHsAJP3FXkbo/1YuQ=
+  - secure: Ryd/84crFhn8dzBynwYKP834lLmHkTEQggyzYMDr2CZQ5wfs2Ut2PCsk1fXNVuAOSE3Q2PXIx6JnuL/zCcKK+rAH4akjyCppZYRKSMKlYvPX7Q/BQav3vpQ6RKhpCr6dGXhqsJj68S3eWl2bHyzBfo6jhlMZaB15bNc53D1ASqo=
+sudo: required
 services:
 - postgresql
+- docker
+before_install:
+- docker build ./ -t dymajo/nitro-client:latest
 before_script:
 - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
 - chmod +x ./cc-test-reporter
-- ./cc-test-reporter before-build
+- "./cc-test-reporter before-build"
 - psql -c 'create database nitro_travis;' -U postgres
 - npm run migrate
 after_script:
-- ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+- "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
+deploy:
+  provider: script
+  script: npm run docker-push-master
+  on:
+    branch: master
