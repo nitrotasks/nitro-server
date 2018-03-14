@@ -5,6 +5,8 @@ branches:
   only:
   - master
 addons:
+  ssh_known_hosts:
+    - uat.nitrotasks.com
   apt:
     sources:
     - ubuntu-toolchain-r-test
@@ -13,8 +15,6 @@ addons:
     - g++-4.8
 env:
   global:
-  - PUBLIC_KEY=|1|IA2SQQTBrCJ9cdgkr6xSA2In//E=|iB5tLmY0zy6sgMLYVO0XgjbriMo= ecdsa-sha2-nistp256
-    AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBETNX3MY2iEuao+TO8k5AVxa0Shw0+tjfp6IYRH6cOVNgaXjBV4QsngOGt8kqk48qhSLGfdPRpoK520HvwtudMw=
   - NODE_ENV=travis CXX=g++-4.8
   - CC_TEST_REPORTER_ID=fdd47ebee1738494b7955ca315f8597e70470747862a1e60aff068497c4cd289
   - secure: MrhkfUEJb2jrgI5rPn2+u3ax6soBCIqngvRAC6zPq5yRqU6HS50nkRJKKsQ18mpXgFyWHACrC2EKM0yyUPrVokjcI/p+KotNbx1PtVRI64DcHwP50j1dGhWon3NAJJUfqH3Yb/K2wOzgjXi1qof6RooF0wzHsAJP3FXkbo/1YuQ=
@@ -35,7 +35,6 @@ before_script:
 after_script:
 - "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
 before_deploy:
-- echo $PUBLIC_KEY >> $HOME/.ssh/known_hosts
 - openssl aes-256-cbc -K $encrypted_8c436ca8c42b_key -iv $encrypted_8c436ca8c42b_iv
   -in deploy_rsa.enc -out /tmp/deploy_rsa -d
 - eval "$(ssh-agent -s)"
