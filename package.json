@@ -11,7 +11,8 @@
     "sequelize": "sequelize",
     "migrate": "sequelize db:migrate",
     "migrate:test": "cross-env NODE_ENV=test sequelize db:migrate:undo:all && cross-env NODE_ENV=test sequelize db:migrate && npm run test",
-    "docker-push-master": "docker login -u \"$DOCKER_USERNAME\" -p \"$DOCKER_PASSWORD\" && docker push dymajo/nitro-server:latest"
+    "docker-push-master": "docker login -u \"$DOCKER_USERNAME\" -p \"$DOCKER_PASSWORD\" && docker push dymajo/nitro-server:latest",
+    "ssh-remote": "ssh $SSH_HOSTNAME nitro-server/deploy.sh"
   },
   "repository": {
     "type": "git",
