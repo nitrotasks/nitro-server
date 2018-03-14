@@ -5,8 +5,6 @@ branches:
   only:
   - master
 addons:
-  ssh_known_hosts:
-    - uat.nitrotasks.com
   apt:
     sources:
     - ubuntu-toolchain-r-test
