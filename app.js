@@ -37,7 +37,10 @@ migrator.migrate().then(function() {
 
   // if we turn off the dist routing, we're only hosting API
   } else {
-    app.use('/', require('./lib/router.js'))
+    // but we also want it to work on the ALB.
+    const router = require('./lib/router.js')
+    app.use('/a', router)
+    app.use('/', router)
   }
 
 })
