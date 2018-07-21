@@ -7,10 +7,17 @@
 [![devDependency Status](https://david-dm.org/nitrotasks/nitro-server/dev-status.svg?theme=shields.io)](https://david-dm.org/nitrotasks/nitro-server#info=devDependencies)
 
 # Configure
+
 - You'll need PostgreSQL installed - configure the settings in config.js
 - Set a strong JWT secret in config.js
 
+## Postgres Docker Sample
+
+This should start Postgres in Docker Nicely, no configuration required in config.js.
+`docker run --name nitro-postgres -p 5432:5432 -e POSTGRES_USER=nitro -e POSTGRES_PASSWORD=secret -d postgres`
+
 # Running
+
 - Run `npm run migrate` to run migrations.
 - Run with `npm start`. There will be an error if it can't connect to the database.
 - Run `npm run migrate:test` to run tests. Recommended to make sure everything is working.
