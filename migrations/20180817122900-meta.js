@@ -7,7 +7,7 @@ module.exports = {
         defaultValue: Sequelize.UUIDV4
       },
       key: Sequelize.STRING,
-      value: Sequelize.JSONB,
+      value: Sequelize.JSON,
       userId: {
         type: Sequelize.UUID,
         references: {
