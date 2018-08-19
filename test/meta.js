@@ -2,6 +2,8 @@ const assert = require('assert')
 const request = require('supertest')
 const endpoint = '/a/meta'
 
+// TODO: need to source this from the code itself?
+const metaKeys = ['list-order', 'settings-general', 'settings-language']
 const objectSample = { a: 1, b: true, c: '3' }
 const arraySample = [1, true, '3']
 
@@ -13,7 +15,7 @@ describe('/meta', function() {
   describe('POST /:key', function() {
     it('needs authentication', function(done) {
       request(app)
-        .post(endpoint)
+        .post(endpoint + '/list-order')
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
@@ -73,7 +75,7 @@ describe('/meta', function() {
         .end(function(err, res) {
           if (err) return done(err)
           assert(
-            res.body.keys.length === ['settings-general', 'list-order'].length,
+            res.body.keys.length === metaKeys.length,
             'has the correct amount of keys'
           )
           done()
@@ -101,9 +103,19 @@ describe('/meta', function() {
           done()
         })
     })
-    it('should return 404 if a key is not found', function(done) {
+    it('should return 400 if a key is not real', function(done) {
       request(app)
         .get(endpoint + '/not-a-real-key')
+        .set(authToken())
+        .expect(400)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('should return 404 if a key is not found', function(done) {
+      request(app)
+        .get(endpoint + '/settings-language')
         .set(authToken())
         .expect(404)
         .end(function(err, res) {
