@@ -3,7 +3,13 @@ const request = require('supertest')
 const endpoint = '/a/meta'
 
 // TODO: need to source this from the code itself?
-const metaKeys = ['list-order', 'settings-general', 'settings-language']
+const metaKeys = [
+  'list-order',
+  'settings-general',
+  'settings-language',
+  'test-key',
+  'test-key-2'
+]
 const objectSample = { a: 1, b: true, c: '3' }
 const arraySample = [1, true, '3']
 
@@ -15,7 +21,7 @@ describe('/meta', function() {
   describe('POST /:key', function() {
     it('needs authentication', function(done) {
       request(app)
-        .post(endpoint + '/list-order')
+        .post(endpoint + '/test-key')
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
@@ -34,7 +40,7 @@ describe('/meta', function() {
     })
     it('should be able to store a json object', function(done) {
       request(app)
-        .post(endpoint + '/list-order')
+        .post(endpoint + '/test-key')
         .set(authToken())
         .send(objectSample)
         .expect(200)
@@ -45,7 +51,7 @@ describe('/meta', function() {
     })
     it('should be able to store an json array', function(done) {
       request(app)
-        .post(endpoint + '/settings-general')
+        .post(endpoint + '/test-key-2')
         .set(authToken())
         .send(arraySample)
         .expect(200)
@@ -83,7 +89,7 @@ describe('/meta', function() {
     })
     it('should get a json object back', function(done) {
       request(app)
-        .get(endpoint + '/list-order')
+        .get(endpoint + '/test-key')
         .set(authToken())
         .expect(200)
         .end(function(err, res) {
@@ -94,7 +100,7 @@ describe('/meta', function() {
     })
     it('should get a json array back', function(done) {
       request(app)
-        .get(endpoint + '/settings-general')
+        .get(endpoint + '/test-key-2')
         .set(authToken())
         .expect(200)
         .end(function(err, res) {
