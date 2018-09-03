@@ -12,6 +12,7 @@ const metaKeys = [
 ]
 const objectSample = { a: 1, b: true, c: '3' }
 const arraySample = [1, true, '3']
+const arraySample2 = [2, false, '4']
 
 const authToken = () => ({
   Authorization: 'Bearer ' + token.access_token
@@ -53,7 +54,18 @@ describe('/meta', function() {
       request(app)
         .post(endpoint + '/test-key-2')
         .set(authToken())
-        .send(arraySample)
+        .send([1, 2, 3])
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
+    it('should be able to update a key', function(done) {
+      request(app)
+        .post(endpoint + '/test-key-2')
+        .set(authToken())
+        .send(arraySample2)
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -80,8 +92,9 @@ describe('/meta', function() {
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert(
-            res.body.keys.length === metaKeys.length,
+          assert.equal(
+            res.body.keys.length,
+            metaKeys.length,
             'has the correct amount of keys'
           )
           done()
@@ -94,7 +107,7 @@ describe('/meta', function() {
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert(JSON.stringify(res.body) === JSON.stringify(objectSample))
+          assert.equal(JSON.stringify(res.body), JSON.stringify(objectSample))
           done()
         })
     })
@@ -105,7 +118,7 @@ describe('/meta', function() {
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert(JSON.stringify(res.body) === JSON.stringify(arraySample))
+          assert.equal(JSON.stringify(res.body), JSON.stringify(arraySample2))
           done()
         })
     })
