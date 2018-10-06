@@ -304,7 +304,25 @@ describe('/lists/:listid', function() {
             .end(function(err, res) {
               if (err) return done(err)
               assert.equal(res.body.name, 'A different name.')
-              assert.equal(res.body.notes, 'A different notes.')
+              assert.equal(res.body.notes, null) // disabled for v1
+              done()
+            })
+        })
+    })
+    it('should update a list and truncate the name to 255 chars', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId)
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({name: new Array(256).fill('a').join(''), updatedAt: new Date()})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          request(app)
+            .get(endpoint + '/' + listId)
+            .set({'Authorization': 'Bearer ' + token.access_token})
+            .end(function(err, res) {
+              if (err) return done(err)
+              assert.equal(res.body.name, new Array(255).fill('a').join(''))
               done()
             })
         })
@@ -320,7 +338,7 @@ describe('/lists/:listid', function() {
           if (err) return done(err)
           currentOrder = res.body.order
           assert.equal(res.body.name, 'A different yoho.')
-          assert.equal(res.body.notes, 'A different notes.')
+          assert.equal(res.body.notes, null) // disabled for v1
           done()
         })
     })

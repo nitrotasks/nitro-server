@@ -68,6 +68,18 @@ describe('/lists', function() {
           done()
         })
     })
+    it('should create truncate a list name with over 255 characters', function(done) {
+      request(app)
+        .post(endpoint)
+        .send({ name: new Array(256).fill('a').join(''), id: '12345' })
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(res.body.name, new Array(255).fill('a').join(''), 'truncated to 255')
+          done()
+        })
+    })
   })
 
   describe('GET /', function() {
@@ -98,7 +110,7 @@ describe('/lists', function() {
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          if (res.body.length === 2) {
+          if (res.body.length === 3) {
             assert(typeof(res.body[0].id) !== 'undefined')
 
             inboxId = res.body[0].id
