@@ -6,6 +6,7 @@ let listId = null
 let taskId = null
 let taskId2 = null
 
+const TASK_COUNT = 5
 describe('/lists/:listid', function() {
   before(function(done) {
     // creates a test list
@@ -79,6 +80,36 @@ describe('/lists/:listid', function() {
           done()
         })
     })
+    it('should truncate task names more than 255 characters', function(done) {
+      request(app)
+        .post(endpoint + '/' + listId)
+        .send({tasks: [{
+            name: new Array(256).fill('a').join('')
+          }
+        ]})
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(new Array(255).fill('a').join(''), res.body.tasks[0].name)
+          done()
+        })
+    })
+    it('should truncate task notes more than 50kb', function(done) {
+      request(app)
+        .post(endpoint + '/' + listId)
+        .send({tasks: [{
+            notes: new Array(51201).fill('a').join('')
+          }
+        ]})
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(new Array(51200).fill('a').join(''), res.body.tasks[0].notes)
+          done()
+        })
+    })
   })
   describe('GET /', function() {
     it('needs authentication', function(done) {
@@ -111,7 +142,7 @@ describe('/lists/:listid', function() {
           assert(typeof(res.body.notes) !== 'undefined')
           assert(typeof(res.body.users) !== 'undefined')
           assert(typeof(res.body.tasks) !== 'undefined')
-          assert(res.body.tasks.length === 3)
+          assert(res.body.tasks.length === TASK_COUNT)
           assert('id' in res.body.tasks[0])
           taskId = res.body.tasks[0].id
           taskId2 = res.body.tasks[1].id
@@ -157,7 +188,7 @@ describe('/lists/:listid', function() {
           assert(typeof(res.body.notes) !== 'undefined')
           assert(typeof(res.body.users) !== 'undefined')
           assert(typeof(res.body.tasks) !== 'undefined')
-          assert(res.body.tasks.length === 3)
+          assert(res.body.tasks.length === TASK_COUNT)
           assert('id' in res.body.tasks[0])
           assert('name' in res.body.tasks[0])
           assert('type' in res.body.tasks[0])
@@ -469,7 +500,7 @@ describe('/lists/:listid', function() {
           done()
         })
     })
-    it('requres a task', function(done) {
+    it('requires a task', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
         .set({'Authorization': 'Bearer ' + token.access_token})
@@ -510,6 +541,30 @@ describe('/lists/:listid', function() {
           assert('deadline' in res.body.tasks[0])
           assert('updatedAt' in res.body.tasks[0])
           assert('createdAt' in res.body.tasks[0])
+          done()
+        })
+    })
+    it('should update tasks names to a truncated 255 characters', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId + '/tasks')
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({tasks: {[taskId]: {name:  new Array(256).fill('a').join(''), updatedAt: new Date()}}})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(new Array(255).fill('a').join(''), res.body.tasks[0].name)
+          done()
+        })
+    })
+    it('should update tasks notes to a truncated 50kb characters', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId + '/tasks')
+        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({tasks: {[taskId]: {notes:  new Array(51201).fill('a').join(''), updatedAt: new Date()}}})
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(new Array(51200).fill('a').join(''), res.body.tasks[0].notes)
           done()
         })
     })

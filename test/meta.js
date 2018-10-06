@@ -83,6 +83,17 @@ describe('/meta', function() {
           done()
         })
     })
+    it('should fail if the payload is too large', function(done) {
+      request(app)
+        .post(endpoint + '/test-key')
+        .set(authToken())
+        .send(new Array(51200).fill('a'))
+        .expect(413)
+        .end(function(err, res) {
+          if (err) return done(err)
+          done()
+        })
+    })
   })
   describe('GET /:key', function() {
     it('should list available keys', function(done) {
