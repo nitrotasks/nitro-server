@@ -41,6 +41,7 @@
     "cross-env": "^5.2.0",
     "express": "^4.16.3",
     "jsonwebtoken": "^7.4.3",
+    "jwks-rsa": "^1.3.0",
     "passport": "^0.4.0",
     "passport-bearer-strategy": "^1.0.1",
     "passport-http-bearer": "^1.0.1",

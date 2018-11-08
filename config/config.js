@@ -22,6 +22,10 @@ const config = {
     dialect: 'postgres'
   },
 
+  jwtstrategy: process.env.JWT_Strategy || 'bearer',
+  jwtaudience: process.env.JWT_Audience || 'https://uat.nitrotasks.com/a/',
+  jwtissuer: process.env.JWT_Issuer || 'https://dymajo.au.auth0.com/',
+  jwksuri: process.env.JWKS_Uri || 'https://dymajo.au.auth0.com/.well-known/jwks.json',
   jwtsecret: process.env.JWT_Secret || 'secret'
 }
 module.exports = config
