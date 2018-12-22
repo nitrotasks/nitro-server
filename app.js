@@ -1,6 +1,7 @@
 const http = require('http')
 const express = require('express')
 const config = require('./config/config.js')
+const logger = require('./lib/logger.js')
 const migrator = require('./lib/migrator')
 const compression = require('compression')
 const WebSocket = require('ws')
@@ -12,7 +13,7 @@ const server = http.createServer(app)
 // set headers for every request
 app.disable('x-powered-by')
 if (config.dist !== false) {
-  app.use(compression({threshold: 200}))
+  app.use(compression({ threshold: 200 }))
 }
 app.use(function(req, res, next) {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN')
@@ -35,22 +36,21 @@ migrator.migrate().then(function() {
     app.get('/', cb)
     app.get('/*', cb)
 
-  // if we turn off the dist routing, we're only hosting API
+    // if we turn off the dist routing, we're only hosting API
   } else {
     // but we also want it to work on the ALB.
     const router = require('./lib/router.js')
     app.use('/a', router)
     app.use('/', router)
   }
-
 })
 
-const wss = new WebSocket.Server({server})
+const wss = new WebSocket.Server({ server })
 
 wss.on('connection', socketController.connection)
- 
+
 // the router routes stuff through this port
-var port = config.port
-server.listen(port, function() {
-  console.log('listening on localhost:' + port)
+const port = config.port
+server.listen(port, () => {
+  logger.info({ port: port }, 'server listening')
 })
