@@ -5,6 +5,7 @@ const endpoint = '/a/meta'
 // TODO: need to source this from the code itself?
 const metaKeys = [
   'list-order',
+  'latest-version',
   'settings-general',
   'settings-language',
   'test-key',
