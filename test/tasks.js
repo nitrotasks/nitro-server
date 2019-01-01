@@ -13,7 +13,7 @@ describe('/lists/:listid', function() {
     request(app)
       .post(endpoint)
       .send({ name: 'A List for our Tasks' })
-      .set({'Authorization': 'Bearer ' + token.access_token})
+      .set({ Authorization: 'Bearer ' + token.access_token })
       .end(function(err, res) {
         listId = res.body.id
         done()
@@ -32,8 +32,8 @@ describe('/lists/:listid', function() {
     it('needs tasks params', function(done) {
       request(app)
         .post(endpoint + '/' + listId)
-        .send({taskszz: 'yo'})
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({ taskszz: 'yo' })
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
@@ -43,13 +43,16 @@ describe('/lists/:listid', function() {
     it('should create multiple tasks', function(done) {
       request(app)
         .post(endpoint + '/' + listId)
-        .send({tasks: [{
-          name: 'A brand new task.'
-        },
-        {name: 'Another brand new task.'},
-        {name: 'Another brand new taskzhgzg.'}
-        ]})
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({
+          tasks: [
+            {
+              name: 'A brand new task.'
+            },
+            { name: 'Another brand new task.' },
+            { name: 'Another brand new taskzhgzg.' }
+          ]
+        })
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -59,7 +62,7 @@ describe('/lists/:listid', function() {
     it('the order should be in the correct order', function(done) {
       request(app)
         .get(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -70,10 +73,14 @@ describe('/lists/:listid', function() {
     it('should not create a task in a list belonging to another user', function(done) {
       request(app)
         .post(endpoint + '/' + listId)
-        .send({tasks: [{
-          name: 'A brand new task.'
-        }]})
-        .set({'Authorization': 'Bearer ' + token2.access_token})
+        .send({
+          tasks: [
+            {
+              name: 'A brand new task.'
+            }
+          ]
+        })
+        .set({ Authorization: 'Bearer ' + token2.access_token })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
@@ -83,30 +90,42 @@ describe('/lists/:listid', function() {
     it('should truncate task names more than 255 characters', function(done) {
       request(app)
         .post(endpoint + '/' + listId)
-        .send({tasks: [{
-            name: new Array(256).fill('a').join('')
-          }
-        ]})
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({
+          tasks: [
+            {
+              name: new Array(256).fill('a').join('')
+            }
+          ]
+        })
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert.equal(new Array(255).fill('a').join(''), res.body.tasks[0].name)
+          assert.equal(
+            new Array(255).fill('a').join(''),
+            res.body.tasks[0].name
+          )
           done()
         })
     })
     it('should truncate task notes more than 50kb', function(done) {
       request(app)
         .post(endpoint + '/' + listId)
-        .send({tasks: [{
-            notes: new Array(51201).fill('a').join('')
-          }
-        ]})
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .send({
+          tasks: [
+            {
+              notes: new Array(51201).fill('a').join('')
+            }
+          ]
+        })
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert.equal(new Array(51200).fill('a').join(''), res.body.tasks[0].notes)
+          assert.equal(
+            new Array(51200).fill('a').join(''),
+            res.body.tasks[0].notes
+          )
           done()
         })
     })
@@ -124,7 +143,7 @@ describe('/lists/:listid', function() {
     it('requires correct uuid syntax', function(done) {
       request(app)
         .get(endpoint + '/notacorrectuuid')
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
@@ -134,14 +153,14 @@ describe('/lists/:listid', function() {
     it('should return list with users and tasks', function(done) {
       request(app)
         .get(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert(typeof(res.body.name) !== 'undefined')
-          assert(typeof(res.body.notes) !== 'undefined')
-          assert(typeof(res.body.users) !== 'undefined')
-          assert(typeof(res.body.tasks) !== 'undefined')
+          assert(typeof res.body.name !== 'undefined')
+          assert(typeof res.body.notes !== 'undefined')
+          assert(typeof res.body.users !== 'undefined')
+          assert(typeof res.body.tasks !== 'undefined')
           assert(res.body.tasks.length === TASK_COUNT)
           assert('id' in res.body.tasks[0])
           taskId = res.body.tasks[0].id
@@ -149,17 +168,21 @@ describe('/lists/:listid', function() {
           taskId3 = res.body.tasks[2].id
           assert('updatedAt' in res.body.tasks[0])
           assert('createdAt' in res.body.tasks[0])
-          assert(typeof(res.body.updatedAt) !== 'undefined')
-          assert(typeof(res.body.createdAt) !== 'undefined')
-          assert(typeof(res.body.order) !== 'undefined', 'has order')
-          assert.equal(res.body.order.length, res.body.tasks.length, 'tasks order matches tasks length')
+          assert(typeof res.body.updatedAt !== 'undefined')
+          assert(typeof res.body.createdAt !== 'undefined')
+          assert(typeof res.body.order !== 'undefined', 'has order')
+          assert.equal(
+            res.body.order.length,
+            res.body.tasks.length,
+            'tasks order matches tasks length'
+          )
           done()
         })
     })
     it('should not return list belonging to another user', function(done) {
       request(app)
         .get(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token2.access_token})
+        .set({ Authorization: 'Bearer ' + token2.access_token })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
@@ -180,14 +203,14 @@ describe('/lists/:listid', function() {
     it('should return list with users and full tasks', function(done) {
       request(app)
         .get(endpoint + '/' + listId + '/tasks')
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert(typeof(res.body.name) !== 'undefined')
-          assert(typeof(res.body.notes) !== 'undefined')
-          assert(typeof(res.body.users) !== 'undefined')
-          assert(typeof(res.body.tasks) !== 'undefined')
+          assert(typeof res.body.name !== 'undefined')
+          assert(typeof res.body.notes !== 'undefined')
+          assert(typeof res.body.users !== 'undefined')
+          assert(typeof res.body.tasks !== 'undefined')
           assert(res.body.tasks.length === TASK_COUNT)
           assert('id' in res.body.tasks[0])
           assert('name' in res.body.tasks[0])
@@ -198,8 +221,8 @@ describe('/lists/:listid', function() {
           assert('deadline' in res.body.tasks[0])
           assert('updatedAt' in res.body.tasks[0])
           assert('createdAt' in res.body.tasks[0])
-          assert(typeof(res.body.updatedAt) !== 'undefined')
-          assert(typeof(res.body.createdAt) !== 'undefined')
+          assert(typeof res.body.updatedAt !== 'undefined')
+          assert(typeof res.body.createdAt !== 'undefined')
           done()
         })
     })
@@ -217,7 +240,7 @@ describe('/lists/:listid', function() {
     it('requires correct uuid syntax', function(done) {
       request(app)
         .get(endpoint + '/' + listId + '/?tasks=rekt')
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
@@ -227,23 +250,23 @@ describe('/lists/:listid', function() {
     it('should get the full task details', function(done) {
       request(app)
         .get(endpoint + '/' + listId + '/?tasks=' + taskId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert(typeof(res.body[0].id) !== 'undefined', 'has id')
-          assert(typeof(res.body[0].name) !== 'undefined', 'has name')
-          assert(typeof(res.body[0].type) !== 'undefined', 'has type')
-          assert(typeof(res.body[0].notes) !== 'undefined', 'has notes')
-          assert(typeof(res.body[0].updatedAt) !== 'undefined', 'has updatedAt')
-          assert(typeof(res.body[0].createdAt) !== 'undefined', 'has createdAt')
+          assert(typeof res.body[0].id !== 'undefined', 'has id')
+          assert(typeof res.body[0].name !== 'undefined', 'has name')
+          assert(typeof res.body[0].type !== 'undefined', 'has type')
+          assert(typeof res.body[0].notes !== 'undefined', 'has notes')
+          assert(typeof res.body[0].updatedAt !== 'undefined', 'has updatedAt')
+          assert(typeof res.body[0].createdAt !== 'undefined', 'has createdAt')
           done()
         })
     })
     it('should get multiple tasks', function(done) {
       request(app)
         .get(endpoint + '/' + listId + '/?tasks=' + taskId + ',' + taskId2)
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -254,7 +277,7 @@ describe('/lists/:listid', function() {
     it('should not return a task belonging to another user', function(done) {
       request(app)
         .get(endpoint + '/' + listId + '/?tasks=' + taskId)
-        .set({'Authorization': 'Bearer ' + token2.access_token})
+        .set({ Authorization: 'Bearer ' + token2.access_token })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
@@ -263,8 +286,13 @@ describe('/lists/:listid', function() {
     })
     it('should not return a task if does not exist', function(done) {
       request(app)
-        .get(endpoint + '/' + listId + '/?tasks=38944917-a0fd-4e31-9c56-6c1f825bfa0c')
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .get(
+          endpoint +
+            '/' +
+            listId +
+            '/?tasks=38944917-a0fd-4e31-9c56-6c1f825bfa0c'
+        )
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
@@ -273,8 +301,15 @@ describe('/lists/:listid', function() {
     })
     it('should get tasks that do exist if one not found', function(done) {
       request(app)
-        .get(endpoint + '/' + listId + '/?tasks=' + taskId + ',38944917-a0fd-4e31-9c56-6c1f825bfa0c')
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .get(
+          endpoint +
+            '/' +
+            listId +
+            '/?tasks=' +
+            taskId +
+            ',38944917-a0fd-4e31-9c56-6c1f825bfa0c'
+        )
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -284,7 +319,7 @@ describe('/lists/:listid', function() {
     })
   })
   let lastUpdated = null
-  describe('PATCH /' , function() {
+  describe('PATCH /', function() {
     it('needs authentication', function(done) {
       request(app)
         .patch(endpoint + '/' + listId)
@@ -297,7 +332,7 @@ describe('/lists/:listid', function() {
     it('requires a list', function(done) {
       request(app)
         .patch(endpoint + '/')
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
@@ -307,7 +342,7 @@ describe('/lists/:listid', function() {
     it('requires correct uuid syntax', function(done) {
       request(app)
         .patch(endpoint + '/notacorrectuuid')
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
@@ -317,21 +352,25 @@ describe('/lists/:listid', function() {
     it('should update a list and return all required attributes', function(done) {
       request(app)
         .patch(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({name: 'A different name.', notes: 'A different notes.', updatedAt: new Date()})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({
+          name: 'A different name.',
+          notes: 'A different notes.',
+          updatedAt: new Date()
+        })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert(typeof(res.body.name) !== 'undefined', 'has name')
-          assert(typeof(res.body.notes) !== 'undefined', 'has notes')
-          assert(typeof(res.body.order) !== 'undefined', 'has order')
-          assert(typeof(res.body.users) !== 'undefined', 'has users')
-          assert(typeof(res.body.updatedAt) !== 'undefined', 'has updatedAt')
-          assert(typeof(res.body.createdAt) !== 'undefined', 'has createdAt')
+          assert(typeof res.body.name !== 'undefined', 'has name')
+          assert(typeof res.body.notes !== 'undefined', 'has notes')
+          assert(typeof res.body.order !== 'undefined', 'has order')
+          assert(typeof res.body.users !== 'undefined', 'has users')
+          assert(typeof res.body.updatedAt !== 'undefined', 'has updatedAt')
+          assert(typeof res.body.createdAt !== 'undefined', 'has createdAt')
 
           request(app)
             .get(endpoint + '/' + listId)
-            .set({'Authorization': 'Bearer ' + token.access_token})
+            .set({ Authorization: 'Bearer ' + token.access_token })
             .end(function(err, res) {
               if (err) return done(err)
               assert.equal(res.body.name, 'A different name.')
@@ -343,14 +382,17 @@ describe('/lists/:listid', function() {
     it('should update a list and truncate the name to 255 chars', function(done) {
       request(app)
         .patch(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({name: new Array(256).fill('a').join(''), updatedAt: new Date()})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({
+          name: new Array(256).fill('a').join(''),
+          updatedAt: new Date()
+        })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
           request(app)
             .get(endpoint + '/' + listId)
-            .set({'Authorization': 'Bearer ' + token.access_token})
+            .set({ Authorization: 'Bearer ' + token.access_token })
             .end(function(err, res) {
               if (err) return done(err)
               assert.equal(res.body.name, new Array(255).fill('a').join(''))
@@ -362,8 +404,8 @@ describe('/lists/:listid', function() {
     it('should ignore the update if paramater is not specified', function(done) {
       request(app)
         .patch(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({name: 'A different yoho.', updatedAt: new Date()})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ name: 'A different yoho.', updatedAt: new Date() })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -376,8 +418,8 @@ describe('/lists/:listid', function() {
     it('should not be able to update to a system list', function(done) {
       request(app)
         .patch(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({name: 'nitrosys-notallowed', updatedAt: new Date()})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ name: 'nitrosys-notallowed', updatedAt: new Date() })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -385,10 +427,10 @@ describe('/lists/:listid', function() {
           done()
         })
     })
-     it('should not be able to change from system list to normal list', function(done) {
+    it('should not be able to change from system list to normal list', function(done) {
       request(app)
         .get(endpoint)
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           const list = res.body.find(item => {
@@ -397,25 +439,28 @@ describe('/lists/:listid', function() {
 
           request(app)
             .patch(endpoint + '/' + list)
-            .set({'Authorization': 'Bearer ' + token.access_token})
-            .send({name: 'inbox', updatedAt: new Date()})
+            .set({ Authorization: 'Bearer ' + token.access_token })
+            .send({ name: 'inbox', updatedAt: new Date() })
             .expect(200)
             .end(function(err, res) {
               if (err) return done(err)
               assert.equal(res.body.name, 'nitrosys-inbox')
               done()
             })
-        })        
+        })
     })
     it('should update order', function(done) {
       request(app)
         .patch(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({order: currentOrder.reverse(), updatedAt: new Date()})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ order: currentOrder.reverse(), updatedAt: new Date() })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert.equal(JSON.stringify(res.body.order), JSON.stringify(currentOrder))
+          assert.equal(
+            JSON.stringify(res.body.order),
+            JSON.stringify(currentOrder)
+          )
           lastUpdated = res.body.updatedAt
           done()
         })
@@ -425,12 +470,15 @@ describe('/lists/:listid', function() {
       newOrder.push(listId)
       request(app)
         .patch(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({order: newOrder, updatedAt: new Date()})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ order: newOrder, updatedAt: new Date() })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert.equal(JSON.stringify(res.body.order), JSON.stringify(currentOrder))
+          assert.equal(
+            JSON.stringify(res.body.order),
+            JSON.stringify(currentOrder)
+          )
           done()
         })
     })
@@ -439,8 +487,8 @@ describe('/lists/:listid', function() {
       currentOrder[0] = listId
       request(app)
         .patch(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({order: currentOrder, updatedAt: new Date()})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ order: currentOrder, updatedAt: new Date() })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -451,15 +499,15 @@ describe('/lists/:listid', function() {
     it('should not update a list if it has been updated more recently', function(done) {
       request(app)
         .patch(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({name: 'NO UPDATE', notes: 'NO NOTES', updatedAt: new Date(0)})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ name: 'NO UPDATE', notes: 'NO NOTES', updatedAt: new Date(0) })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
 
           request(app)
             .get(endpoint + '/' + listId)
-            .set({'Authorization': 'Bearer ' + token.access_token})
+            .set({ Authorization: 'Bearer ' + token.access_token })
             .end(function(err, res) {
               if (err) return done(err)
               assert.notEqual(res.body.name, 'NO UPDATE')
@@ -468,11 +516,66 @@ describe('/lists/:listid', function() {
             })
         })
     })
+    it('should update a list if it is lagging behind a bit', function(done) {
+      request(app)
+        .get(endpoint + '/' + listId)
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          const updated = new Date(res.body.updatedAt).getTime()
+
+          request(app)
+            .patch(endpoint + '/' + listId)
+            .set({ Authorization: 'Bearer ' + token.access_token })
+            .send({
+              name: 'NO UPDATE',
+              // notes: 'NO NOTES',
+              updatedAt: new Date(updated - 20001)
+            })
+            .expect(200)
+            .end(function(err, res) {
+              if (err) return done(err)
+
+              request(app)
+                .get(endpoint + '/' + listId)
+                .set({ Authorization: 'Bearer ' + token.access_token })
+                .end(function(err, res) {
+                  if (err) return done(err)
+                  assert.notEqual(res.body.name, 'NO UPDATE')
+                  // assert.notEqual(res.body.notes, 'NO NOTES')
+
+                  request(app)
+                    .patch(endpoint + '/' + listId)
+                    .set({ Authorization: 'Bearer ' + token.access_token })
+                    .send({
+                      name: 'UPDATE',
+                      // notes: 'NOTES',
+                      updatedAt: new Date(updated - 19999)
+                    })
+                    .expect(200)
+                    .end(function(err, res) {
+                      if (err) return done(err)
+
+                      request(app)
+                        .get(endpoint + '/' + listId)
+                        .set({ Authorization: 'Bearer ' + token.access_token })
+                        .end(function(err, res) {
+                          if (err) return done(err)
+                          assert.equal(res.body.name, 'UPDATE')
+                          // assert.equal(res.body.notes, 'NOTES')
+                          done()
+                        })
+                    })
+                })
+            })
+        })
+    })
     it('should not update a list that belongs to someone else', function(done) {
       request(app)
         .patch(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token2.access_token})
-        .send({name: 'A different name.', notes: 'A different notes.'})
+        .set({ Authorization: 'Bearer ' + token2.access_token })
+        .send({ name: 'A different name.', notes: 'A different notes.' })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
@@ -480,7 +583,7 @@ describe('/lists/:listid', function() {
         })
     })
   })
-  describe('PATCH /tasks' , function() {
+  describe('PATCH /tasks', function() {
     it('needs authentication', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
@@ -493,7 +596,7 @@ describe('/lists/:listid', function() {
     it('requres task parameter', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
@@ -503,8 +606,8 @@ describe('/lists/:listid', function() {
     it('requires a task', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({tasks: {}})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ tasks: {} })
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
@@ -514,8 +617,8 @@ describe('/lists/:listid', function() {
     it('requires correct uuid syntax', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({tasks: {'rekt': {name: 'new data'}}})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ tasks: { rekt: { name: 'new data' } } })
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
@@ -526,8 +629,13 @@ describe('/lists/:listid', function() {
     it('should update tasks and return all required attributes', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({tasks: {[taskId]: {name: 'new data', updatedAt: new Date()}, [taskId2]: {name: 'new yolo swag', updatedAt: new Date()}}})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({
+          tasks: {
+            [taskId]: { name: 'new data', updatedAt: new Date() },
+            [taskId2]: { name: 'new yolo swag', updatedAt: new Date() }
+          }
+        })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -547,35 +655,59 @@ describe('/lists/:listid', function() {
     it('should update tasks names to a truncated 255 characters', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({tasks: {[taskId]: {name:  new Array(256).fill('a').join(''), updatedAt: new Date()}}})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({
+          tasks: {
+            [taskId]: {
+              name: new Array(256).fill('a').join(''),
+              updatedAt: new Date()
+            }
+          }
+        })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert.equal(new Array(255).fill('a').join(''), res.body.tasks[0].name)
+          assert.equal(
+            new Array(255).fill('a').join(''),
+            res.body.tasks[0].name
+          )
           done()
         })
     })
     it('should update tasks notes to a truncated 50kb characters', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({tasks: {[taskId]: {notes:  new Array(51201).fill('a').join(''), updatedAt: new Date()}}})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({
+          tasks: {
+            [taskId]: {
+              notes: new Array(51201).fill('a').join(''),
+              updatedAt: new Date()
+            }
+          }
+        })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert.equal(new Array(51200).fill('a').join(''), res.body.tasks[0].notes)
+          assert.equal(
+            new Array(51200).fill('a').join(''),
+            res.body.tasks[0].notes
+          )
           done()
         })
     })
     it('should update the updatedAt time on the parent list', function(done) {
       request(app)
         .get(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert.notEqual(res.body.updatedAt, lastUpdated, 'timestamp should be updated')
+          assert.notEqual(
+            res.body.updatedAt,
+            lastUpdated,
+            'timestamp should be updated'
+          )
           lastUpdated = res.body.updatedAt
           done()
         })
@@ -583,27 +715,89 @@ describe('/lists/:listid', function() {
     it('should not update if it has been updated recently', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({tasks: {[taskId]: {name: 'NO UPDATE', updatedAt: new Date(0)}}})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({
+          tasks: { [taskId]: { name: 'NO UPDATE', updatedAt: new Date(0) } }
+        })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
           request(app)
             .get(endpoint + '/' + listId + '/?tasks=' + taskId)
-            .set({'Authorization': 'Bearer ' + token.access_token})
+            .set({ Authorization: 'Bearer ' + token.access_token })
             .expect(200)
             .end(function(err, res) {
               if (err) return done(err)
-              assert.notEqual(res.body.name, 'NO UPDATE')
+              assert.notEqual(res.body[0].name, 'NO UPDATE')
               done()
+            })
+        })
+    })
+    it('should update if it is lagging behind a bit', function(done) {
+      request(app)
+        .get(endpoint + '/' + listId + '/?tasks=' + taskId)
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          const updated = new Date(res.body[0].updatedAt).getTime()
+
+          request(app)
+            .patch(endpoint + '/' + listId + '/tasks')
+            .set({ Authorization: 'Bearer ' + token.access_token })
+            .send({
+              tasks: {
+                [taskId]: {
+                  name: 'NO UPDATE',
+                  updatedAt: new Date(updated - 20001)
+                }
+              }
+            })
+            .expect(200)
+            .end(function(err, res) {
+              if (err) return done(err)
+              request(app)
+                .get(endpoint + '/' + listId + '/?tasks=' + taskId)
+                .set({ Authorization: 'Bearer ' + token.access_token })
+                .expect(200)
+                .end(function(err, res) {
+                  if (err) return done(err)
+                  assert.notEqual(res.body[0].name, 'NO UPDATE')
+                  request(app)
+                    .patch(endpoint + '/' + listId + '/tasks')
+                    .set({ Authorization: 'Bearer ' + token.access_token })
+                    .send({
+                      tasks: {
+                        [taskId]: {
+                          name: 'UPDATE',
+                          updatedAt: new Date(updated - 19999)
+                        }
+                      }
+                    })
+                    .expect(200)
+                    .end(function(err, res) {
+                      if (err) return done(err)
+                      request(app)
+                        .get(endpoint + '/' + listId + '/?tasks=' + taskId)
+                        .set({ Authorization: 'Bearer ' + token.access_token })
+                        .expect(200)
+                        .end(function(err, res) {
+                          if (err) return done(err)
+                          assert.equal(res.body[0].name, 'UPDATE')
+                          done()
+                        })
+                    })
+                })
             })
         })
     })
     it('should not update if the task belongs to someone else', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
-        .set({'Authorization': 'Bearer ' + token2.access_token})
-        .send({tasks: {[taskId]: {name: 'new data', updatedAt: new Date()}}})
+        .set({ Authorization: 'Bearer ' + token2.access_token })
+        .send({
+          tasks: { [taskId]: { name: 'new data', updatedAt: new Date() } }
+        })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
@@ -613,8 +807,10 @@ describe('/lists/:listid', function() {
     it('should not update if the task does not exist', function(done) {
       request(app)
         .patch(endpoint + '/' + listId + '/tasks')
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({tasks: {[listId]: {name: 'new data', updatedAt: new Date()}}})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({
+          tasks: { [listId]: { name: 'new data', updatedAt: new Date() } }
+        })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
@@ -622,7 +818,7 @@ describe('/lists/:listid', function() {
         })
     })
   })
-  describe('DELETE /' , function() {
+  describe('DELETE /', function() {
     it('needs authentication', function(done) {
       request(app)
         .delete(endpoint + '/' + listId)
@@ -635,18 +831,18 @@ describe('/lists/:listid', function() {
     it('requires a task', function(done) {
       request(app)
         .delete(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(400)
         .end(function(err, res) {
-          if (err) return done(err)        
+          if (err) return done(err)
           done()
         })
     })
     it('requires correct uuid syntax', function(done) {
       request(app)
         .delete(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({tasks: ['rekt']})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ tasks: ['rekt'] })
         .expect(400)
         .end(function(err, res) {
           if (err) return done(err)
@@ -656,8 +852,8 @@ describe('/lists/:listid', function() {
     it('should not delete a task belonging to another user', function(done) {
       request(app)
         .delete(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token2.access_token})
-        .send({tasks: [taskId, taskId2]})
+        .set({ Authorization: 'Bearer ' + token2.access_token })
+        .send({ tasks: [taskId, taskId2] })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
@@ -667,8 +863,8 @@ describe('/lists/:listid', function() {
     it('should delete a task', function(done) {
       request(app)
         .delete(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({tasks: [taskId, taskId2]})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ tasks: [taskId, taskId2] })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
@@ -678,7 +874,7 @@ describe('/lists/:listid', function() {
     it('should be deleted from the database', function(done) {
       request(app)
         .get(endpoint + '/' + listId + '?tasks=' + taskId + ',' + taskId2)
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
@@ -688,11 +884,15 @@ describe('/lists/:listid', function() {
     it('should update the updatedAt time on the parent list', function(done) {
       request(app)
         .get(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
+        .set({ Authorization: 'Bearer ' + token.access_token })
         .expect(200)
         .end(function(err, res) {
           if (err) return done(err)
-          assert.notEqual(res.body.updatedAt, lastUpdated, 'timestamp should be updated')
+          assert.notEqual(
+            res.body.updatedAt,
+            lastUpdated,
+            'timestamp should be updated'
+          )
           lastUpdated = res.body.updatedAt
           done()
         })
@@ -700,12 +900,16 @@ describe('/lists/:listid', function() {
     it('should return exact tasks that do not exist', function(done) {
       request(app)
         .delete(endpoint + '/' + listId)
-        .set({'Authorization': 'Bearer ' + token.access_token})
-        .send({tasks: [taskId3, '38944917-a0fd-4e31-9c56-6c1f825bfa0c']})
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({ tasks: [taskId3, '38944917-a0fd-4e31-9c56-6c1f825bfa0c'] })
         .expect(404)
         .end(function(err, res) {
           if (err) return done(err)
-          assert.equal(res.body.items[0], '38944917-a0fd-4e31-9c56-6c1f825bfa0c', 'Not found task must be found.')
+          assert.equal(
+            res.body.items[0],
+            '38944917-a0fd-4e31-9c56-6c1f825bfa0c',
+            'Not found task must be found.'
+          )
           done()
         })
     })
