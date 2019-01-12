@@ -28,7 +28,7 @@ before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   - './cc-test-reporter before-build'
-  - psql -c 'create database nitro_travis;' -U postgres
+  - psql -c 'create database nitrotest;' -U postgres
   - npm run migrate
 after_script:
   - './cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT'
