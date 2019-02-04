@@ -219,6 +219,7 @@ describe('/lists/:listid', function() {
           assert('completed' in res.body.tasks[0])
           assert('date' in res.body.tasks[0])
           assert('deadline' in res.body.tasks[0])
+          assert.equal(res.body.tasks[0].priority, 0)
           assert('updatedAt' in res.body.tasks[0])
           assert('createdAt' in res.body.tasks[0])
           assert(typeof res.body.updatedAt !== 'undefined')
@@ -647,6 +648,7 @@ describe('/lists/:listid', function() {
           assert('completed' in res.body.tasks[0])
           assert('date' in res.body.tasks[0])
           assert('deadline' in res.body.tasks[0])
+          assert.equal(res.body.tasks[0].priority, 0)
           assert('updatedAt' in res.body.tasks[0])
           assert('createdAt' in res.body.tasks[0])
           done()
@@ -693,6 +695,63 @@ describe('/lists/:listid', function() {
             new Array(51200).fill('a').join(''),
             res.body.tasks[0].notes
           )
+          done()
+        })
+    })
+    it('should not update tasks priority if value is not an integer', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId + '/tasks')
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({
+          tasks: {
+            [taskId]: {
+              priority: 'not an integer',
+              updatedAt: new Date()
+            }
+          }
+        })
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(0, res.body.tasks[0].priority)
+          done()
+        })
+    })
+    it('should update tasks priority to a value greater than 0', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId + '/tasks')
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({
+          tasks: {
+            [taskId]: {
+              priority: -100,
+              updatedAt: new Date()
+            }
+          }
+        })
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(0, res.body.tasks[0].priority)
+          done()
+        })
+    })
+    it('should update tasks priority to a value less than 3', function(done) {
+      request(app)
+        .patch(endpoint + '/' + listId + '/tasks')
+        .set({ Authorization: 'Bearer ' + token.access_token })
+        .send({
+          tasks: {
+            [taskId]: {
+              priority: 234,
+              updatedAt: new Date()
+            }
+          }
+        })
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err)
+          assert.equal(3, res.body.tasks[0].priority)
           done()
         })
     })
