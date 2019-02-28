@@ -21,9 +21,6 @@ env:
 sudo: required
 services:
   - postgresql
-  - docker
-before_install:
-  - docker build ./ -t dymajo/nitro-server:latest
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
@@ -32,8 +29,3 @@ before_script:
   - npm run migrate
 after_script:
   - './cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT'
-deploy:
-  - provider: script
-    script: npm run docker-push-master
-    on:
-      branch: master

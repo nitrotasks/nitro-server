@@ -10,8 +10,7 @@
     "test": "nyc mocha --require test/mocha.env.js --exit",
     "sequelize": "sequelize",
     "migrate": "sequelize db:migrate",
-    "migrate:test": "cross-env NODE_ENV=test sequelize db:migrate:undo:all && cross-env NODE_ENV=test sequelize db:migrate && npm run test",
-    "docker-push-master": "docker login -u \"$DOCKER_USERNAME\" -p \"$DOCKER_PASSWORD\" && docker push dymajo/nitro-server:latest"
+    "migrate:test": "cross-env NODE_ENV=test sequelize db:migrate:undo:all && cross-env NODE_ENV=test sequelize db:migrate && npm run test"
   },
   "repository": {
     "type": "git",
@@ -26,7 +25,11 @@
     "node": "8.4.x"
   },
   "nyc": {
-    "reporter": ["lcov", "text", "html"]
+    "reporter": [
+      "lcov",
+      "text",
+      "html"
+    ]
   },
   "homepage": "http://nitrotasks.com",
   "dependencies": {
