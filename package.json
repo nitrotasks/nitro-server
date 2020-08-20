@@ -33,7 +33,7 @@
   },
   "homepage": "http://nitrotasks.com",
   "dependencies": {
-    "bcrypt": "^3.0.2",
+    "bcrypt": "^5.0.0",
     "body-parser": "^1.18.3",
     "bufferutil": "^3.0.5",
     "bunyan": "^1.8.12",
